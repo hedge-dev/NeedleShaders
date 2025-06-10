@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 
-namespace HedgeDev.Shaders.HE2.Compiler
+namespace HedgeDev.NeedleShaders.HE2.Compiler
 {
     internal class Program
     {
@@ -41,6 +41,9 @@ namespace HedgeDev.Shaders.HE2.Compiler
                         break;
                     case "info":
                         CommandInfo.Run(args);
+                        break;
+                    case "extract":
+                        CommandExtract.Run(args);
                         break;
                     default:
                         Console.WriteLine($"Unknown command {args[0]}.");

@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using Vortice.Direct3D;
 
-namespace HedgeDev.Shaders.HE2.Compiler
+namespace HedgeDev.NeedleShaders.HE2.Compiler
 {
     internal static class D3D11Extensions
     {

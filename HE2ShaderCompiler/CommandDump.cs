@@ -1,7 +1,7 @@
 ﻿using SharpNeedle.Framework.HedgehogEngine.Needle.Shader;
 using SharpNeedle.Resource;
 
-namespace HedgeDev.Shaders.HE2.Compiler
+namespace HedgeDev.NeedleShaders.HE2.Compiler
 {
     internal static class CommandDump
     {
@@ -29,7 +29,7 @@ namespace HedgeDev.Shaders.HE2.Compiler
                 }
 
                 string arg = rawArg[1..].ToLower();
-
+                
                 switch(arg)
                 {
                     case "odir":

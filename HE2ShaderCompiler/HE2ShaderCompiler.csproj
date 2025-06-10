@@ -18,6 +18,7 @@
 	<ItemGroup>
 	  <None Remove="cmdhelp.txt" />
 	  <None Remove="cmdhelp_compile.txt" />
+	  <None Remove="cmdhelp_extract.txt" />
 	</ItemGroup>
 
 	<ItemGroup>

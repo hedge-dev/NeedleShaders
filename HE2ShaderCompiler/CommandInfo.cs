@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HedgeDev.Shaders.HE2.Compiler
+namespace HedgeDev.NeedleShaders.HE2.Compiler
 {
     internal static class CommandInfo
     {

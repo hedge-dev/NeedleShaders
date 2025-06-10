@@ -1,0 +1,16 @@
+﻿Info command usage:
+
+he2shadercompiler extract <file> <output directory> <options>
+
+-------------------------------------------------
+
+Tracks down and extracts shader object files embedded within an executable, as well as prints their
+address for your to use when replacing the shader.
+
+Must specify an output directory
+
+-------------------------------------------------
+
+options:
+    -nodump             Only print the location of shader objects within the executable
+	-fullname			Print the full build path of the file, and not just the shader name

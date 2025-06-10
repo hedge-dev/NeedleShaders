@@ -2,7 +2,7 @@
 using SharpNeedle.Framework.HedgehogEngine.Needle.Shader.Variable;
 using Vortice.Direct3D11.Shader;
 
-namespace HedgeDev.Shaders.HE2.Compiler
+namespace HedgeDev.NeedleShaders.HE2.Compiler
 {
     internal static class ShaderByteCodeProcessor
     {
