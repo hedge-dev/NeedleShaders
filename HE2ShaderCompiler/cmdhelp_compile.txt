@@ -1,0 +1,49 @@
+﻿Compile command usage: 
+
+he2shadercompiler compile <file> <options>
+
+-------------------------------------------------
+
+Compiles an HLSL file into its respective HE2 Needle shader object file (pso, vso, cso).
+
+If no output is specified, then the compiled shader will be saved right next to the input.
+
+You can manually specify which shader model to use via the -p option. Otherwise, the type of model
+can be specified via the file extension, which will get used as a "loose" profile:
+    - .vs.hlsl -> vertex shader (.vso)
+    - .ps.hlsl -> pixel shader (.pso)
+    - .cs.hlsl -> compute shader (.cso)
+
+-------------------------------------------------
+
+options:
+    -o <filename>       Output filename
+    -odir <directory>   Output directory (automated filename)
+	-nobp               Don't include build path in shader
+	-v1	                Compile the shader for HE2 games released before Shadow Generations
+    
+    -T <profile>        Manually specify a directx shader profile (disregards file extension),
+                        Can be loosely specified (like "vs") or specific (like "vs_5_0").
+                        If losely specified, will use the 5.0 shader model ("vs" turns into "vs_5_0")
+    -E <entrypoint>     Specify a custom entrypoint. Default is "main"
+    -D <macro>=<text>   Define macro
+
+    -Od                 disable optimizations
+    -Op                 disable preshaders
+    -O{{0,1,2,3}}       optimization level 0..3.  1 is default
+    -WX                 treat warnings as errors
+    -Vd                 disable validation
+    -Zi                 enable debugging information
+    -Zss                debug name with source information
+    -Zsb                debug name with only binary information
+    -Zpr                pack matrices in row-major order
+    -Zpc                pack matrices in column-major order
+
+    -Gpp                force partial precision
+    -Gfa                avoid flow control constructs
+    -Gfp                prefer flow control constructs
+    -Gdp                disable effect performance mode
+    -Ges                enable strict mode
+    -Gec                enable backwards compatibility mode
+    -Gis                force IEEE strictness
+    

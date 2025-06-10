@@ -1,0 +1,18 @@
+﻿Info command usage:
+
+he2shadercompiler info <file> <options>
+
+-------------------------------------------------
+
+Prints info stored within a shader file.
+
+There are also options for printing the...
+    Permutation map: Shows which compiled shader variant gets used for each combination of features
+    Variant globals: Lists all the global and their information for one variant
+
+-------------------------------------------------
+
+options:
+    -pm                 Show permutation map with 8 columns
+	-pmc <columns>		Show permutation map with a specific column count
+	-gv <index>         Show global variables of a specific shader variant

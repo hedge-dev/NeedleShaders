@@ -1,0 +1,28 @@
+﻿Dump command usage: 
+
+he2shadercompiler dump <file> <options>
+
+-------------------------------------------------
+
+Dumps the compied shader(s) of a shader object file. For more info about the
+shader variants in a file, check out the "info" command and use the -pm command
+to see a permutation map.
+
+You have to specify if you want to dump a specific compiled shader variants,
+or specify to dump all.
+
+By default, decompiled hlsl bytecode will be dumped, but you can also have the binaries
+dumped if you want to process it with another tool.
+
+Files are dumped next to the input file when no output directory is specified with -od
+
+-------------------------------------------------
+
+options:
+	-odir <directory>   Output directory
+
+	-i <index>		    Dump a specific shader variant
+	-all				Dump all shader variants
+
+    -bin                Dump binary data
+	-noasm              Don't dump hlsl bytecode
