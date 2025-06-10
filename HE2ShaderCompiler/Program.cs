@@ -60,7 +60,6 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
         private static void PrintHelp(string name)
         {
             Assembly assembly = Assembly.GetExecutingAssembly();
-            FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
 
             string resourceName = "HedgeDev.Shaders.HE2.Compiler." + name;
             string print;
@@ -70,8 +69,10 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             }
 
             Console.WriteLine("Hedgehog Engine 2 Shader Compiler @Hedge-Dev");
-            Console.WriteLine("Version " + fvi.FileVersion);
+            Console.WriteLine("Version " + assembly.GetName().Version!.ToString());
             Console.WriteLine(print);
+            Console.WriteLine();
+            Console.WriteLine();
         }
     }
 }
