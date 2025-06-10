@@ -9,17 +9,13 @@
 		<Platforms>AnyCPU;x64;x86</Platforms>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<ApplicationIcon>Icon.ico</ApplicationIcon>
+		<Title>HE2 Shader Compiler</Title>
+		<Version>1.0.1</Version>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
 		<DebugType>embedded</DebugType>
 	</PropertyGroup>
-
-	<ItemGroup>
-	  <None Remove="cmdhelp.txt" />
-	  <None Remove="cmdhelp_compile.txt" />
-	  <None Remove="cmdhelp_extract.txt" />
-	</ItemGroup>
 
 	<ItemGroup>
 	  <EmbeddedResource Include="cmdhelp*.txt" />
