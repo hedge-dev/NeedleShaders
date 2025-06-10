@@ -123,9 +123,9 @@ SurfaceData CreateCommonSurface(
     result.normal.xyz = normal * 0.5 + 0.5;
 
     //////////////////////////////////////////////////
-    // (?)
+    // Motion blur direction (?)
 
-    result.o4.xy = position.xy - jitter_offset.xy - (u_viewport_info.xy * ((prev_position.xy / prev_position.zz) * float2(1,-1) + float2(1,1)) * 0.5 - jitter_offset.zw);
+    result.o4.xy = position.xy - jitter_offset.xy - (u_viewport_info.xy * ((prev_position.xy / prev_position.zz) * float2(1.0,-1.0) + 1.0) * 0.5 - jitter_offset.zw);
 
     //////////////////////////////////////////////////
     // (?)

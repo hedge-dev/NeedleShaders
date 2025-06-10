@@ -27,7 +27,7 @@ struct VertexInput
 struct Vertex2Pixel
 {
 	// --- Position ---
-	// XYZW: Screen (?) space position (or clip space?)
+	// XYZW: Screen space position (aligned with pixels)
 	float4 Position : SV_POSITION;
 
 	// --- Color ---
@@ -55,14 +55,14 @@ struct Vertex2Pixel
 	float4 WorldTangent : TEXCOORD3;
 
 	// --- Preview view position ---
-	// XYZ: Previous (?) Screen space position (or clip space?)
+	// XYZ: Previous Screen space position (aligned with pixels)
 	// W: World space Z position
 	float4 PrevPosition : TEXCOORD4;
 
 	// --- Binormal orientation ---
 	// X: Either 1 or -1; Use on the cross product between the normal and
 	// 		tangent to get the correctly orientated binormal
-	// Y: Instancing index (?)
+	// Y: Instancing index
 	float2 BinormalOrientation : TEXCOORD11;
 
 	#ifndef enable_deferred_rendering
