@@ -6,7 +6,15 @@
 float3 LightSurface(SurfaceData surface)
 {
 	// TODO only placeholder rn
-	return surface.albedo.rgb;
+	return saturate(surface.albedo.rgb
+		+ surface.emission.rgb
+		+ surface.normal.rgb
+		+ surface.prm.rgb
+		+ surface.o4.rgb
+		+ surface.o5.rgb
+		+ surface.albedo.www
+		+ surface.emission.www
+		+ surface.prm.www);
 }
 
 #endif

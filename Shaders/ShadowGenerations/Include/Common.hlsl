@@ -2,11 +2,16 @@
 #define COMMON_INCLUDED
 
 #define TextureInput(name) \
-	SamplerState name##_sampler_s; \
+	SamplerState name##_sampler; \
 	Texture2D<float4> name##_NedSmpignorenametexture;
 
-#define SampleTexture(name, uv) name##_NedSmpignorenametexture.Sample(name##_sampler_s, uv)
-#define SampleTextureBiased(name, uv, bias) name##_NedSmpignorenametexture.SampleBias(name##_sampler_s, uv, bias)
+#define TextureArrayInput(name) \
+	SamplerState name##_sampler; \
+	Texture2D<float4> name;
+
+#define SampleTexture(name, uv) name##_NedSmpignorenametexture.Sample(name##_sampler, uv)
+#define SampleTextureLevel(name, uv, level) name.SampleLevel(name##_sampler, uv, level)
+#define SampleTextureBiased(name, uv, bias) name##_NedSmpignorenametexture.SampleBias(name##_sampler, uv, bias)
 
 #ifdef WORLD_CONSTANTBUFFER_INCLUDED
 	#define SampleTextureBiasedGl(name, uv) SampleTextureBiased(name, uv, global_mip_bias.x)
