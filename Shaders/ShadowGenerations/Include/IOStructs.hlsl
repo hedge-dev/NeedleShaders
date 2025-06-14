@@ -55,7 +55,7 @@ struct Vertex2Pixel
 	float4 world_tangent : TEXCOORD3;
 
 	// --- Preview view position ---
-	// XYZ: Previous Screen space position (aligned with pixels)
+	// XYZ: Clip space position (?)
 	// W: World space Z position
 	float4 previous_position : TEXCOORD4;
 

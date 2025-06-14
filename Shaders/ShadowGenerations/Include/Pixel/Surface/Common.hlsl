@@ -68,7 +68,7 @@ SurfaceData CreateCommonSurface(
     result.emission.w = GetGIShadow(gi_uv);
 
     result.normal.xyz = normal * 0.5 + 0.5;
-    result.motion_vector.xy = GetMotionVector(position.xy, prev_position);
+    result.motion_vector.xy = GetMotionVector(position, prev_position);
 
     // TODO figure out what these do
     result.albedo.w = (0.5 + (asuint(u_shading_model_flag.x) | 2)) / 255.0;
