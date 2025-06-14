@@ -12,26 +12,26 @@ struct SurfaceData
 
 	// --- Normal ---
 	// XYZ: Normalized world space normal
-	// W: ???
-    float4 normal : SV_Target1;
+    float3 normal : SV_Target1;
 
 	// --- Emission --
 	// XYZ: RGB Emission color
-	// W: ???
+	// W: GI Shadow
     float4 emission : SV_Target2;
 
 	// --- Physical rendering parameters ---
 	// X: Specularity
 	// Y: Roughness
-	// Z: Metallic
-	// W: Ambient Occlusion
+	// Z: Ambient Occlusion
+	// W: Metallic
     float4 prm : SV_Target3;
 
-	// ???
-    float4 o4 : SV_Target4;
+	// --- Motion Vector ---
+	// XY: Motion vector direction
+    float2 motion_vector : SV_Target4;
 
 	// ???
-    float4 o5 : SV_Target5;
+    float2 o5 : SV_Target5;
 };
 
 #endif

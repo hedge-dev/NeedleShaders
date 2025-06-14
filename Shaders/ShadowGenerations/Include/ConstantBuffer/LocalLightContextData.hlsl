@@ -1,13 +1,12 @@
 #ifndef LOCALLIGHTCONTEXTDATA_CONSTANTBUFFER_INCLUDED
 #define LOCALLIGHTCONTEXTDATA_CONSTANTBUFFER_INCLUDED
 
-cbuffer cb_shlightfield_probes : register(b6)
+cbuffer cb_local_light_context_data : register(b8)
 {
-  float4 shlightfield_param;
-  float4 shlightfield_multiply_color_up;
-  float4 shlightfield_multiply_color_down;
-  float4 shlightfield_probes_SHLightFieldProbe[27];
-  float4 shlightfield_probe_SHLightFieldProbe_end;
+    float4 g_local_light_count;
+    float4 g_local_light_shadow_param[3];
+    row_major float4x4 g_local_light_shadow_matrix[3];
+    row_major float4x4 g_local_light_data[1000];
 }
 
 #endif

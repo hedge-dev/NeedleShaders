@@ -10,8 +10,8 @@ float3 LightSurface(SurfaceData surface)
 		+ surface.emission.rgb
 		+ surface.normal.rgb
 		+ surface.prm.rgb
-		+ surface.o4.rgb
-		+ surface.o5.rgb
+		+ surface.motion_vector.rgg
+		+ surface.o5.rgg
 		+ surface.albedo.www
 		+ surface.emission.www
 		+ surface.prm.www);
