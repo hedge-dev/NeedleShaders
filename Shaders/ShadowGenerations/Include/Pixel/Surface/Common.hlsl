@@ -61,9 +61,9 @@ SurfaceData CreateCommonSurface(
         pbr_parameters.metallic
     );
 
+    ApplyGI(emission);
+    ApplyShadowCascadeThing(emission, world_position);
     result.emission.xyz = emission;
-    ApplyGI(result.emission.xyz);
-    ApplyShadowCascadeThing(result.emission.xyz, world_position);
 
     result.emission.w = GetGIShadow(gi_uv);
 
