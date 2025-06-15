@@ -35,6 +35,13 @@ TextureInput(specular)
 
 PixelOutput main(const PixelInput input)
 {
+    SurfaceParameters parameters = InitSurfaceParameters();
+
+    parameters.screen_position = input.position.xyz;
+    parameters.world_position = WorldPosition(input);
+    parameters.previous_position = input.previous_position.xyz;
+    parameters.gi_uv = input.uv01.zw;
+
     #define SampleUV0(name) SampleTextureBiasedGl(name, TexUV(input.uv01.xy, name))
     #define SampleUV2(name) SampleTextureBiasedGl(name, TexUV(input.uv23.xy, name))
 
@@ -51,23 +58,23 @@ PixelOutput main(const PixelInput input)
     // Albedo Color
 
     float4 diffuse_texture = SampleUV0(diffuse);
-    float3 albedo = diffuse_texture.rgb;
+    parameters.albedo = diffuse_texture.rgb;
 
     #if defined(is_compute_instancing) && defined(enable_deferred_rendering)
 
         //////////////////////////////////////////////////
         // Compute Instance HSV modification
 
-        albedo = HSVtoRGB(RGBtoHSV(albedo) + input.compute_instance_parameters.xyz);
+        parameters.albedo = HSVtoRGB(RGBtoHSV(parameters.albedo) + input.compute_instance_parameters.xyz);
 
     #endif
 
-    albedo = LinearToSrgb(albedo);
+    parameters.albedo = LinearToSrgb(parameters.albedo);
 
     // Color will be applied if it's not used for a vertex animation (?)
     if(u_vat_type.x <= 0)
     {
-        albedo *= input.color.rgb;
+        parameters.albedo *= input.color.rgb;
     }
 
     #if defined(enable_alpha_threshold) && defined(enable_deferred_rendering)
@@ -97,27 +104,16 @@ PixelOutput main(const PixelInput input)
     float3 binormal = normalize(cross(normal, tangent) * input.binormal_orientation.x);
 
     float4 normal_texture = SampleUV2(normal);
-    float3 normal_map = UnpackNormalMapToWorldSpaceSafe(normal_texture.xy, normal, tangent, binormal);
+    parameters.normal = UnpackNormalMapToWorldSpaceSafe(normal_texture.xy, normal, tangent, binormal);
+    parameters.debug_normal = normal;
 
     //////////////////////////////////////////////////
     // PBR Parameters
 
     float4 prm = SampleUV0(specular);
-    PBRParameters pbr_parameters = ProcessPRMTexture(prm, albedo);
+    ProcessPRMTexture(parameters, prm);
 
     //////////////////////////////////////////////////
 
-    SurfaceData surface = CreateCommonSurface(
-        input.position.xyz,
-        input.previous_position.xyz,
-        WorldPosition4(input),
-        albedo.xyz,
-        normal_map,
-        normal,
-        0.0,
-        pbr_parameters,
-        input.uv01.zw
-    );
-
-	return ProcessSurface(surface);
+	return ProcessSurface(CreateCommonSurface(parameters));
 }

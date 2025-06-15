@@ -15,22 +15,22 @@ float GetGIShadow(float2 gi_uv)
 
 	#ifdef is_use_gi
 
+		if (IsSGGIEnabled())
+		{
+			gi_shadow = SampleTexture(gi_shadow_texture, gi_uv).x;
+		}
+		else
+		{
+			#ifndef is_use_gi_prt
+
+				gi_shadow =
+					SampleTexture(gi_shadow_texture, gi_uv).x
+					* SampleTexture(gi_texture, gi_uv).w;
+
+			#endif
+		}
+
 		uint gi_mode = GetGIMode();
-
-		#if defined(is_use_gi_sg)
-
-			if (gi_mode != 1 && gi_mode != 3)
-			{
-				gi_shadow = SampleTexture(gi_shadow_texture, gi_uv).x;
-			}
-
-		#elif !defined(is_use_gi_prt)
-
-			gi_shadow =
-				SampleTexture(gi_shadow_texture, gi_uv).x
-				* SampleTexture(gi_texture, gi_uv).w;
-
-		#endif
 
 		disable_gi_shadow =
 			gi_mode == GIMode1

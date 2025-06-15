@@ -2,6 +2,7 @@
 #define SHADOW_CASCADE_SURFACE_INCLUDED
 
 #include "../../ConstantBuffer/World.hlsl"
+#include "Struct.hlsl"
 
 static const float4 shadow_cascade_something[] = {
     { 1.0, 0.0, 0.0, 0.0 },
@@ -15,14 +16,14 @@ static const float4 shadow_cascade_something[] = {
     { 1.5, 0.3, 5.5, 1.0 },
 };
 
-void ApplyShadowCascadeThing(inout float3 emission, float4 world_position)
+void ApplyShadowCascadeThing(inout SurfaceParameters parameters)
 {
     if(shadow_map_parameter[0].z != -1.0)
     {
         return;
     }
 
-    float view_dot = dot(shadow_camera_view_matrix_third_row.xyzw, world_position);
+    float view_dot = dot(shadow_camera_view_matrix_third_row.xyzw, float4(parameters.world_position, 1.0));
     int shadow_cascade = (int)dot(float4(1.0, 1.0, 1.0, 1.0), shadow_cascade_frustums_eye_space_depth < -view_dot);
 
     int parameter_cascade = (int)shadow_map_parameter[0].y;
@@ -49,7 +50,7 @@ void ApplyShadowCascadeThing(inout float3 emission, float4 world_position)
         return;
     }
 
-    float3 shadow_view_position = mul(shadow_view_matrix, world_position).xyz
+    float3 shadow_view_position = mul(shadow_view_matrix, float4(parameters.world_position, 1.0)).xyz
         * shadow_cascade_scale[shadow_cascade].xyz
         + shadow_cascade_offset[shadow_cascade].xyz;
 
@@ -67,7 +68,7 @@ void ApplyShadowCascadeThing(inout float3 emission, float4 world_position)
     last_cascade += view_dot;
     last_cascade = saturate(shadow_map_parameter[1].x * last_cascade);
 
-    emission *= lerp(
+    parameters.emission *= lerp(
         1.0,
         lerp(
             shadow_cascade_something[shadow_cascade+4].xyz,

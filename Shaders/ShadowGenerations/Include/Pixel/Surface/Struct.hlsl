@@ -1,13 +1,72 @@
 #ifndef STRUCT_SURFACE_INCLUDED
 #define STRUCT_SURFACE_INCLUDED
 
-// PBR base data, also directly used for deferred rendering output
+// TODO figure out what these do
+// Notes:
+// 2 = Approximate Environment BRDF
+static const uint ShadingMode2 = 2;
+
+//////////////////////////////////////////////////
+// Surface parameters (input)
+
+struct SurfaceParameters
+{
+	float3 albedo;
+	float3 emission;
+
+	float specular;
+	float roughness;
+	float metallic;
+	float ambient_occlusion;
+
+	float3 fresnel_reflectance;
+
+	float3 screen_position;
+	float3 previous_position;
+	float3 world_position;
+
+	float3 normal;
+	float3 debug_normal;
+
+	float2 gi_uv;
+
+	uint deferred_flags;
+};
+
+SurfaceParameters InitSurfaceParameters()
+{
+	SurfaceParameters result = {
+		{0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0},
+
+		0.0, 0.0, 0.0, 0.0,
+
+		{0.0, 0.0, 0.0},
+
+		{0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0},
+
+		{0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0},
+
+		{0.0, 0.0},
+
+		0
+	};
+
+	return result;
+}
+
+
+//////////////////////////////////////////////////
+// Surface data (output)
 
 struct SurfaceData
 {
 	// --- Albedo ---
 	// XYZ: RGB Diffuse color
-	// W: ???
+	// W: Shading model flags
     float4 albedo : SV_Target0;
 
 	// --- Normal ---

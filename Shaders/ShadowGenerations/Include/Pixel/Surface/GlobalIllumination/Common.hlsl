@@ -50,4 +50,14 @@ bool IsAOGIEnabled()
 	#endif
 }
 
+bool IsSGGIEnabled()
+{
+	#if defined(is_use_gi) && defined(is_use_gi_sg)
+		uint gi_mode = GetGIMode();
+		return gi_mode != GIMode1 && gi_mode != GIMode3;
+	#else
+		return false;
+	#endif
+}
+
 #endif

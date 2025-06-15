@@ -10,11 +10,17 @@
 	Texture2DArray<float4> name;
 
 #define SampleTexture(name, uv) name##_NedSmpignorenametexture.Sample(name##_sampler, uv)
-#define SampleTextureLevel(name, uv, level) name.SampleLevel(name##_sampler, uv, level)
+#define SampleTextureLevel(name, uv, level) name##_NedSmpignorenametexture.SampleLevel(name##_sampler, uv, level)
 #define SampleTextureBiased(name, uv, bias) name##_NedSmpignorenametexture.SampleBias(name##_sampler, uv, bias)
+
+// Short / Simple versions
+#define SampleTextureS(name, uv) name.Sample(name##_sampler, uv)
+#define SampleTextureLevelS(name, uv, level) name.SampleLevel(name##_sampler, uv, level)
+#define SampleTextureBiasedS(name, uv, bias) name.SampleBias(name##_sampler, uv, bias)
 
 #ifdef WORLD_CONSTANTBUFFER_INCLUDED
 	#define SampleTextureBiasedGl(name, uv) SampleTextureBiased(name, uv, global_mip_bias.x)
+	#define SampleTextureBiasedGlS(name, uv) SampleTextureBiasedS(name, uv, global_mip_bias.x)
 #endif
 
 #ifdef MATERIAL_IMMUTABLE_CONSTANTBUFFER_INCLUDED

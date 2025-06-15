@@ -1,26 +1,22 @@
 #ifndef PBR_UTILS_PIXEL_INCLUDED
 #define PBR_UTILS_PIXEL_INCLUDED
 
-struct PBRParameters
+#include "Surface/Struct.hlsl"
+
+void ProcessPRM(inout SurfaceParameters parameters, float4 prm, float specular_modifier)
 {
-	float specular;
-	float roughness;
-	float metallic;
-	float ambient_occlusion;
-};
+	parameters.specular = prm.x * specular_modifier;
+	parameters.roughness = max(0.01, 1.0 - prm.y);
+	parameters.metallic = prm.z;
+	parameters.ambient_occlusion = prm.w;
 
-PBRParameters ProcessPRM(float4 prm, float specular_modifier, float3 albedo)
-{
-	PBRParameters result;
-
-	result.specular = prm.x * specular_modifier;
-	result.roughness = max(0.01, 1.0 - prm.y);
-	result.metallic = prm.z;
-	result.ambient_occlusion = prm.w;
-
-	return result;
+	parameters.fresnel_reflectance = lerp(
+		parameters.specular,
+		parameters.albedo,
+		parameters.metallic
+	);
 }
 
-#define ProcessPRMTexture(prm, albedo) ProcessPRM(prm, 0.25, albedo)
+#define ProcessPRMTexture(parameters, prm) ProcessPRM(parameters, prm, 0.25)
 
 #endif

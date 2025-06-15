@@ -1,6 +1,8 @@
 #ifndef MATH_INCLUDED
 #define MATH_INCLUDED
 
+static const float Pi = radians(180.0);
+static const float Tau = radians(360.0);
 
 // This is for the HLSL "ubfe" instruction:
 // https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/ubfe--sm5---asm-
