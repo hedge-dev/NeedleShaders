@@ -13,7 +13,7 @@
 #include "Weather.hlsl"
 #include "MotionBlur.hlsl"
 
-#include "GlobalIllumination/Common.hlsl"
+#include "GlobalIllumination/Base.hlsl"
 #include "GlobalIllumination/AmbientOcclusion.hlsl"
 #include "GlobalIllumination/Shadow.hlsl"
 
@@ -30,15 +30,15 @@ SurfaceData CreateCommonSurface(
 {
 	SurfaceData result;
 
-    switch(DEBUG_MODE)
+    switch(GetDebugMode())
     {
-        case DEBUG_MODE_NO_NORMAL_MAP:
+        case DebugModeNoNormalMap:
             normal = debug_normal;
             break;
-        case DEBUG_MODE_NO_ALBEDO:
+        case DebugModeNoAlbedo:
             albedo = 1.0;
             break;
-        case DEBUG_MODE_NO_ALBEDO_NO_AO:
+        case DebugModeNoAlbedoNoAO:
             albedo = 1.0;
             pbr_parameters.ambient_occlusion = 1.0;
             break;
@@ -61,9 +61,15 @@ SurfaceData CreateCommonSurface(
         pbr_parameters.metallic
     );
 
-    ApplyGI(emission);
-    ApplyShadowCascadeThing(emission, world_position);
-    result.emission.xyz = emission;
+    result.emission.xyz = ComputeIllumination(
+        gi_uv,
+        world_position.xyz,
+        albedo,
+        emission,
+        pbr_parameters
+    );
+
+    ApplyShadowCascadeThing(result.emission.xyz, world_position);
 
     result.emission.w = GetGIShadow(gi_uv);
 

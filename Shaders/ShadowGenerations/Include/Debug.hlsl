@@ -3,16 +3,35 @@
 
 #include "ConstantBuffer/World.hlsl"
 
-#define DEBUG_MODE ((int)round(g_debug_option.x))
+//////////////////////////////////////////////////
+// First debug modes
 
-#define DEBUG_MODE_3 3
-#define DEBUG_MODE_4 4
-#define DEBUG_MODE_NO_NORMAL_MAP 6
-#define DEBUG_MODE_NO_ALBEDO 8
-#define DEBUG_MODE_NO_ALBEDO_NO_AO 9
-#define DEBUG_MODE_12 12
-#define DEBUG_MODE_19 19
-#define DEBUG_MODE_43 43
-#define DEBUG_MODE_44 44
+static const int DebugMode3 = 3;
+static const int DebugMode4 = 4;
+static const int DebugModeNoNormalMap = 6;
+static const int DebugModeNoAlbedo = 8;
+static const int DebugModeNoAlbedoNoAO = 9;
+static const int DebugMode12 = 12;
+static const int DebugMode19 = 19;
+static const int DebugMode43 = 43;
+static const int DebugMode44 = 44;
+
+//////////////////////////////////////////////////
+// Second debug modes
+
+static const int Debug2Mode3 = 3;
+
+//////////////////////////////////////////////////
+// Methods
+
+int GetDebugMode()
+{
+	return (int)round(g_debug_option.x);
+}
+
+int GetDebug2Mode()
+{
+	return (int)round(g_debug_option.y);
+}
 
 #endif

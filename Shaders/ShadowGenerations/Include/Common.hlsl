@@ -7,7 +7,7 @@
 
 #define TextureArrayInput(name) \
 	SamplerState name##_sampler; \
-	Texture2D<float4> name;
+	Texture2DArray<float4> name;
 
 #define SampleTexture(name, uv) name##_NedSmpignorenametexture.Sample(name##_sampler, uv)
 #define SampleTextureLevel(name, uv, level) name.SampleLevel(name##_sampler, uv, level)

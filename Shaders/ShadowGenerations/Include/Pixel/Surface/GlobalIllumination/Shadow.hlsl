@@ -6,6 +6,8 @@
 
 #include "Common.hlsl"
 
+TextureInput(gi_shadow_texture)
+
 float GetGIShadow(float2 gi_uv)
 {
 	bool disable_gi_shadow = true;

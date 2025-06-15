@@ -3,7 +3,8 @@
 
 #include "../../../ConstantBuffer/World.hlsl"
 #include "../../../Common.hlsl"
-
+#include "../../../Debug.hlsl"
+#include "../../PBRUtils.hlsl"
 
 //////////////////////////////////////////////////
 // Shader Features
@@ -28,14 +29,8 @@ static const uint GIMode6 = 6;
 //////////////////////////////////////////////////
 // Textures
 
-#if defined(is_use_gi_prt) || defined(is_use_gi_sg)
-	TextureArrayInput(gi_texture)
-#else
-	TextureInput(gi_texture)
-#endif
-
-TextureInput(gi_shadow_texture)
-
+TextureInput(gi_texture)
+Texture2DArray<float4> gi_texture;
 
 //////////////////////////////////////////////////
 // Methods
@@ -45,10 +40,14 @@ uint GetGIMode()
 	return (uint)u_sggi_param[1].z;
 }
 
-void ApplyGI(inout float3 emission)
+bool IsAOGIEnabled()
 {
-
+	#if defined(is_use_gi) && defined(is_use_gi_prt)
+		uint gi_mode = GetGIMode();
+		return gi_mode == GIMode0 || gi_mode == GIMode1 || gi_mode == GIMode5;
+	#else
+		return false;
+	#endif
 }
-
 
 #endif

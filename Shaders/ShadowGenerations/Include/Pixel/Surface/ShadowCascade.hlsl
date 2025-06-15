@@ -61,9 +61,9 @@ void ApplyShadowCascadeThing(inout float3 emission, float4 world_position)
     }
 
     parameter_cascade -= 1;
-    int another_cascade = min(shadow_cascade + 1, parameter_cascade); // r1.w
+    int another_cascade = min(shadow_cascade + 1, parameter_cascade);
 
-    float last_cascade = dot(shadow_cascade_frustums_eye_space_depth, shadow_cascade_something[parameter_cascade]); // r1.y
+    float last_cascade = dot(shadow_cascade_frustums_eye_space_depth, shadow_cascade_something[parameter_cascade]);
     last_cascade += view_dot;
     last_cascade = saturate(shadow_map_parameter[1].x * last_cascade);
 
