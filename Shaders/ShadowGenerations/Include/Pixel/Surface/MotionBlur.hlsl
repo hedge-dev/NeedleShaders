@@ -3,7 +3,7 @@
 
 #include "../../Transform.hlsl"
 
-float2 GetMotionVector(float3 position, float3 previous_position)
+float2 ComputeMotionVector(float3 position, float3 previous_position)
 {
 	float2 current = position.xy - jitter_offset.xy;
 	float2 previous = ClipToScreenSpace(previous_position) - jitter_offset.zw;

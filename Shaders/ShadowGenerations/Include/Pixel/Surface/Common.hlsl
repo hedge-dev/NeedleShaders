@@ -47,14 +47,14 @@ SurfaceData CreateCommonSurface(SurfaceParameters parameters)
         parameters.metallic
     );
 
-    result.emission.xyz = ComputeIllumination(parameters);
-
+    ApplyGlobalIllumination(parameters);
     ApplyShadowCascadeThing(parameters);
 
-    result.emission.w = GetGIShadow(parameters.gi_uv);
+    result.emission.xyz = parameters.emission;
+    result.emission.w = ComputeGIShadow(parameters.gi_uv);
 
     result.normal.xyz = parameters.normal * 0.5 + 0.5;
-    result.motion_vector.xy = GetMotionVector(parameters.screen_position, parameters.previous_position);
+    result.motion_vector.xy = ComputeMotionVector(parameters.screen_position, parameters.previous_position);
 
     result.albedo.w = (0.5 + parameters.deferred_flags) / 255.0;
 

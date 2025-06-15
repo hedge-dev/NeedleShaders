@@ -9,7 +9,7 @@
 #include "Common.hlsl"
 #include "SphericalGaussian.hlsl"
 
-float3 ComputeIllumination(inout SurfaceParameters parameters)
+void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 {
 	int debug_mode = GetDebugMode();
 	int debug2_mode = GetDebug2Mode();
@@ -41,7 +41,8 @@ float3 ComputeIllumination(inout SurfaceParameters parameters)
 
 	if(debug_mode == DebugMode12 || debug_mode == DebugMode19)
 	{
-		return color_1;
+		parameters.emission.xyz = color_1;
+		return;
 	}
 
 	float3 color_2 = color_1 * parameters.albedo;
@@ -84,7 +85,7 @@ float3 ComputeIllumination(inout SurfaceParameters parameters)
 			break;
 	}
 
-	return color_2 + color_3 + color_4;
+	parameters.emission.xyz = color_2 + color_3 + color_4;
 }
 
 #endif
