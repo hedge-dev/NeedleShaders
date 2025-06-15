@@ -52,9 +52,7 @@ float ComputeSGGISpecularFactor(float3 normal, int index, float fac)
 		+ SGGIAxis[index];
 
 	float l = length(direction);
-
-	float t = 4 + fac - l;
-	return (12.566371 / exp(t)) * ((1.0 - exp(-t * 2)) * 0.5 / l);
+	return (12.566371 / exp(4 + fac - l)) * ((1.0 - exp((l) * -2)) * 0.5 / l);
 }
 
 float2 ApproximateEnvironmentBRDF(float angle, float roughness)
@@ -104,7 +102,7 @@ float3 ComputeSGGISpecular(float3 colors[4], SurfaceParameters parameters)
 	float camera_dir_dif_clamped = saturate(camera_dir_dif);
 
 	float3 t = parameters.normal * 2 * camera_dir_dif_clamped - camera_dir;
-	float t2 = 2.0 / pow(max(0.05, (saturate(parameters.roughness * 2.5 - 1.5), 2)), 2);
+	float t2 = 2.0 / pow(max(0.05, pow(saturate(parameters.roughness * 2.5 - 1.5), 2)), 2);
 	float t3 = min(70, (t2 / (4 * max(0.05, abs(camera_dir_dif)))) * 2);
 
 	float3 result = 0.0;
