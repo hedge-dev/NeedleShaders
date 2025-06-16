@@ -55,7 +55,11 @@ bool UsingSGGI()
 
 bool UsingAOGI()
 {
-	#if defined(is_use_gi_prt)
+	// Sonic team seemed to disallow combining
+	// SG with AO when using forward rendering,
+	// but not when using deferred rendering
+
+	#if defined(is_use_gi_prt) && (defined(enable_deferred_rendering) || !defined(is_use_gi_sg))
 		return UsingGI();
 	#else
 		return false;
