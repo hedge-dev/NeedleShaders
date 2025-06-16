@@ -35,6 +35,41 @@ Texture2DArray<float4> gi_texture;
 //////////////////////////////////////////////////
 // Methods
 
+bool UsingGI()
+{
+	#if defined(is_use_gi)
+		return true;
+	#else
+		return false;
+	#endif
+}
+
+bool UsingSGGI()
+{
+	#if defined(is_use_gi_sg)
+		return UsingGI();
+	#else
+		return false;
+	#endif
+}
+
+bool UsingAOGI()
+{
+	#if defined(is_use_gi_prt)
+		return UsingGI();
+	#else
+		return false;
+	#endif
+}
+
+bool UsingDefaultGI()
+{
+	return UsingGI()
+		&& !UsingAOGI()
+		&& !UsingSGGI();
+}
+
+
 uint GetGIMode()
 {
 	return (uint)u_sggi_param[1].z;
@@ -42,22 +77,34 @@ uint GetGIMode()
 
 bool IsAOGIEnabled()
 {
-	#if defined(is_use_gi) && defined(is_use_gi_prt)
-		uint gi_mode = GetGIMode();
-		return gi_mode == GIMode0 || gi_mode == GIMode1 || gi_mode == GIMode5;
-	#else
-		return false;
-	#endif
+	uint gi_mode = GetGIMode();
+	return UsingAOGI() && (
+		gi_mode == GIMode0
+		|| gi_mode == GIMode1
+		|| gi_mode == GIMode5
+	);
 }
 
 bool IsSGGIEnabled()
 {
-	#if defined(is_use_gi) && defined(is_use_gi_sg)
-		uint gi_mode = GetGIMode();
-		return gi_mode != GIMode1 && gi_mode != GIMode3;
-	#else
-		return false;
-	#endif
+	uint gi_mode = GetGIMode();
+	return UsingSGGI() && !(
+		gi_mode == GIMode1
+		|| gi_mode == GIMode3
+	);
 }
+
+bool AreBakedShadowsEnabled()
+{
+	uint gi_mode = GetGIMode();
+	return UsingGI() && !(
+		gi_mode == GIMode1
+		|| gi_mode == GIMode2
+		|| gi_mode == GIMode3
+		|| gi_mode == GIMode6
+		|| IsAOGIEnabled()
+	);
+}
+
 
 #endif

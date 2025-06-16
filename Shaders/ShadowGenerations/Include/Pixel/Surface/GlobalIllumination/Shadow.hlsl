@@ -8,59 +8,45 @@
 
 TextureInput(gi_shadow_texture)
 
+float SampleGIShadow(float2 gi_uv)
+{
+	if(UsingDefaultGI())
+	{
+		return SampleTexture(gi_shadow_texture, gi_uv).x
+			* SampleTexture(gi_texture, gi_uv).w;
+	}
+	else if(IsSGGIEnabled())
+	{
+		return SampleTexture(gi_shadow_texture, gi_uv).x;
+	}
+	else
+	{
+		return 1.0;
+	}
+}
+
 float ComputeGIShadow(float2 gi_uv)
 {
-	bool disable_gi_shadow = true;
-	float gi_shadow = 1.0;
+	bool enable_shadows = AreBakedShadowsEnabled();
 
-	#ifdef is_use_gi
+	float result = shlightfield_param.x <= 0 || enable_shadows
+		? SampleGIShadow(gi_uv)
+		: 0.0001;
 
-		if (IsSGGIEnabled())
+	if(enable_shadows)
+	{
+		if(UsingSGGI())
 		{
-			gi_shadow = SampleTexture(gi_shadow_texture, gi_uv).x;
+			result += 30.0;
+		}
+		else if(UsingAOGI())
+		{
+			result += 20.0;
 		}
 		else
 		{
-			#ifndef is_use_gi_prt
-
-				gi_shadow =
-					SampleTexture(gi_shadow_texture, gi_uv).x
-					* SampleTexture(gi_texture, gi_uv).w;
-
-			#endif
-		}
-
-		uint gi_mode = GetGIMode();
-
-		disable_gi_shadow =
-			gi_mode == GIMode1
-			|| gi_mode == GIMode2
-			|| gi_mode == GIMode3
-			|| gi_mode == GIMode6;
-
-		#ifdef is_use_gi_prt
-			disable_gi_shadow = disable_gi_shadow
-				|| gi_mode == GIMode0;
-
-			#ifndef is_use_gi_sg
-				disable_gi_shadow = disable_gi_shadow
-					|| gi_mode == GIMode5;
-			#endif
-		#endif
-
-	#endif
-
-	float result = shlightfield_param.x > 0 && disable_gi_shadow ? 0.0001 : gi_shadow;
-
-	if(!disable_gi_shadow)
-	{
-		#if defined(is_use_gi_sg)
-			result += 30.0;
-		#elif defined(is_use_gi_prt)
-			result += 20.0;
-		#else
 			result += 10.0;
-		#endif
+		}
 	}
 
 	return enable_shadow_map

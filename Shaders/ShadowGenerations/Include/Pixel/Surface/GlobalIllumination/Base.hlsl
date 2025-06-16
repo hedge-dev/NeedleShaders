@@ -18,17 +18,18 @@ void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 	float3 gi_diffuse = 0.0;
 	float3 gi_specular = 0.0;
 
-	#ifdef is_use_gi
-		#if defined(is_use_gi_sg)
-			ComputeSGGIColors(
-				parameters,
-				gi_diffuse,
-				gi_specular
-			);
-		#elif !defined(is_use_gi_prt)
-			gi_diffuse = SampleTexture(gi_texture, parameters.gi_uv).xyz;
-		#endif
-	#endif
+	if(UsingDefaultGI())
+	{
+		gi_diffuse = SampleTexture(gi_texture, parameters.gi_uv).xyz;
+	}
+	else if(UsingSGGI())
+	{
+		ComputeSGGIColors(
+			parameters,
+			gi_diffuse,
+			gi_specular
+		);
+	}
 
 	float3 color_1 = 0.0;
 
