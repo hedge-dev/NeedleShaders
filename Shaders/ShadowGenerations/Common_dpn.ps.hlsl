@@ -16,11 +16,8 @@ static const uint FEATURE_enable_alpha_threshold;
 #include "Include/Pixel/Dithering.hlsl"
 #include "Include/Pixel/Normals.hlsl"
 #include "Include/Pixel/PBRUtils.hlsl"
-
 #include "Include/Pixel/Surface/Common.hlsl"
-
-// must be inside some include that comes inside or after surface/common
-static const uint FEATURE_u_model_user_flag_0;
+#include "Include/Pixel/UserModel.hlsl"
 
 MaterialImmutables
 {
@@ -114,6 +111,10 @@ PixelOutput main(const PixelInput input)
     ProcessPRMTexture(parameters, prm);
 
     //////////////////////////////////////////////////
+
+    #ifdef u_model_user_flag_0
+        parameters.emission = UserModel1Stuff(parameters.world_position);
+    #endif
 
 	return ProcessSurface(CreateCommonSurface(parameters));
 }
