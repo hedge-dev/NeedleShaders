@@ -68,9 +68,11 @@ bool UsingAOGI()
 
 bool UsingDefaultGI()
 {
-	return UsingGI()
-		&& !UsingAOGI()
-		&& !UsingSGGI();
+	#if !defined(is_use_gi_prt) && !defined(is_use_gi_sg)
+		return UsingGI();
+	#else
+		return false;
+	#endif
 }
 
 
