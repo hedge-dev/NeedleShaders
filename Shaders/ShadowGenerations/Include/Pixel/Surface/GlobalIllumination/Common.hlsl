@@ -2,7 +2,7 @@
 #define COMMON_GI_SURFACE_INCLUDED
 
 #include "../../../ConstantBuffer/World.hlsl"
-#include "../../../Common.hlsl"
+#include "../../../Texture.hlsl"
 #include "../../../Debug.hlsl"
 #include "../../PBRUtils.hlsl"
 
@@ -29,8 +29,15 @@ static const uint GIMode6 = 6;
 //////////////////////////////////////////////////
 // Textures
 
-TextureInput(gi_texture)
-Texture2DArray<float4> gi_texture;
+#ifdef is_use_gi_sg
+	Texture2DArray<float4> WithSampler(gi_texture);
+	#define SampleGITexture(xy, z) SampleTexture(gi_texture, float3(xy, z))
+	#define SampleGITextureLevel(xy, z, level) SampleTextureLevel(gi_texture, float3(xy, z), level)
+#else
+	Texture2D<float4> WithSampler(gi_texture);
+	#define SampleGITexture(xy, z) SampleTexture(gi_texture, xy)
+	#define SampleGITextureLevel(xy, z, level) SampleTextureLevel(gi_texture, xy, level)
+#endif
 
 //////////////////////////////////////////////////
 // Methods

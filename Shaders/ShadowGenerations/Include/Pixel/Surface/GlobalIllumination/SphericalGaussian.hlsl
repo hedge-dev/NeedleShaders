@@ -2,13 +2,12 @@
 #define SG_GI_SURFACE_INCLUDED
 
 #include "../../../ConstantBuffer/World.hlsl"
-#include "../../../Common.hlsl"
+#include "../../../Texture.hlsl"
 #include "../../../Math.hlsl"
 
 #include "Common.hlsl"
 
-
-TextureInput(s_EnvBRDF)
+Texture2D<float4> WithSampler(s_EnvBRDF);
 
 static const float3 SGGIAxis[4] =
 {
@@ -130,7 +129,7 @@ void ComputeSGGIColors(SurfaceParameters parameters, out float3 diffuse, out flo
 	float3 colors[4];
 	for(int i = 0; i < 4; i++)
 	{
-		colors[i] = SampleTextureLevelS(gi_texture, float3(parameters.gi_uv, i), 0).xyz;
+		colors[i] = SampleGITextureLevel(parameters.gi_uv, i, 0).xyz;
 	}
 
 	diffuse = ComputeSGGIDiffuse(colors, parameters);

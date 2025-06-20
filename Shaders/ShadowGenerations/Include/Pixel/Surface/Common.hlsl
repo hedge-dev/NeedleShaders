@@ -7,8 +7,8 @@
 
 #include "../../Debug.hlsl"
 
+#include "../ShadowCascade.hlsl"
 #include "Struct.hlsl"
-#include "ShadowCascade.hlsl"
 #include "Weather.hlsl"
 #include "MotionBlur.hlsl"
 
@@ -48,7 +48,7 @@ SurfaceData CreateCommonSurface(SurfaceParameters parameters)
     );
 
     ApplyGlobalIllumination(parameters);
-    ApplyShadowCascadeThing(parameters);
+    ApplyShadowCascadeThing(parameters.world_position, parameters.emission);
 
     result.emission.xyz = parameters.emission;
     result.emission.w = ComputeGIShadow(parameters.gi_uv);

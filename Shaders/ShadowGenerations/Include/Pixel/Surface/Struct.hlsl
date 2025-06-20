@@ -22,6 +22,7 @@ struct SurfaceParameters
 	float3 fresnel_reflectance;
 
 	float3 screen_position;
+	float2 screen_tile;
 	float3 previous_position;
 	float3 world_position;
 
@@ -44,6 +45,7 @@ SurfaceParameters InitSurfaceParameters()
 		{0.0, 0.0, 0.0},
 
 		{0.0, 0.0, 0.0},
+		{0.0, 0.0},
 		{0.0, 0.0, 0.0},
 		{0.0, 0.0, 0.0},
 

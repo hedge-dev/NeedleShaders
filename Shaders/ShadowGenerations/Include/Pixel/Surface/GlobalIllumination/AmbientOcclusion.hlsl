@@ -10,7 +10,7 @@ void ApplyAOGI(inout SurfaceParameters parameters)
 
 	if(IsAOGIEnabled())
 	{
-		gi_ao = saturate(SampleTextureLevelS(gi_texture, float3(parameters.gi_uv, 0.0), 0).x);
+		gi_ao = saturate(SampleGITextureLevel(parameters.gi_uv, 0.0, 0).x);
 		parameters.ambient_occlusion *= gi_ao;
 	}
 

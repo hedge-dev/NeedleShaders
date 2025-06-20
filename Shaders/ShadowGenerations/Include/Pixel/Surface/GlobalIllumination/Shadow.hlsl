@@ -3,17 +3,18 @@
 
 #include "../../../ConstantBuffer/MaterialDynamic.hlsl"
 #include "../../../ConstantBuffer/SHLightFieldProbes.hlsl"
+#include "../../../Texture.hlsl"
 
 #include "Common.hlsl"
 
-TextureInput(gi_shadow_texture)
+Texture2D<float4> WithSampler(gi_shadow_texture);
 
 float SampleGIShadow(float2 gi_uv)
 {
 	if(UsingDefaultGI())
 	{
 		return SampleTexture(gi_shadow_texture, gi_uv).x
-			* SampleTexture(gi_texture, gi_uv).w;
+			* SampleGITexture(gi_uv, 0.0).w;
 	}
 	else if(IsSGGIEnabled())
 	{

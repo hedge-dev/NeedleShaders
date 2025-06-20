@@ -7,7 +7,7 @@ static const uint FEATURE_enable_alpha_threshold;
 #include "Include/ConstantBuffer/MaterialDynamic.hlsl"
 #include "Include/ConstantBuffer/MaterialImmutable.hlsl"
 
-#include "Include/Common.hlsl"
+#include "Include/Texture.hlsl"
 #include "Include/ColorConversion.hlsl"
 #include "Include/IOStructs.hlsl"
 
@@ -26,18 +26,24 @@ MaterialImmutables
     UVInput(specular)
 }
 
-TextureInput(diffuse)
-TextureInput(normal)
-TextureInput(specular)
+Texture2D<float4> WithSampler(diffuse);
+Texture2D<float4> WithSampler(normal);
+Texture2D<float4> WithSampler(specular);
 
 PixelOutput main(const PixelInput input)
 {
+    //////////////////////////////////////////////////
+    // Initialization
+
     SurfaceParameters parameters = InitSurfaceParameters();
 
     parameters.screen_position = input.position.xyz;
+    parameters.screen_tile = uint2(input.position.xy * u_screen_info.zw * u_screen_info.xy) >> 4;
     parameters.world_position = WorldPosition(input);
     parameters.previous_position = input.previous_position.xyz;
     parameters.gi_uv = input.uv01.zw;
+
+    //////////////////////////////////////////////////
 
     #define SampleUV0(name) SampleTextureBiasedGl(name, TexUV(input.uv01.xy, name))
     #define SampleUV2(name) SampleTextureBiasedGl(name, TexUV(input.uv23.xy, name))
@@ -96,13 +102,13 @@ PixelOutput main(const PixelInput input)
     //////////////////////////////////////////////////
     // Normals
 
-    float3 normal = normalize(input.world_normal.xyz);
-    float3 tangent = normalize(input.world_tangent.xyz);
-    float3 binormal = normalize(cross(normal, tangent) * input.binormal_orientation.x);
+    float3 world_normal = normalize(input.world_normal.xyz);
+    float3 world_tangent = normalize(input.world_tangent.xyz);
+    float3 world_binormal = normalize(cross(world_normal, world_tangent) * input.binormal_orientation.x);
 
     float4 normal_texture = SampleUV2(normal);
-    parameters.normal = UnpackNormalMapToWorldSpaceSafe(normal_texture.xy, normal, tangent, binormal);
-    parameters.debug_normal = normal;
+    parameters.normal = UnpackNormalMapToWorldSpaceSafe(normal_texture.xy, world_normal, world_tangent, world_binormal);
+    parameters.debug_normal = world_normal;
 
     //////////////////////////////////////////////////
     // PBR Parameters

@@ -1,8 +1,8 @@
 #ifndef LUMINANCE_PIXEL_INCLUDED
 #define LUMINANCE_PIXEL_INCLUDED
 
-#include "../Common.hlsl"
+#include "../Texture.hlsl"
 
-TextureInput(s_Luminance)
+Texture2D<float4> WithSampler(s_Luminance);
 
 #endif

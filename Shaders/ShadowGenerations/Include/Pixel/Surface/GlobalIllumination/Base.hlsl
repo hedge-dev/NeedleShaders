@@ -20,7 +20,7 @@ void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 
 	if(UsingDefaultGI())
 	{
-		gi_diffuse = SampleTexture(gi_texture, parameters.gi_uv).xyz;
+		gi_diffuse = SampleGITexture(parameters.gi_uv, 0.0).xyz;
 	}
 	else if(UsingSGGI())
 	{
