@@ -119,5 +119,5 @@ float4 main(
 
 	float output = max(0.0001, saturate(dot(combined_buffer, pow(normal, 2))));
 
-	return float4(0,0,0,output);
+	return float4(0, 0, 0, output);
 }
