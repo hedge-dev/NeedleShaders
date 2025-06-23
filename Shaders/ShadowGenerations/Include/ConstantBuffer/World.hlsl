@@ -37,9 +37,22 @@ cbuffer cbWorld : register(b0)
     float4 g_probe_param[24];
     float4 g_probe_shparam[168];
     float4 g_probe_count;
+
+    // xyz: rayleigh value (color)
+    // w: mie value
     float4 g_LightScattering_Ray_Mie_Ray2_Mie2;
+
+    // x: (1.0f - g) * (1.0f - g);
+    // y: g * g + 1.0f;
+    // z: g * -2.0f;
     float4 g_LightScattering_ConstG_FogDensity;
+
+    // x: 1.0f / (zFar - zNear)
+    // y: zNear
+    // z: depthScale
+    // w: inScatteringScale
     float4 g_LightScatteringFarNearScale;
+
     float4 g_LightScatteringColor;
     float4 g_alphathreshold;
     float4 g_smoothness_param;

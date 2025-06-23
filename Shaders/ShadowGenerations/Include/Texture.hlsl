@@ -11,6 +11,7 @@
 #define SampleTextureLevel(name, uv, level) name.SampleLevel(SamplerName(name), uv, level)
 #define SampleTextureBiased(name, uv, bias) name.SampleBias(SamplerName(name), uv, bias)
 #define SampleTextureBiasedGl(name, uv) SampleTextureBiased(name, uv, global_mip_bias.x)
+#define SampleTextureCmpLevelZero(name, location, compare_value) name.SampleCmpLevelZero(SamplerName(name), location, compare_value)
 
 float2 ComputeIndexedUV(float4 uv01, float4 uv23, float4 index)
 {

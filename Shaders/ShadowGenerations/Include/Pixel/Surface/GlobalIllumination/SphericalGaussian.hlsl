@@ -96,7 +96,7 @@ float3 ComputeSGGISpecular(float3 colors[4], SurfaceParameters parameters)
 		return 0.0;
 	}
 
-	float3 camera_dir = normalize(u_cameraPosition.xyz - parameters.world_position);
+	float3 camera_dir = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
 	float camera_dir_dif = dot(camera_dir, parameters.normal);
 	float camera_dir_dif_clamped = saturate(camera_dir_dif);
 

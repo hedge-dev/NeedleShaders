@@ -1,5 +1,5 @@
 #ifndef IO_STRUCTS_INCLUDED
-#define  IO_STRUCTS_INCLUDED
+#define IO_STRUCTS_INCLUDED
 
 //////////////////////////////////////////////////
 // Vertex shader input
@@ -68,8 +68,8 @@ struct Vertex2Pixel
 	#ifndef enable_deferred_rendering
 		float4 shadow_position : TEXCOORD5;
 		float depth : TEXCOORD6;
-		float3 light1 : TEXCOORD7;
-		float3 light2 : TEXCOORD9;
+		float3 light_scattering_factor : TEXCOORD7;
+		float3 light_scattering_base : TEXCOORD9;
 	#endif
 
 	#if defined(is_compute_instancing) && defined(enable_deferred_rendering)

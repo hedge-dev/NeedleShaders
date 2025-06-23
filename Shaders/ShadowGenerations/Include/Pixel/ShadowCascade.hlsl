@@ -17,14 +17,14 @@ static const float3 shadow_cascade_params[] = {
     { 1.5, 0.3, 5.5 },
 };
 
-void ApplyShadowCascadeThing(float3 position, inout float3 emission)
+void ApplyShadowCascadeThing(float4 position, inout float3 emission)
 {
     if(shadow_map_parameter[0].z != -1.0)
     {
         return;
     }
 
-    float view_dot = dot(shadow_camera_view_matrix_third_row.xyzw, float4(position, 1.0));
+    float view_dot = dot(shadow_camera_view_matrix_third_row.xyzw, position);
     int shadow_cascade = (int)dot(float4(1.0, 1.0, 1.0, 1.0), shadow_cascade_frustums_eye_space_depth < -view_dot);
 
     int parameter_cascade = (int)shadow_map_parameter[0].y;
@@ -51,7 +51,7 @@ void ApplyShadowCascadeThing(float3 position, inout float3 emission)
         return;
     }
 
-    float3 shadow_view_position = mul(shadow_view_matrix, float4(position, 1.0)).xyz
+    float3 shadow_view_position = mul(shadow_view_matrix, position).xyz
         * shadow_cascade_scale[shadow_cascade].xyz
         + shadow_cascade_offset[shadow_cascade].xyz;
 

@@ -24,7 +24,7 @@ struct SurfaceParameters
 	float3 screen_position;
 	float2 screen_tile;
 	float3 previous_position;
-	float3 world_position;
+	float4 world_position;
 
 	float3 normal;
 	float3 debug_normal;
@@ -47,7 +47,7 @@ SurfaceParameters InitSurfaceParameters()
 		{0.0, 0.0, 0.0},
 		{0.0, 0.0},
 		{0.0, 0.0, 0.0},
-		{0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0, 0.0},
 
 		{0.0, 0.0, 0.0},
 		{0.0, 0.0, 0.0},
@@ -94,5 +94,19 @@ struct SurfaceData
 	// ???
     float2 o5 : SV_Target5;
 };
+
+SurfaceData InitSurfaceData()
+{
+	SurfaceData result = {
+		{0.0, 0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0, 0.0},
+		{0.0, 0.0},
+		{0.0, 0.0},
+	};
+
+	return result;
+}
 
 #endif

@@ -33,4 +33,9 @@ float2 PixelToScreen(uint2 pixel_index)
 	return (pixel_index + 0.5) / u_screen_info.xy;
 }
 
+float DepthToViewDistance(float depth)
+{
+	return -u_view_param.x / (depth * u_view_param.w - u_view_param.z);
+}
+
 #endif

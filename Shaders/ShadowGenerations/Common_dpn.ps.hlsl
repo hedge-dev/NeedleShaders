@@ -39,7 +39,7 @@ PixelOutput main(const PixelInput input)
 
     parameters.screen_position = input.position.xyz;
     parameters.screen_tile = uint2(input.position.xy * u_screen_info.zw * u_screen_info.xy) >> 4;
-    parameters.world_position = WorldPosition(input);
+    parameters.world_position = WorldPosition4(input);
     parameters.previous_position = input.previous_position.xyz;
     parameters.gi_uv = input.uv01.zw;
 
@@ -60,7 +60,7 @@ PixelOutput main(const PixelInput input)
     //////////////////////////////////////////////////
     // Albedo Color
 
-    float4 diffuse_texture = SampleUV0(diffuse);
+    float4 diffuse_texture = SampleUV0(diffuse) * float4(1,0,0,1);
     parameters.albedo = diffuse_texture.rgb;
 
     #if defined(is_compute_instancing) && defined(enable_deferred_rendering)
