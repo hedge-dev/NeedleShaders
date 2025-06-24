@@ -38,4 +38,41 @@ float DepthToViewDistance(float depth)
 	return -u_view_param.x / (depth * u_view_param.w - u_view_param.z);
 }
 
+float3 RotateX(float3 position, float angle)
+{
+	float sin, cos;
+	sincos(angle, sin, cos);
+
+	return float3(
+		position.x,
+		cos * position.y - sin * position.z,
+		sin * position.y + cos * position.z
+	);
+
+}
+
+float3 RotateY(float3 position, float angle)
+{
+	float sin, cos;
+	sincos(angle, sin, cos);
+
+	return float3(
+		sin * position.z + cos * position.x,
+		position.y,
+		cos * position.z - sin * position.x
+	);
+}
+
+float3 RotateZ(float3 position, float angle)
+{
+	float sin, cos;
+	sincos(angle, sin, cos);
+
+	return float3(
+		cos * position.x - sin * position.y,
+		sin * position.x + cos * position.y,
+		position.z
+	);
+}
+
 #endif

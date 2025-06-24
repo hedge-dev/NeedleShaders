@@ -82,9 +82,20 @@ cbuffer cbWorld : register(b0)
     float4 u_hls_rgb;
     float4 u_hls_colorize;
     float4 u_color_grading_factor;
+
+    // x: screen width
+    // y: screen height
+    // z: 1 / screen width
+    // w: 1 / screen height
     float4 u_screen_info;
     float4 u_current_viewport_mask;
+
+    // x: screen width
+    // y: screen height
+    // zw: ??
     float4 u_viewport_info;
+
+    // u_viewport_info on the previous frame
     float4 u_prev_viewport_info;
     float4 u_view_param;
     float4 u_sggi_param[2];
@@ -100,6 +111,11 @@ cbuffer cbWorld : register(b0)
     float4 u_hiz_param;
     float4 u_rlr_param[2];
     float4 u_sky_sh_param[9];
+
+    // x: screen width (in tiles)
+    // y: light data offset start (?)
+    // z: screen width
+    // w: screen height
     float4 u_tile_info;
     float4 u_detail_param;
     bool enable_ibl_plus_directional_specular;

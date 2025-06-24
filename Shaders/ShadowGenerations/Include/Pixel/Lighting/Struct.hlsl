@@ -15,9 +15,9 @@ struct LightingParameters
     float3 emission;
 
 	// Lighting flags
-	uint raw_flags;
 	uint shading_mode;
-	uint flags_unk1;
+	bool flags_unk1;
+	uint flags_unk2;
 
 	uint2 pixel_position;
 	uint2 tile_position;
@@ -33,6 +33,8 @@ struct LightingParameters
 
 	// direction from camera position to world position
 	float3 view_direction;
+
+	float cos_view_direction;
 
 
 	// -- Mode dependent ambient occlusion --
@@ -56,7 +58,7 @@ LightingParameters InitLightingParameters()
 		{0.0, 0.0, 0.0},
 		{0.0, 0.0, 0.0},
 
-		0, 0, 0,
+		0, false, 0,
 
 		{0, 0},
 		{0, 0},
@@ -65,6 +67,7 @@ LightingParameters InitLightingParameters()
 		{0.0, 0.0, 0.0, 0.0},
 		{0.0, 0.0, 0.0},
 		{0.0, 0.0, 0.0},
+		0.0,
 
 		0.0,
 		0.0, 0.0, 0.0, 0.0,
@@ -80,8 +83,9 @@ void TransferInputData(PixelInput input, inout LightingParameters parameters)
 {
 	parameters.screen_position = input.position.xy * u_screen_info.zw;
 	parameters.world_position = WorldPosition4(input);
-	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
 	parameters.world_normal = input.world_normal.xyz;
+	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
+	parameters.cos_view_direction = saturate(dot(parameters.world_normal, parameters.view_direction));
 
 	parameters.pixel_position = (uint2)(parameters.screen_position * u_screen_info.xy);
 	parameters.tile_position = parameters.pixel_position >> 4;
@@ -96,9 +100,10 @@ void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 {
 	parameters.albedo = data.albedo.xyz;
 
-	parameters.raw_flags = (uint)(data.albedo.w * 255);
-	parameters.shading_mode = UnpackUIntBits(parameters.raw_flags, 4, 0);
-	parameters.flags_unk1 = UnpackUIntBits(parameters.raw_flags, 2, 4);
+	uint flags = (uint)(data.albedo.w * 255);
+	parameters.shading_mode = UnpackUIntBits(flags, 3, 0);
+	parameters.flags_unk1 = (bool)UnpackUIntBits(flags, 1, 3);
+	parameters.flags_unk2 = UnpackUIntBits(flags, 2, 4);
 
 	parameters.world_normal = data.normal * 2.0 - 1.0;
 

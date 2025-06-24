@@ -4,17 +4,20 @@
 #include "../../ConstantBuffer/World.hlsl"
 #include "../../ConstantBuffer/LocalLightContextData.hlsl"
 
-#include "../../Math.hlsl"
+#include "../../Transform.hlsl"
 #include "../../Texture.hlsl"
 
 #include "Struct.hlsl"
 #include "SubsurfaceScattering.hlsl"
+#include "Math.hlsl"
 
 
 Buffer<uint> s_LocalLightIndexData;
 TextureCubeArray<float4> WithSamplerComparison(s_LocalShadowMap);
 
-static const float2 light_something[5] = {
+static const uint max_light_count = 64;
+
+static const float2 shadow_angles[5] = {
 	{ 0.0, 0.0 },
 	{ 1.0, 1.0 },
 	{ 1.0, -1.0 },
@@ -22,10 +25,96 @@ static const float2 light_something[5] = {
 	{ -1.0, -1.0 }
 };
 
-void GetLightColors(LightingParameters parameters, out float3 result_1, out float3 result_2)
+struct LightInfo
 {
-	result_1 = 0.0; // r21
-	result_2 = 0.0; // r22
+	float3 color;
+	float3 position;
+	float radius_squared;
+	float3 direction;
+	float factor_offset;
+	float factor_strength;
+	uint flags;
+};
+
+LightInfo GetLightInfo(int index)
+{
+	LightInfo result;
+	float4x4 data = g_local_light_data[index];
+
+	result.color = data._m00_m01_m02;
+	// m03 missing
+
+	result.position = data._m10_m11_m12;
+	result.radius_squared = data._m13;
+
+	result.direction = data._m20_m21_m22;
+	// m23 missing
+
+	result.factor_offset = data._m30;
+	result.factor_strength = data._m31;
+	// m32 missing
+	result.flags = asuint(data._m33);
+
+	return result;
+}
+
+float ComputeShadowSomething(LightingParameters parameters, uint index)
+{
+	float4 shadow_param = g_local_light_shadow_param[index];
+
+	if(index < 0 || abs(shadow_param.w) <= 0.01)
+	{
+		return 1.0;
+	}
+
+	float3 shadow_offset = parameters.world_position.xyz - shadow_param.xyz;
+	float shadow_distance = length(shadow_offset);
+
+	float4x4 shadow_matrix = g_local_light_shadow_matrix[index];
+
+	float compare_value;
+
+	if(shadow_param.w < 0.0)
+	{
+		float4 shadow_offset_2 = mul(parameters.world_position, shadow_matrix);
+		shadow_offset_2 /= shadow_offset_2.w;
+
+		compare_value = shadow_offset_2.z;
+		shadow_offset = shadow_distance * normalize(float3(1, shadow_offset_2.y, -shadow_offset_2.x));
+	}
+	else
+	{
+		float max_dist = max(max(abs(shadow_offset.x), abs(shadow_offset.y)), abs(shadow_offset.z));
+		float2 t2 = shadow_matrix._m32_m33 - shadow_matrix._m22_m23 * max_dist;
+		compare_value = t2.x / t2.y;
+	}
+
+	float result;
+
+	for(int i = 0; i < 5; i++)
+	{
+		float3 rotated_offset = shadow_offset;
+		rotated_offset = RotateX(rotated_offset, shadow_angles[i].x * 0.002);
+		rotated_offset = RotateY(rotated_offset, shadow_angles[i].y * 0.002);
+
+		result += SampleTextureCmpLevelZero(
+			s_LocalShadowMap,
+			float4(rotated_offset, index),
+			compare_value - 0.001
+		).x;
+	}
+
+	result *= 0.2;
+	result += smoothstep(0.0, 1.0, -2.5 * (shadow_distance - 1.0));
+	result = min(result, 0.1);
+
+	return lerp(1.0, result, abs(shadow_param.w));
+}
+
+void GetLightColors(LightingParameters parameters, float3 blue_emission_thing, out float3 out_light_color, out float3 out_sss_color)
+{
+	out_light_color = 0.0;
+	out_sss_color = 0.0;
 
 	uint light_count = g_local_light_count.x;
 	if(light_count == 0)
@@ -33,186 +122,107 @@ void GetLightColors(LightingParameters parameters, out float3 result_1, out floa
 		return;
 	}
 
-	// WIP
-	/*float4 r14, r1, r8, r10, r18, r12, r13, r23, r24, r16, r17, r25, r29, r26, r28, r27, r11;
-	int4 bitmask;
+	uint2 tile_resolution = ((uint2)u_tile_info.zw + 15) >> 4;
 
-	r14.xy = (int2)u_tile_info.zw;
-	r14.xy = (int2)r14.xy + int2(15,15);
-	r14.xy = (uint2)r14.xy >> int2(4,4);
-	r14.xy = (int2)parameters.tile_position < (int2)r14.xy;
-	r1.x = r14.y ? r14.x : 0;
-	r14.xy = (uint2)u_tile_info.xy;
-	r8.z = mad((int)r1.z, (int)r14.x, (int)r1.y);
-	r8.z = (int)r8.z * 3;
-	r10.y = s_LocalLightIndexData[r8.z].x;
-	r10.y = asint(r10.y) & 0x0000ffff;
-	r18.x = min(64, (uint)r10.y);
-	r8.z = (uint)r8.z << 6;
-	r18.y = (int)r8.z + (int)r14.y;
-	r14.xy = asint(r1.xx) & asint(r18.xy);
-	r1.x = 1 << parameters.flags_unk1;
-	r18.y = 1;
-
-	for(int i = 0; i < (uint)r14.x; i++)
+	if(parameters.tile_position.x >= tile_resolution.x
+		|| parameters.tile_position.y >= tile_resolution.y)
 	{
-		r10.y = i + (int)r14.y;
-		r10.y = s_LocalLightIndexData[r10.y].x;
-		bitmask.y = ((~(-1 << 16)) << 2) & 0xffffffff;  r10.y = (((uint)r10.y << 2) & bitmask.y) | ((uint)0 & ~bitmask.y);
-		r11.w = asint(r1.x) & asint(g_local_light_data[r10.y/4]._m33);
-		r12.y = UnpackUIntBits((uint)g_local_light_data[r10.y/4]._m33, 3, 16);
-		r12.y = (int)r12.y + -1;
-		r13.w = (int)r12.y >= 0;
-		r14.z = 0.01 < abs(g_local_light_shadow_param[r12.y].w);
-		r13.w = r13.w ? r14.z : 0;
+		return;
+	}
 
-		if (r13.w == 0) {
-			r13.w = 1;
-		} else {
-			r14.z = g_local_light_shadow_param[r12.y].w < 0;
-			r23.xyz = -g_local_light_shadow_param[r12.y].xyz + parameters.world_position.xyz;
-			r14.w = dot(r23.xyz, r23.xyz);
-			r18.x = sqrt(r14.w);
-			if (r14.z != 0) {
-				r14.z = (uint)r12.y << 2;
-				r24.xyzw = g_local_light_shadow_matrix[r14.z/4]._m10_m11_m12_m13 * parameters.world_position.yyyy;
-				r24.xyzw = parameters.world_position.xxxx * g_local_light_shadow_matrix[r14.z/4]._m00_m01_m02_m03 + r24.xyzw;
-				r24.xyzw = parameters.world_position.zzzz * g_local_light_shadow_matrix[r14.z/4]._m20_m21_m22_m23 + r24.xyzw;
-				r24.xyzw = g_local_light_shadow_matrix[r14.z/4]._m30_m31_m32_m33 + r24.xyzw;
-				r24.xyz = r24.zxy / r24.www;
-				r18.zw = float2(1,-1) * r24.zy;
-				r14.z = dot(r18.yzw, r18.yzw);
-				r14.z = rsqrt(r14.z);
-				r24.yzw = r18.xzw * r14.zzz;
-				r23.xyz = r24.yzw * r18.yxx;
-				r14.zw = r23.yz;
-			} else {
-				r16.w = (uint)r12.y << 2;
-				r17.w = max(abs(r23.y), abs(r23.z));
-				r17.w = max(abs(r23.x), r17.w);
-				r18.zw = g_local_light_shadow_matrix[r16.w/4]._m22_m23 * -r17.ww + g_local_light_shadow_matrix[r16.w/4]._m32_m33;
-				r24.x = r18.z / r18.w;
-				r14.zw = r23.yz;
-			}
-			r25.w = (int)r12.y;
-			r16.w = -0.00100000005 + r24.x;
-			r17.w = 0;
+	int tile_index = (parameters.tile_position.y * (int)u_tile_info.x + parameters.tile_position.x) * 3;
+	int tile_light_count = min(max_light_count, s_LocalLightIndexData[tile_index] & 0xFFFF);
+	int tile_light_data_offset = (tile_index * max_light_count) + (int)u_tile_info.y;
 
-			for(int j = 0; j < 5; j++)
+	for(int i = 0; i < tile_light_count; i++)
+	{
+		uint light_index = s_LocalLightIndexData[tile_light_data_offset + i] & 0xFFFF;
+		LightInfo light_info = GetLightInfo(light_index);
+
+		if(!(light_info.flags & (1 << parameters.flags_unk2)))
+		{
+			continue;
+		}
+
+		float3 light_offset = light_info.position - parameters.world_position.xyz;
+		float light_distance_squared = dot(light_offset, light_offset);
+
+		if(light_distance_squared < light_info.radius_squared
+			|| abs(light_info.color.x + light_info.color.y + light_info.color.z) < 0.000001)
+		{
+			continue;
+		}
+
+		float3 light_direction = normalize(light_offset);
+
+		float light_base = 1.0;
+
+		if(0x100 & light_info.flags)
+		{
+			light_base = dot(light_info.direction, -light_direction);
+			light_base -= light_info.factor_offset;
+			light_base *= light_info.factor_strength;
+			light_base = saturate(light_base);
+			light_base *= light_base;
+
+			if(light_base < 0.000001)
 			{
-				r23.zw = light_something[j].xy * float2(0.002,0.002);
-				sincos(r23.z, r24.x, r26.x);
-				sincos(r23.w, r27.x, r28.x);
-				r29.xz = sin(-r23.zw);
-				r29.y = r26.x;
-				r25.y = dot(r29.yx, r14.zw);
-				r29.w = r24.x;
-				r23.y = dot(r29.wy, r14.zw);
-				r29.x = r28.x;
-				r29.y = r27.x;
-				r25.x = dot(r29.xy, r23.xy);
-				r25.z = dot(r29.zx, r23.xy);
-				r18.w = SampleTextureCmpLevelZero(s_LocalShadowMap, r25.xyzw, r16.w).x;
-				r17.w = r18.w + r17.w;
+				continue;
 			}
-
-			r14.z = -1 + r18.x;
-			r14.z = saturate(-2.50000024 * r14.z);
-			r14.w = r14.z * -2 + 3;
-			r14.z = r14.z * r14.z;
-			r14.z = r14.w * r14.z;
-			r14.z = r17.w * 0.200000003 + r14.z;
-			r14.z = min(1, r14.z);
-			r14.z = -1 + r14.z;
-			r13.w = abs(g_local_light_shadow_param[r12.y].w) * r14.z + 1;
 		}
-		if (r11.w != 0) {
-			r18.xzw = g_local_light_data[r10.y/4]._m10_m11_m12 - parameters.world_position.xyz;
-			r11.w = dot(r18.xzw, r18.xzw);
-			r12.y = g_local_light_data[r10.y/4]._m13 < r11.w;
-			r14.z = g_local_light_data[r10.y/4]._m00 + g_local_light_data[r10.y/4]._m01;
-			r14.z = g_local_light_data[r10.y/4]._m02 + r14.z;
-			r14.z = abs(r14.z) < 9.99999997e-007;
-			r12.y = (int)r12.y | (int)r14.z;
-			if (r12.y == 0) {
-				r12.y = 256 & asint(g_local_light_data[r10.y/4]._m33);
-				r14.z = rsqrt(r11.w);
-				r23.xyz = r18.xzw * r14.zzz;
-				r14.w = dot(g_local_light_data[r10.y/4]._m20_m21_m22, -r23.xyz);
-				r14.w = -g_local_light_data[r10.y/4]._m30 + r14.w;
-				r14.w = saturate(g_local_light_data[r10.y/4]._m31 * r14.w);
-				r14.w = r14.w * r14.w;
-				r16.w = r14.w >= 9.99999997e-007;
-				r16.w = r12.y ? r16.w : -1;
-				if (r16.w != 0) {
-					r24.xy = int2(16,32) & asint(g_local_light_data[r10.y/4]._m33_m33);
-					r16.w = r11.w / g_local_light_data[r10.y/4]._m13;
-					r16.w = -r16.w * r16.w + 1;
-					r16.w = max(0, r16.w);
-					r16.w = r16.w * r16.w;
-					r25.xyz = g_local_light_data[r10.y/4]._m00_m01_m02 * float3(0.0795774683,0.0795774683,0.0795774683);
-					r10.y = r12.y ? r14.w : 1;
-					r11.w = max(1, r11.w);
-					r11.w = rcp(r11.w);
-					r12.y = dot(parameters.world_normal, r23.xyz);
-					r26.xyz = saturate(r12.yyy);
-					r18.xzw = r18.xzw * r14.zzz + normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
-					r14.z = dot(r18.xzw, r18.xzw);
-					r14.z = rsqrt(r14.z);
-					r18.xzw = r18.xzw * r14.zzz;
-					r14.z = saturate(dot(r18.xzw, r23.xyz));
-					r14.z = 1 + -r14.z;
-					r14.w = r14.z * r14.z;
-					r14.w = r14.w * r14.w;
-					r14.z = r14.z * r14.w;
-					r23.xyz = r17.xyz * r14.zzz + parameters.fresnel_reflectance;
-					r11.w = r11.w * r16.w;
-					r10.y = r11.w * r10.y;
 
-					if (r24.y != 0)
-					{
-						r11.w = r13.w * r10.y;
-						r14.z = saturate(dot(parameters.world_normal, r18.xzw));
-						r14.w = -r14.z * r14.z + 1;
-						r14.z = r14.z * parameters.roughness;
-						r14.z = r14.z * r14.z + r14.w;
-						r14.z = parameters.roughness / r14.z;
-						r14.z = r14.z * r14.z;
-						r14.z = 0.318309873 * r14.z;
-						r14.w = r26.z * r8.x + r8.y;
-						r14.w = r14.w * r11.y;
-						r14.w = 0.25 / r14.w;
-						r14.z = r14.z * r14.w;
-						r18.xzw = saturate(r14.zzz * r23.xyz);
-						r18.xzw = r18.xzw * r26.xyz;
-						r18.xzw = r18.xzw * r25.xyz;
-						result_2 += r11.www * r18.xzw;
-					}
+		float light_mask = light_distance_squared / light_info.radius_squared;
+		light_mask = saturate(1 - light_mask * light_mask);
+		light_mask *= light_mask;
 
-					if (r24.x != 0)
-					{
-						r10.y = r13.w * r10.y;
+		float light_attenuation = light_base / max(1.0, light_distance_squared);
+		light_attenuation *= light_mask;
 
-						#ifndef enable_ssss
-							if (parameters.shading_mode == 3)
-							{
-								r11.w = max(-1, r12.y);
-								r11.w = r11.w * 0.5 + 0.5;
-								r12.x = min(1, r11.w);
-								r26.xyz = SampleTextureLevel(s_Common_CDRF, r12.xzw, 0).xyz;
-							}
-						#endif
+		float3 light_color = light_info.color / (Pi * 4.0);
 
-						r18.xzw = r26.xyz * r25.xyz;
-						r11.w = 1 + -r23.x;
-						r11.w = r11.w * (1.0 - parameters.ambient_occlusion);
-						r18.xzw = r18.xzw * r11.www;
-						result_1 += r10.yyy * r18.xzw;
-					}
+		float3 halfway_direction = normalize(light_direction + parameters.view_direction);
+
+		float cos_light_direction = saturate(dot(light_direction, parameters.world_normal));
+    	float cos_halfway_direction = saturate(dot(halfway_direction, parameters.world_normal));
+		float cos_view_direction = saturate(dot(parameters.world_normal, parameters.view_direction));
+
+		float3 schlick_fresnel = FresnelSchlick(parameters.fresnel_reflectance, saturate(dot(halfway_direction, light_direction)));
+
+		uint shadow_index = UnpackUIntBits(light_info.flags, 3, 16) - 1;
+		float shadow_something = ComputeShadowSomething(parameters, shadow_index);
+
+		if(light_info.flags & 0x20)
+		{
+			float distribution = NdfGGX(cos_halfway_direction, parameters.roughness);
+			float visibility = VisSchlick(parameters.roughness, cos_view_direction, cos_light_direction);
+			float3 specular_brdf = saturate(schlick_fresnel * distribution * visibility);
+
+			out_light_color += light_color
+				* light_attenuation
+				* cos_light_direction
+				* specular_brdf
+				* shadow_something;
+		}
+
+		if(light_info.flags & 0x10)
+		{
+			float3 cld3 = cos_light_direction;
+
+			#ifndef enable_ssss
+				if (parameters.shading_mode == 3)
+				{
+					float t = saturate(dot(light_direction, parameters.world_normal) * 0.5 + 0.5);
+					cld3 = SampleTextureLevel(s_Common_CDRF, float3(t, blue_emission_thing.x, blue_emission_thing.y), 0).xyz;
 				}
-			}
+			#endif
+
+			out_sss_color += cld3
+				* (1.0 - schlick_fresnel.x)
+				* (1.0 - parameters.metallic)
+				* light_attenuation
+				* shadow_something;
 		}
-	}*/
+	}
 }
 
 #endif

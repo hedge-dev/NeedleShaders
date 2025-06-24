@@ -102,7 +102,7 @@ float4 CompositeLighting(LightingParameters parameters)
 
 	ao_3 = min(ao_3, ssao.w);
 
-	if((parameters.raw_flags & 8) != 0)
+	if(parameters.flags_unk1 != 0)
 	{
 		parameters.emission *= ao_3 * u_lightColor.xyz * parameters.albedo;
 	}
@@ -155,7 +155,7 @@ float4 CompositeLighting(LightingParameters parameters)
 
 	float t3 = 1.0 / (blue_emission_thing_2 * pow(dot(t2, t2), 2) + 0.000001);
 
-	float t4 = 0.318309873 * pow(parameters.roughness / (pow(t2.x * parameters.roughness, 2) + (1 - pow(t2.x, 2))), 2);
+	float t4 = (1 / Pi) * pow(parameters.roughness / (pow(t2.x * parameters.roughness, 2) + (1 - pow(t2.x, 2))), 2);
 
 	if(parameters.shading_mode == 4)
 	{
@@ -172,9 +172,9 @@ float4 CompositeLighting(LightingParameters parameters)
 	//////////////////////////////////////////////////
 	// Lighting
 
-	float3 light_color_1;
-	float3 light_color_2;
-	GetLightColors(parameters, light_color_1, light_color_2);
+	float3 local_light_sss_color;
+	float3 local_light_color;
+	GetLightColors(parameters, blue_emission_thing, local_light_color, local_light_sss_color);
 
 	float3 ambient_color = ComputeAmbientColor(parameters.shading_mode, ao_mode);
 
@@ -244,7 +244,7 @@ float4 CompositeLighting(LightingParameters parameters)
 	float3 occlusion_capsule_1 = lerp(u_occlusion_capsule_param[1].xyz, 1.0, ssao.y);
 
 	float3 oc_thing_1 = parameters.shading_mode == 1 ? 1.0 : occlusion_capsule_0;
-	occlusion_capsule_0 *= light_color_1;
+	occlusion_capsule_0 *= local_light_sss_color;
 
 	albedo_5 *= ssao_thing;
 	float3 oc_thing_4 = albedo_5 * gi_shadow_4;
@@ -271,7 +271,7 @@ float4 CompositeLighting(LightingParameters parameters)
 	}
 
 	float3 oc_thing_7 = (max(0.0, sss_thing * occlusion_capsule_1 + occlusion_capsule_0) * 0.318309873 + oc_thing_1 * ambient_color_3.xyz) * parameters.albedo;
-	float3 oc_thing_8 = parameters.emission * oc_thing_1 + max(0.0, oc_thing_4 + light_color_2 * ssao_thing);
+	float3 oc_thing_8 = parameters.emission * oc_thing_1 + max(0.0, oc_thing_4 + local_light_color * ssao_thing);
 
 	float out_alpha = 1.0;
 
