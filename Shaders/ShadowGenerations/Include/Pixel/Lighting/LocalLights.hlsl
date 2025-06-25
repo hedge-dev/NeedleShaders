@@ -1,5 +1,5 @@
-#ifndef LIGHTS_LIGHTING_INCLUDED
-#define LIGHTS_LIGHTING_INCLUDED
+#ifndef LOCALLIGHTS_LIGHTING_INCLUDED
+#define LOCALLIGHTS_LIGHTING_INCLUDED
 
 #include "../../ConstantBuffer/World.hlsl"
 #include "../../ConstantBuffer/LocalLightContextData.hlsl"
@@ -9,7 +9,7 @@
 
 #include "Struct.hlsl"
 #include "SubsurfaceScattering.hlsl"
-#include "Math.hlsl"
+#include "Light.hlsl"
 
 
 Buffer<uint> s_LocalLightIndexData;

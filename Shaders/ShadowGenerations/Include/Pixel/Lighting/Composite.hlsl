@@ -16,7 +16,7 @@
 
 #include "Struct.hlsl"
 #include "SubsurfaceScattering.hlsl"
-#include "Lights.hlsl"
+#include "LocalLights.hlsl"
 #include "Fog.hlsl"
 #include "Ambient.hlsl"
 

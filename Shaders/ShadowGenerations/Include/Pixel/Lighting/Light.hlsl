@@ -1,5 +1,5 @@
-#ifndef MATH_LIGHTING_INCLUDED
-#define MATH_LIGHTING_INCLUDED
+#ifndef LIGHT_LIGHTING_INCLUDED
+#define LIGHT_LIGHTING_INCLUDED
 
 #include "../../Math.hlsl"
 
