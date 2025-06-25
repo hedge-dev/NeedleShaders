@@ -56,7 +56,7 @@ void main(ThreadInfo input)
 	parameters.world_position = ScreenDepthToWorldPosition(parameters.screen_position, depth);
 
 	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
-	parameters.cos_view_direction = saturate(dot(parameters.world_normal, parameters.view_direction));
+	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
 	parameters.light_scattering_colors = ComputeLightScatteringColors(view_distance, parameters.view_direction);
 
 	rw_Output0[input.dispatchThreadId.xy] = CompositeLighting(parameters);

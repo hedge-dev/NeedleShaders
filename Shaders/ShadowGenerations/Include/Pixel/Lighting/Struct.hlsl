@@ -34,7 +34,7 @@ struct LightingParameters
 	// direction from camera position to world position
 	float3 view_direction;
 
-	float cos_view_direction;
+	float cos_view_normal;
 
 
 	// -- Mode dependent ambient occlusion --
@@ -85,7 +85,7 @@ void TransferInputData(PixelInput input, inout LightingParameters parameters)
 	parameters.world_position = WorldPosition4(input);
 	parameters.world_normal = input.world_normal.xyz;
 	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
-	parameters.cos_view_direction = saturate(dot(parameters.world_normal, parameters.view_direction));
+	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
 
 	parameters.pixel_position = (uint2)(parameters.screen_position * u_screen_info.xy);
 	parameters.tile_position = parameters.pixel_position >> 4;

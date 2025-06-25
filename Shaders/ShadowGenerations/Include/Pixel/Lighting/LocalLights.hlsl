@@ -154,29 +154,20 @@ void CalculateLight(LightingParameters parameters, LightInfo light_info, float3 
 	float light_attenuation = light_base / max(1.0, light_distance_squared);
 	light_attenuation *= light_mask;
 
+	float cos_light_direction = saturate(dot(light_direction, parameters.world_normal));
+
 	float3 light_color = light_info.color / (Pi * 4.0);
 
-
-	float3 halfway_direction = normalize(light_direction + parameters.view_direction);
-
-	float cos_light_direction = saturate(dot(light_direction, parameters.world_normal));
-	float cos_halfway_direction = saturate(dot(halfway_direction, parameters.world_normal));
-
-	float3 schlick_fresnel = FresnelSchlick(parameters.fresnel_reflectance, saturate(dot(halfway_direction, light_direction)));
 
 	uint shadow_index = UnpackUIntBits(light_info.flags, 3, 16) - 1;
 	float shadow_something = ComputeShadowSomething(parameters, shadow_index);
 
 	if(light_info.flags & 0x20)
 	{
-		float distribution = NdfGGX(cos_halfway_direction, parameters.roughness);
-		float visibility = VisSchlick(parameters.roughness, parameters.cos_view_direction, cos_light_direction);
-		float3 specular_brdf = saturate(schlick_fresnel * distribution * visibility);
-
 		out_light_color = light_color
-			* light_attenuation
 			* cos_light_direction
-			* specular_brdf
+			* light_attenuation
+			* SpecularBRDF(parameters, light_direction, light_color)
 			* shadow_something;
 	}
 
@@ -192,8 +183,10 @@ void CalculateLight(LightingParameters parameters, LightInfo light_info, float3 
 			}
 		#endif
 
+		float3 fresnel = ComputeFresnelColor(parameters, light_direction);
+
 		out_sss_color = cld3
-			* (1.0 - schlick_fresnel.x)
+			* (1.0 - fresnel.x)
 			* (1.0 - parameters.metallic)
 			* light_attenuation
 			* shadow_something;

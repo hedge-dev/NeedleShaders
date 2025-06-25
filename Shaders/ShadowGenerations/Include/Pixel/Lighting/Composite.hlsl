@@ -110,64 +110,53 @@ float4 CompositeLighting(LightingParameters parameters)
 	//////////////////////////////////////////////////
 	// Sunlight stuff
 
-	float light_factor = dot(parameters.world_normal, u_lightDirection.xyz);
-	float light_factor_clamped = saturate(light_factor);
+	float cos_light_normal_raw = dot(parameters.world_normal, u_lightDirection.xyz);
+	float cos_light_normal = saturate(cos_light_normal_raw);
 
-	float3 light_camera_direction = normalize(parameters.view_direction + u_lightDirection.xyz);
+	float3 halfway_direction = normalize(parameters.view_direction + u_lightDirection.xyz);
+	float cos_halfway_normal = saturate(dot(halfway_direction, parameters.world_normal));
+	float cos_halfway_light = saturate(dot(halfway_direction, u_lightDirection.xyz));
 
-	float3 albedo_3 = saturate(dot(parameters.fresnel_reflectance, 16.5));
-
-	float light_fac_2 = saturate(dot(light_camera_direction, u_lightDirection.xyz));
-	light_fac_2 = pow(1.0 - light_fac_2, 5);
-
-	float3 albedo_4 = lerp(
-		parameters.fresnel_reflectance,
-		albedo_3,
-		light_fac_2
-	);
+	float3 fresnel_color = FresnelSchlick(parameters.fresnel_reflectance, cos_halfway_light);
 
 	//////////////////////////////////////////////////
 	// SSS ???
 
-	float3 sss_thing = GetCDRF(parameters.shading_mode, light_factor, light_factor_clamped, ao_3, blue_emission_thing);
+	float3 sss_thing = GetCDRF(parameters.shading_mode, cos_light_normal_raw, cos_light_normal, ao_3, blue_emission_thing);
 	sss_thing *= u_lightColor.xyz;
 	sss_thing *= 1.0 - parameters.metallic;
-	sss_thing *= 1.0 - albedo_4.x;
+	sss_thing *= 1.0 - fresnel_color.x;
 
-	float camera_dot = saturate(dot(parameters.world_normal, parameters.view_direction));
-	float light_camera_dot = saturate(dot(parameters.world_normal, light_camera_direction));
-
-	float emission_thing_dot = dot(light_camera_direction, emission_thing);
-	float emission_normal_thing_dot = dot(light_camera_direction, emission_normal_thing);
+	float emission_thing_dot = dot(halfway_direction, emission_thing);
+	float emission_normal_thing_dot = dot(halfway_direction, emission_normal_thing);
 
 	float roughness_sqared = pow(parameters.roughness, 2);
 	float blue_emission_thing_2 = Pi
 		* blue_emission_thing.x * roughness_sqared
 		* blue_emission_thing.y * roughness_sqared;
 
-	float2 t = roughness_sqared * blue_emission_thing.xy + 0.000001;
-
-	float3 t2 = float3(
-		light_camera_dot,
-		emission_thing_dot / t.x,
-		emission_normal_thing_dot / t.y
-	);
-
-	float t3 = 1.0 / (blue_emission_thing_2 * pow(dot(t2, t2), 2) + 0.000001);
-
-	float t4 = (1 / Pi) * pow(parameters.roughness / (pow(t2.x * parameters.roughness, 2) + (1 - pow(t2.x, 2))), 2);
+	float distribution;
 
 	if(parameters.shading_mode == 4)
 	{
-		t4 = t3;
+		float2 t = roughness_sqared * blue_emission_thing.xy + 0.000001;
+
+		float3 t2 = float3(
+			cos_halfway_normal,
+			emission_thing_dot / t.x,
+			emission_normal_thing_dot / t.y
+		);
+
+		distribution = 1.0 / (blue_emission_thing_2 * pow(dot(t2, t2), 2) + 0.000001);
+	}
+	else
+	{
+		distribution = NdfGGX(cos_halfway_normal, parameters.roughness);
 	}
 
-	float t5_1 = pow(1.0 + parameters.roughness, 2) * 0.125;
-	float t5_2 = lerp(t5_1, 1.0, camera_dot);
-	float t5 = t5_2 * lerp(t5_1, 1.0, light_factor_clamped);
-	t5 = (0.25 / t5) * t4;
+	float visibility = VisSchlick(parameters.roughness, parameters.cos_view_normal, cos_light_normal);
 
-	float3 albedo_5 = u_lightColor.xyz * saturate(t5 * albedo_4) * light_factor_clamped * ao_3;
+	float3 sunlight_color = u_lightColor.xyz * saturate(distribution * visibility * fresnel_color) * cos_light_normal * ao_3;
 
 	//////////////////////////////////////////////////
 	// Lighting
@@ -237,7 +226,7 @@ float4 CompositeLighting(LightingParameters parameters)
 		ambient_color_3 = float4(ambient_color, sggi_thing_2);
 	}
 
-	something(parameters.emission, albedo_5, ambient_color_3.w);
+	something(parameters.emission, sunlight_color, ambient_color_3.w);
 
 	float ssao_thing = ssao.x * ssao.z;
 	float3 occlusion_capsule_0 = lerp(u_occlusion_capsule_param[0].xyz, 1.0, ssao.x);
@@ -246,8 +235,8 @@ float4 CompositeLighting(LightingParameters parameters)
 	float3 oc_thing_1 = parameters.shading_mode == 1 ? 1.0 : occlusion_capsule_0;
 	occlusion_capsule_0 *= local_light_sss_color;
 
-	albedo_5 *= ssao_thing;
-	float3 oc_thing_4 = albedo_5 * gi_shadow_4;
+	sunlight_color *= ssao_thing;
+	float3 oc_thing_4 = sunlight_color * gi_shadow_4;
 
 	float oc_thing_5;
 	switch(debug2_mode)
@@ -267,10 +256,10 @@ float4 CompositeLighting(LightingParameters parameters)
 
 	if(enable_ibl_plus_directional_specular)
 	{
-		oc_thing_4 = albedo_5;
+		oc_thing_4 = sunlight_color;
 	}
 
-	float3 oc_thing_7 = (max(0.0, sss_thing * occlusion_capsule_1 + occlusion_capsule_0) * 0.318309873 + oc_thing_1 * ambient_color_3.xyz) * parameters.albedo;
+	float3 oc_thing_7 = (max(0.0, sss_thing * occlusion_capsule_1 + occlusion_capsule_0) / Pi + oc_thing_1 * ambient_color_3.xyz) * parameters.albedo;
 	float3 oc_thing_8 = parameters.emission * oc_thing_1 + max(0.0, oc_thing_4 + local_light_color * ssao_thing);
 
 	float out_alpha = 1.0;
