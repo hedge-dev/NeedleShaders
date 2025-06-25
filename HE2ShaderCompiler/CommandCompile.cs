@@ -7,6 +7,10 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 {
     internal static partial class CommandCompile
     {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+        private static readonly ShaderMacro _nullMacro = new(null, null);
+#pragma warning restore CS8625
+
         public static void Run(string[] args)
         {
             string file = args[1];
@@ -32,7 +36,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                     baseMacroLUT.Add(baseMacros[i].Name);
                 }
 
-                baseMacros[^1] = new(null, null);
+                baseMacros[^1] = _nullMacro;
             }
 
             string shaderCode = File.ReadAllText(file);
@@ -60,7 +64,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                     macros.Add(new(features[j], 1));
                 }
 
-                macros.Add(new(null, null));
+                macros.Add(_nullMacro);
 
                 ReadOnlyMemory<byte> compiledShader = Vortice.D3DCompiler.Compiler.Compile(
                     shaderCode, 
@@ -104,7 +108,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             output.Variants.AddRange(variants.Select(ShaderByteCodeProcessor.ProcessShaderByteCode));
             output.Permutations.AddRange(permutations);
 
-            if(!compilerArgs.BuildV1)
+            if(compilerArgs.BuildV1)
             {
                 foreach(ShaderVariant variant in output.Variants)
                 {
