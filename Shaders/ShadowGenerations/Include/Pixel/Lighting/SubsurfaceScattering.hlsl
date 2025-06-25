@@ -13,10 +13,10 @@ float4 ssss_colors[16];
 float4 ssss_ambient_boost;
 
 static groupshared int shared_variable;
-RWByteAddressBuffer rw_indirectSSSSDrawArguments;
-RWStructuredBuffer<int> rw_IndirectSSSSTiles;
+RWTexture2D<float4> rw_Output1 : register(u1);
+RWByteAddressBuffer rw_indirectSSSSDrawArguments : register(u2);
+RWStructuredBuffer<int> rw_IndirectSSSSTiles : register(u3);
 
-RWTexture2D<float4> rw_Output1;
 
 Texture2DArray<float4> WithSampler(s_Common_CDRF);
 
@@ -72,7 +72,7 @@ void ClearSSSOutput(uint2 pixel)
 
 void WriteSSSOutput(uint2 pixel, uint shading_mode, float3 normal, float3 albedo, float3 ambient_color, float3 oc_thing_7, float3 blue_emission_thing, inout float3 out_color)
 {
-	#ifdef enable_ssss
+	#ifndef enable_ssss
 		out_color += oc_thing_7;
 
 		if(shading_mode == 3)

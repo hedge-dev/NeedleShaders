@@ -35,7 +35,7 @@ void main(ThreadInfo input)
 	LightingParameters parameters = InitLightingParameters();
 	TransferSurfaceData(deferred_data, parameters);
 
-	ComputeSSSSTile(parameters.shading_mode, input.groupIndex, input.groupThreadId.xy);
+	ComputeSSSSTile(parameters.shading_mode, input.groupIndex, input.groupId.xy);
 
 	if(parameters.shading_mode == 0
 		|| (float)input.dispatchThreadId.x >= u_viewport_info.x
@@ -50,7 +50,7 @@ void main(ThreadInfo input)
 	float view_distance = DepthToViewDistance(depth);
 
 	parameters.pixel_position = input.dispatchThreadId.xy;
-	parameters.tile_position = input.groupThreadId.xy >> 1;
+	parameters.tile_position = input.groupId.xy >> 1;
 
 	parameters.screen_position = PixelToScreen(input.dispatchThreadId.xy);
 	parameters.world_position = ScreenDepthToWorldPosition(parameters.screen_position, depth);

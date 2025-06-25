@@ -11,8 +11,7 @@
 #include "SubsurfaceScattering.hlsl"
 #include "Light.hlsl"
 
-
-Buffer<uint> s_LocalLightIndexData;
+StructuredBuffer<int> s_LocalLightIndexData;
 TextureCubeArray<float4> WithSamplerComparison(s_LocalShadowMap);
 
 static const uint max_light_count = 64;
@@ -111,6 +110,96 @@ float ComputeShadowSomething(LightingParameters parameters, uint index)
 	return lerp(1.0, result, abs(shadow_param.w));
 }
 
+void CalculateLight(LightingParameters parameters, LightInfo light_info, float3 blue_emission_thing, out float3 out_light_color, out float3 out_sss_color)
+{
+	out_light_color = 0.0;
+	out_sss_color = 0.0;
+
+	if(!(light_info.flags & (1 << parameters.flags_unk2)))
+	{
+		return;
+	}
+
+	float3 light_offset = light_info.position - parameters.world_position.xyz;
+	float light_distance_squared = dot(light_offset, light_offset);
+
+	if(light_distance_squared >= light_info.radius_squared
+		&& abs(light_info.color.x + light_info.color.y + light_info.color.z) >= 0.000001)
+	{
+		return;
+	}
+
+	float3 light_direction = normalize(light_offset);
+
+	float light_base = 1.0;
+
+	if(0x100 & light_info.flags)
+	{
+		light_base = dot(light_info.direction, -light_direction);
+		light_base -= light_info.factor_offset;
+		light_base *= light_info.factor_strength;
+		light_base = saturate(light_base);
+		light_base *= light_base;
+
+		if(light_base < 0.000001)
+		{
+			return;
+		}
+	}
+
+	float light_mask = light_distance_squared / light_info.radius_squared;
+	light_mask = saturate(1 - light_mask * light_mask);
+	light_mask *= light_mask;
+
+	float light_attenuation = light_base / max(1.0, light_distance_squared);
+	light_attenuation *= light_mask;
+
+	float3 light_color = light_info.color / (Pi * 4.0);
+
+
+	float3 halfway_direction = normalize(light_direction + parameters.view_direction);
+
+	float cos_light_direction = saturate(dot(light_direction, parameters.world_normal));
+	float cos_halfway_direction = saturate(dot(halfway_direction, parameters.world_normal));
+
+	float3 schlick_fresnel = FresnelSchlick(parameters.fresnel_reflectance, saturate(dot(halfway_direction, light_direction)));
+
+	uint shadow_index = UnpackUIntBits(light_info.flags, 3, 16) - 1;
+	float shadow_something = ComputeShadowSomething(parameters, shadow_index);
+
+	if(light_info.flags & 0x20)
+	{
+		float distribution = NdfGGX(cos_halfway_direction, parameters.roughness);
+		float visibility = VisSchlick(parameters.roughness, parameters.cos_view_direction, cos_light_direction);
+		float3 specular_brdf = saturate(schlick_fresnel * distribution * visibility);
+
+		out_light_color = light_color
+			* light_attenuation
+			* cos_light_direction
+			* specular_brdf
+			* shadow_something;
+	}
+
+	if(light_info.flags & 0x10)
+	{
+		float3 cld3 = cos_light_direction;
+
+		#ifndef enable_ssss
+			if (parameters.shading_mode == 3)
+			{
+				float t = saturate(dot(light_direction, parameters.world_normal) * 0.5 + 0.5);
+				cld3 = SampleTextureLevel(s_Common_CDRF, float3(t, blue_emission_thing.x, blue_emission_thing.y), 0).xyz;
+			}
+		#endif
+
+		out_sss_color = cld3
+			* (1.0 - schlick_fresnel.x)
+			* (1.0 - parameters.metallic)
+			* light_attenuation
+			* shadow_something;
+	}
+}
+
 void GetLightColors(LightingParameters parameters, float3 blue_emission_thing, out float3 out_light_color, out float3 out_sss_color)
 {
 	out_light_color = 0.0;
@@ -139,89 +228,11 @@ void GetLightColors(LightingParameters parameters, float3 blue_emission_thing, o
 		uint light_index = s_LocalLightIndexData[tile_light_data_offset + i] & 0xFFFF;
 		LightInfo light_info = GetLightInfo(light_index);
 
-		if(!(light_info.flags & (1 << parameters.flags_unk2)))
-		{
-			continue;
-		}
+		float3 light_color, sss_color;
+		CalculateLight(parameters, light_info, blue_emission_thing, light_color, sss_color);
 
-		float3 light_offset = light_info.position - parameters.world_position.xyz;
-		float light_distance_squared = dot(light_offset, light_offset);
-
-		if(light_distance_squared < light_info.radius_squared
-			|| abs(light_info.color.x + light_info.color.y + light_info.color.z) < 0.000001)
-		{
-			continue;
-		}
-
-		float3 light_direction = normalize(light_offset);
-
-		float light_base = 1.0;
-
-		if(0x100 & light_info.flags)
-		{
-			light_base = dot(light_info.direction, -light_direction);
-			light_base -= light_info.factor_offset;
-			light_base *= light_info.factor_strength;
-			light_base = saturate(light_base);
-			light_base *= light_base;
-
-			if(light_base < 0.000001)
-			{
-				continue;
-			}
-		}
-
-		float light_mask = light_distance_squared / light_info.radius_squared;
-		light_mask = saturate(1 - light_mask * light_mask);
-		light_mask *= light_mask;
-
-		float light_attenuation = light_base / max(1.0, light_distance_squared);
-		light_attenuation *= light_mask;
-
-		float3 light_color = light_info.color / (Pi * 4.0);
-
-		float3 halfway_direction = normalize(light_direction + parameters.view_direction);
-
-		float cos_light_direction = saturate(dot(light_direction, parameters.world_normal));
-    	float cos_halfway_direction = saturate(dot(halfway_direction, parameters.world_normal));
-		float cos_view_direction = saturate(dot(parameters.world_normal, parameters.view_direction));
-
-		float3 schlick_fresnel = FresnelSchlick(parameters.fresnel_reflectance, saturate(dot(halfway_direction, light_direction)));
-
-		uint shadow_index = UnpackUIntBits(light_info.flags, 3, 16) - 1;
-		float shadow_something = ComputeShadowSomething(parameters, shadow_index);
-
-		if(light_info.flags & 0x20)
-		{
-			float distribution = NdfGGX(cos_halfway_direction, parameters.roughness);
-			float visibility = VisSchlick(parameters.roughness, cos_view_direction, cos_light_direction);
-			float3 specular_brdf = saturate(schlick_fresnel * distribution * visibility);
-
-			out_light_color += light_color
-				* light_attenuation
-				* cos_light_direction
-				* specular_brdf
-				* shadow_something;
-		}
-
-		if(light_info.flags & 0x10)
-		{
-			float3 cld3 = cos_light_direction;
-
-			#ifndef enable_ssss
-				if (parameters.shading_mode == 3)
-				{
-					float t = saturate(dot(light_direction, parameters.world_normal) * 0.5 + 0.5);
-					cld3 = SampleTextureLevel(s_Common_CDRF, float3(t, blue_emission_thing.x, blue_emission_thing.y), 0).xyz;
-				}
-			#endif
-
-			out_sss_color += cld3
-				* (1.0 - schlick_fresnel.x)
-				* (1.0 - parameters.metallic)
-				* light_attenuation
-				* shadow_something;
-		}
+		out_light_color += light_color;
+		out_sss_color += sss_color;
 	}
 }
 
