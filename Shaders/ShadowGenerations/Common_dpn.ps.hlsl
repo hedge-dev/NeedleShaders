@@ -43,6 +43,8 @@ PixelOutput main(const PixelInput input)
     parameters.previous_position = input.previous_position.xyz;
     parameters.gi_uv = input.uv01.zw;
 
+    parameters.shader_model = 2;
+
     //////////////////////////////////////////////////
 
     #define SampleUV0(name) SampleTextureBiasedGl(name, TexUV(input.uv01.xy, name))

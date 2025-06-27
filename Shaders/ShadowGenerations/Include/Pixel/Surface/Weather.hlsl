@@ -8,9 +8,7 @@
 
 #include "Struct.hlsl"
 
-// TODO Figure out what the first and second weather modes signify
-#define WEATHER_MODE_0 0
-#define WEATHER_MODE_1 1
+#define WeatherMode_1 1
 
 uint GetWeatherMode()
 {
@@ -21,7 +19,7 @@ void ApplyWeatherEffects(inout SurfaceParameters parameters)
 {
 	float weather_param = u_weather_param.x;
 
-    if(GetWeatherMode() == WEATHER_MODE_1)
+    if(GetWeatherMode() == WeatherMode_1)
     {
         weather_param *= u_weather_param.w;
     }
@@ -30,7 +28,6 @@ void ApplyWeatherEffects(inout SurfaceParameters parameters)
     {
 		return;
     }
-
 
 	parameters.albedo = lerp(
 		parameters.albedo,

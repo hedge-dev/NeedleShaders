@@ -1,11 +1,6 @@
 #ifndef STRUCT_SURFACE_INCLUDED
 #define STRUCT_SURFACE_INCLUDED
 
-// TODO figure out what these do
-// Notes:
-// 2 = Approximate Environment BRDF
-static const uint ShadingMode2 = 2;
-
 //////////////////////////////////////////////////
 // Surface parameters (input)
 
@@ -31,7 +26,7 @@ struct SurfaceParameters
 
 	float2 gi_uv;
 
-	uint deferred_flags;
+	uint shader_model;
 };
 
 SurfaceParameters InitSurfaceParameters()

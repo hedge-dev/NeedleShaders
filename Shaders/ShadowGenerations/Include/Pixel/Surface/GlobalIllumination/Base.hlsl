@@ -40,7 +40,7 @@ void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 		color_1 *= 1.0 - parameters.fresnel_reflectance;
 	}
 
-	if(debug_mode == DebugMode12 || debug_mode == DebugMode19)
+	if(debug_mode == DebugMode_12 || debug_mode == DebugMode_19)
 	{
 		parameters.emission.xyz = color_1;
 		return;
@@ -49,7 +49,7 @@ void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 	float3 color_2 = color_1 * parameters.albedo;
 	float3 color_3 = gi_specular;
 
-	if(debug2_mode == Debug2Mode3)
+	if(debug2_mode == Debug2Mode_3)
 	{
 		color_3 *= saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
 	}
@@ -68,20 +68,20 @@ void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 
 	switch(debug_mode)
 	{
-		case DebugMode3:
-		case DebugMode43:
+		case DebugMode_3:
+		case DebugMode_43:
 			color_2 = color_1;
 			color_3 = 0.0;
 			color_4 = parameters.emission;
 			break;
 
-		case DebugMode4:
+		case DebugMode_4:
 			color_2 = 0.0;
 			color_3 = gi_specular;
 			color_4 = parameters.emission;
 			break;
 
-		case DebugMode44:
+		case DebugMode_44:
 			color_4 = 0.0;
 			break;
 	}

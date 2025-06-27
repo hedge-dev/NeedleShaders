@@ -5,6 +5,8 @@
 #include "../../../Texture.hlsl"
 #include "../../../Math.hlsl"
 
+#include "../../ShaderModel.hlsl"
+
 #include "Common.hlsl"
 
 Texture2D<float4> WithSampler(s_EnvBRDF);
@@ -73,7 +75,7 @@ float2 ApproximateEnvironmentBRDF(float angle, float roughness)
 
 float2 ComputeEnvironmentBRDF(SurfaceParameters parameters, float angle)
 {
-	if((parameters.deferred_flags & 7) == 2)
+	if(parameters.shader_model == ShaderModel_2)
 	{
 		return ApproximateEnvironmentBRDF(angle, parameters.roughness);
 	}
@@ -91,7 +93,7 @@ float3 ComputeSGGISpecular(float3 colors[4], SurfaceParameters parameters)
 	}
 
 	int debug_mode = GetDebugMode();
-	if(debug_mode == 0 || debug_mode == 2)
+	if(!debug_mode || debug_mode == DebugMode_2)
 	{
 		return 0.0;
 	}

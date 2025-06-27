@@ -22,19 +22,17 @@ SurfaceData CreateCommonSurface(SurfaceParameters parameters)
 
     switch(GetDebugMode())
     {
-        case DebugModeNoNormalMap:
+        case DebugMode_NoNormalMap:
             parameters.normal = parameters.debug_normal;
             break;
-        case DebugModeNoAlbedo:
+        case DebugMode_NoAlbedo:
             parameters.albedo = 1.0;
             break;
-        case DebugModeNoAlbedoNoAO:
+        case DebugMode_NoAlbedoNoAO:
             parameters.albedo = 1.0;
             parameters.ambient_occlusion = 1.0;
             break;
     }
-
-    parameters.deferred_flags = asuint(u_shading_model_flag.x) | 2;
 
     ApplyAOGI(parameters);
     ApplyWeatherEffects(parameters);
@@ -56,7 +54,8 @@ SurfaceData CreateCommonSurface(SurfaceParameters parameters)
     result.normal.xyz = parameters.normal * 0.5 + 0.5;
     result.motion_vector.xy = ComputeMotionVector(parameters.screen_position, parameters.previous_position);
 
-    result.albedo.w = (0.5 + parameters.deferred_flags) / 255.0;
+    uint deferred_flags = asuint(u_shading_model_flag.x) | parameters.shader_model;
+    result.albedo.w = (0.5 + deferred_flags) / 255.0;
 
     // TODO figure out what these do
     result.o5.xy = u_model_user_param_3.xy;

@@ -1,27 +1,20 @@
 #ifndef STRUCTS_LIGHTING_INCLUDED
 #define STRUCTS_LIGHTING_INCLUDED
 
-#include "../Surface/Struct.hlsl"
 #include "../../IOStructs.hlsl"
 #include "../../LightScattering.hlsl"
 #include "../../Math.hlsl"
-#include "../Normals.hlsl"
 
-static const uint ShadingMode_0 = 0;
-static const uint ShadingMode_1 = 1;
-static const uint ShadingMode_2 = 2;
-static const uint ShadingMode_SSS = 3; // related to SSS
-static const uint ShadingMode_AnisotropicReflection = 4;
-static const uint ShadingMode_5 = 5;
-static const uint ShadingMode_6 = 6;
-static const uint ShadingMode_7 = 7;
+#include "../Surface/Struct.hlsl"
+
+#include "../Normals.hlsl"
+#include "../ShaderModel.hlsl"
 
 struct LightingParameters
 {
-	// Lighting flags
-	uint shading_mode;
+	uint shader_model;
 	bool flags_unk1;
-	uint flags_unk2;
+	uint flags_unk2; // affects weather
 
     float3 albedo;
     float3 emission;
@@ -42,18 +35,16 @@ struct LightingParameters
 	float3 view_direction;
 	float cos_view_normal;
 
-
-	// -- Mode dependent ambient occlusion --
-	// Mode is set by the 10s (i.e. adding 10, 20 or 30 to the actual AO)
-	// (lots of unknown properties here)
-	float moded_ambient_occlusion;
-
 	// Standard PBR properties
 	float specular;
 	float roughness;
 	float metallic;
 	float ambient_occlusion;
 	float3 fresnel_reflectance;
+
+	uint occlusion_mode;
+	int occlusion_sign;
+	float occlusion_value;
 
 	LightScatteringColors light_scattering_colors;
 };
@@ -82,9 +73,10 @@ LightingParameters InitLightingParameters()
 		{0.0, 0.0, 0.0},
 		0.0,
 
-		0.0,
 		0.0, 0.0, 0.0, 0.0,
 		{0.0, 0.0, 0.0},
+
+		0, 0, 0.0,
 
 		{ {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0} }
 	};
@@ -112,7 +104,7 @@ void TransferInputData(PixelInput input, inout LightingParameters parameters)
 void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 {
 	uint flags = (uint)(data.albedo.w * 255);
-	parameters.shading_mode = UnpackUIntBits(flags, 3, 0);
+	parameters.shader_model = UnpackUIntBits(flags, 3, 0);
 	parameters.flags_unk1 = (bool)UnpackUIntBits(flags, 1, 3);
 	parameters.flags_unk2 = UnpackUIntBits(flags, 2, 4);
 
@@ -121,26 +113,30 @@ void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 	parameters.world_normal = data.normal * 2.0 - 1.0;
 	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
 
-	if(parameters.shading_mode == ShadingMode_SSS)
+	switch(parameters.shader_model)
 	{
-		parameters.sss_param = data.emission.xyz;
-	}
-	else if(parameters.shading_mode == ShadingMode_AnisotropicReflection)
-	{
-		parameters.anisotropy = float2(
-			2 * floor(abs(data.emission.z)),
-			10 * frac(abs(data.emission.z))
-		);
+		case ShaderModel_SSS:
+			parameters.sss_param = data.emission.xyz;
+			break;
 
-		parameters.anisotropic_tangent = CorrectedZNormal(data.emission.xyz);
-		parameters.anisotropic_binormal = ComputeBinormal(parameters.anisotropic_tangent, parameters.world_normal);
-	}
-	else
-	{
-		parameters.emission = data.emission.xyz;
+		case ShaderModel_AnisotropicReflection:
+			parameters.anisotropy = float2(
+				2 * floor(abs(data.emission.z)),
+				10 * frac(abs(data.emission.z))
+			);
+
+			parameters.anisotropic_tangent = CorrectedZNormal(data.emission.xyz);
+			parameters.anisotropic_binormal = ComputeBinormal(parameters.anisotropic_tangent, parameters.world_normal);
+			break;
+
+		default:
+			parameters.emission = data.emission.xyz;
+			break;
 	}
 
-	parameters.moded_ambient_occlusion = data.emission.w;
+	parameters.occlusion_sign = sign(data.emission.w);
+	parameters.occlusion_mode = (uint)trunc(0.1 * abs(data.emission.w));
+	parameters.occlusion_value = abs(data.emission.w) - parameters.occlusion_mode * 10;
 
 	parameters.specular = data.prm.x;
 	parameters.roughness = data.prm.y;
@@ -152,6 +148,8 @@ void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 		parameters.albedo,
 		parameters.metallic
 	);
+
+
 }
 
 #endif
