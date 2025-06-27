@@ -5,35 +5,41 @@
 #include "../../IOStructs.hlsl"
 #include "../../LightScattering.hlsl"
 #include "../../Math.hlsl"
+#include "../Normals.hlsl"
+
+static const uint ShadingMode_0 = 0;
+static const uint ShadingMode_1 = 1;
+static const uint ShadingMode_2 = 2;
+static const uint ShadingMode_SSS = 3; // related to SSS
+static const uint ShadingMode_AnisotropicReflection = 4;
+static const uint ShadingMode_5 = 5;
+static const uint ShadingMode_6 = 6;
+static const uint ShadingMode_7 = 7;
 
 struct LightingParameters
 {
-	// RGB Diffuse color
-    float3 albedo;
-
-	// RGB Emission color
-    float3 emission;
-
 	// Lighting flags
 	uint shading_mode;
 	bool flags_unk1;
 	uint flags_unk2;
 
+    float3 albedo;
+    float3 emission;
+
+	float3 sss_param;
+	float2 anisotropy;
+
 	uint2 pixel_position;
 	uint2 tile_position;
 
-	// screen space position/uv
 	float2 screen_position;
-
-	// world space position
 	float4 world_position;
 
-	// World space normal direction
     float3 world_normal;
+	float3 anisotropic_tangent;
+	float3 anisotropic_binormal;
 
-	// direction from camera position to world position
 	float3 view_direction;
-
 	float cos_view_normal;
 
 
@@ -55,17 +61,24 @@ struct LightingParameters
 LightingParameters InitLightingParameters()
 {
 	LightingParameters result = {
+		0, false, 0,
+
 		{0.0, 0.0, 0.0},
 		{0.0, 0.0, 0.0},
 
-		0, false, 0,
+		{0.0, 0.0, 0.0},
+		{0.0, 0.0},
 
 		{0, 0},
 		{0, 0},
 
 		{0.0, 0.0},
 		{0.0, 0.0, 0.0, 0.0},
+
 		{0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0},
+
 		{0.0, 0.0, 0.0},
 		0.0,
 
@@ -98,16 +111,35 @@ void TransferInputData(PixelInput input, inout LightingParameters parameters)
 
 void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 {
-	parameters.albedo = data.albedo.xyz;
-
 	uint flags = (uint)(data.albedo.w * 255);
 	parameters.shading_mode = UnpackUIntBits(flags, 3, 0);
 	parameters.flags_unk1 = (bool)UnpackUIntBits(flags, 1, 3);
 	parameters.flags_unk2 = UnpackUIntBits(flags, 2, 4);
 
-	parameters.world_normal = data.normal * 2.0 - 1.0;
+	parameters.albedo = data.albedo.xyz;
 
-	parameters.emission = data.emission.xyz;
+	parameters.world_normal = data.normal * 2.0 - 1.0;
+	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
+
+	if(parameters.shading_mode == ShadingMode_SSS)
+	{
+		parameters.sss_param = data.emission.xyz;
+	}
+	else if(parameters.shading_mode == ShadingMode_AnisotropicReflection)
+	{
+		parameters.anisotropy = float2(
+			2 * floor(abs(data.emission.z)),
+			10 * frac(abs(data.emission.z))
+		);
+
+		parameters.anisotropic_tangent = CorrectedZNormal(data.emission.xyz);
+		parameters.anisotropic_binormal = ComputeBinormal(parameters.anisotropic_tangent, parameters.world_normal);
+	}
+	else
+	{
+		parameters.emission = data.emission.xyz;
+	}
+
 	parameters.moded_ambient_occlusion = data.emission.w;
 
 	parameters.specular = data.prm.x;

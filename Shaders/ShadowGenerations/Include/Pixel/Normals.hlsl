@@ -1,7 +1,21 @@
 #ifndef NORMALS_INCLUDED
 #define NORMALS_INCLUDED
 
-float3 UnpackNormalMap(float2 normal_map)
+float3 CorrectedZNormal(float3 normal)
+{
+    return float3(
+        normal.x,
+        normal.y,
+        sign(normal.z) * sqrt(1.0 - min(1.0, dot(normal.xy, normal.xy)))
+    );
+}
+
+float3 ComputeBinormal(float3 normal, float3 tangent)
+{
+    return normalize(cross(normal, tangent));
+}
+
+float3 DenormalizeNormalMap(float2 normal_map)
 {
     float2 remapped = normal_map * 2.0 - 1.0;
 
@@ -23,7 +37,7 @@ float3 LocalToWorldNormal(float3 local_normal, float3 world_normal, float3 world
 
 float3 UnpackNormalMapToWorldSpace(float2 normal_map, float3 world_normal, float3 world_tangent, float3 world_binormal)
 {
-    float3 local_normal = UnpackNormalMap(normal_map);
+    float3 local_normal = DenormalizeNormalMap(normal_map);
     return LocalToWorldNormal(local_normal, world_normal, world_tangent, world_binormal);
 }
 

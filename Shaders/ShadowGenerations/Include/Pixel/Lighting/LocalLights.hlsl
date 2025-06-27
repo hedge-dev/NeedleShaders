@@ -110,10 +110,10 @@ float ComputeShadowSomething(LightingParameters parameters, uint index)
 	return lerp(1.0, result, abs(shadow_param.w));
 }
 
-void CalculateLight(LightingParameters parameters, LightInfo light_info, float3 blue_emission_thing, out float3 out_light_color, out float3 out_sss_color)
+void CalculateLight(LightingParameters parameters, LightInfo light_info, out float3 out_diffuse, out float3 out_specular)
 {
-	out_light_color = 0.0;
-	out_sss_color = 0.0;
+	out_diffuse = 0.0;
+	out_specular = 0.0;
 
 	if(!(light_info.flags & (1 << parameters.flags_unk2)))
 	{
@@ -154,49 +154,26 @@ void CalculateLight(LightingParameters parameters, LightInfo light_info, float3 
 	float light_attenuation = light_base / max(1.0, light_distance_squared);
 	light_attenuation *= light_mask;
 
-	float cos_light_direction = saturate(dot(light_direction, parameters.world_normal));
-
 	float3 light_color = light_info.color / (Pi * 4.0);
 
-
 	uint shadow_index = UnpackUIntBits(light_info.flags, 3, 16) - 1;
-	float shadow_something = ComputeShadowSomething(parameters, shadow_index);
-
-	if(light_info.flags & 0x20)
-	{
-		out_light_color = light_color
-			* cos_light_direction
-			* light_attenuation
-			* SpecularBRDF(parameters, light_direction, light_color)
-			* shadow_something;
-	}
+	light_attenuation *= ComputeShadowSomething(parameters, shadow_index);
 
 	if(light_info.flags & 0x10)
 	{
-		float3 cld3 = cos_light_direction;
+		out_diffuse = DiffuseBDRF(parameters, light_direction, light_color, 1.0) * light_attenuation;
+	}
 
-		#ifndef enable_ssss
-			if (parameters.shading_mode == 3)
-			{
-				float t = saturate(dot(light_direction, parameters.world_normal) * 0.5 + 0.5);
-				cld3 = SampleTextureLevel(s_Common_CDRF, float3(t, blue_emission_thing.x, blue_emission_thing.y), 0).xyz;
-			}
-		#endif
-
-		float3 fresnel = ComputeFresnelColor(parameters, light_direction);
-
-		out_sss_color = cld3
-			* (1.0 - fresnel.x)
-			* (1.0 - parameters.metallic)
-			* light_attenuation
-			* shadow_something;
+	if(light_info.flags & 0x20)
+	{
+		out_specular = SpecularBRDF(parameters, light_direction, light_color, 1.0, false) * light_attenuation;
 	}
 }
 
-void GetLightColors(LightingParameters parameters, float3 blue_emission_thing, out float3 out_light_color, out float3 out_sss_color)
+void GetLightColors(LightingParameters parameters, out float3 out_diffuse, out float3 out_specular)
 {
-	out_light_color = 0.0;
-	out_sss_color = 0.0;
+	out_diffuse = 0.0;
+	out_specular = 0.0;
 
 	uint light_count = g_local_light_count.x;
 	if(light_count == 0)
@@ -221,11 +198,11 @@ void GetLightColors(LightingParameters parameters, float3 blue_emission_thing, o
 		uint light_index = s_LocalLightIndexData[tile_light_data_offset + i] & 0xFFFF;
 		LightInfo light_info = GetLightInfo(light_index);
 
-		float3 light_color, sss_color;
-		CalculateLight(parameters, light_info, blue_emission_thing, light_color, sss_color);
+		float3 light_diffuse, light_specular;
+		CalculateLight(parameters, light_info, light_diffuse, light_specular);
 
-		out_light_color += light_color;
-		out_sss_color += sss_color;
+		out_diffuse += light_diffuse;
+		out_specular += light_specular;
 	}
 }
 

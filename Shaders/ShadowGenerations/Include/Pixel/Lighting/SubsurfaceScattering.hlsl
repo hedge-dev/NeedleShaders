@@ -5,6 +5,8 @@
 #include "../../Common.hlsl"
 #include "../../Texture.hlsl"
 
+#include "Struct.hlsl"
+
 static const uint FEATURE_enable_ssss;
 //DefineFeature(enable_ssss);
 
@@ -17,24 +19,21 @@ RWTexture2D<float4> rw_Output1 : register(u1);
 RWByteAddressBuffer rw_indirectSSSSDrawArguments : register(u2);
 RWStructuredBuffer<int> rw_IndirectSSSSTiles : register(u3);
 
-
 Texture2DArray<float4> WithSampler(s_Common_CDRF);
 
-float3 GetCDRF(uint shading_mode, float light_factor, float light_factor_clamped, float ao_3, float3 blue_emission_thing)
+void SampleCDRF(LightingParameters parameters, float3 light_direction, float ao, inout float3 result)
 {
-	bool use_simple = true;
-
-	#ifndef enable_ssss
-		use_simple = shading_mode != 3;
+	#ifdef enable_ssss
+		return;
 	#endif
 
-	if(use_simple)
-	{
-		return light_factor_clamped * ao_3;
-	}
+	float cos = dot(light_direction, parameters.world_normal);
 
-	float t = min(1.0, max(-1.0, saturate((1.0 + light_factor) * 0.5) * (1.0 - ao_3) + light_factor) * 0.5 + 0.5);
-	return SampleTextureLevel(s_Common_CDRF,  float3(t, blue_emission_thing.xy), 0).xyz;
+	float t = saturate(cos * 0.5 + 0.5);
+	      t = cos - t * (1.0 - ao);
+	      t = saturate(t * 0.5 + 0.5);
+
+	result = SampleTextureLevel(s_Common_CDRF, float3(t, parameters.sss_param.xy), 0).xyz;
 }
 
 void ComputeSSSSTile(uint shading_mode, uint groupIndex, uint2 groupThreadId)
@@ -65,26 +64,28 @@ void ComputeSSSSTile(uint shading_mode, uint groupIndex, uint2 groupThreadId)
 
 void ClearSSSOutput(uint2 pixel)
 {
-	#ifdef enable_ssss
-		rw_Output1[pixel] = 0.0;
+	#ifndef enable_ssss
+		return;
 	#endif
+
+	rw_Output1[pixel] = 0.0;
 }
 
-void WriteSSSOutput(uint2 pixel, uint shading_mode, float3 normal, float3 albedo, float3 ambient_color, float3 oc_thing_7, float3 blue_emission_thing, inout float3 out_color)
+void WriteSSSOutput(uint2 pixel, uint shading_mode, float3 normal, float3 albedo, float3 ambient_color, float3 diffuse, float3 sss_param, inout float3 out_color)
 {
 	#ifndef enable_ssss
-		out_color += oc_thing_7;
+		out_color += diffuse;
 
-		if(shading_mode == 3)
+		if(shading_mode == ShadingMode_SSS)
 		{
 			out_color += ssss_ambient_boost.xyz * ambient_color.xyz * albedo;
 		}
 	#else
 
 		float4 out_sss = 0.0;
-		if(shading_mode == 3)
+		if(shading_mode == ShadingMode_SSS)
 		{
-			out_sss.w = trunc(blue_emission_thing.y) + clamp(0.5 * blue_emission_thing.x, 0.01, 0.49);
+			out_sss.w = trunc(sss_param.y) + clamp(0.5 * sss_param.x, 0.01, 0.49);
 			float4 ssss_color = ssss_colors[((uint)out_sss.w) % 16];
 
 			float3 t1 = u_lightColor.xyz * albedo.xyz * 0.31831 * ssss_color.xyz;
@@ -108,12 +109,12 @@ void WriteSSSOutput(uint2 pixel, uint shading_mode, float3 normal, float3 albedo
 			float t4 = saturate(0.3 + dot(u_lightDirection.xyz, -normal));
 
 			out_sss.xyz = ambient_color * ssss_ambient_boost.xyz * albedo
-				+ t4 * t3 * t1 * blue_emission_thing.z
-				+ oc_thing_7;
+				+ t4 * t3 * t1 * sss_param.z
+				+ diffuse;
 		}
 		else
 		{
-			out_color += oc_thing_7;
+			out_color += diffuse;
 		}
 
 		rw_Output1[pixel] = out_sss;
