@@ -20,26 +20,17 @@
 #include "LocalLights.hlsl"
 #include "Fog.hlsl"
 #include "Ambient.hlsl"
+#include "Reflection.hlsl"
 
 Texture2D<float4> WithSampler(s_EnvBRDF);
 Texture2D<float4> WithSampler(s_SSAO);
 Texture2D<float4> WithSampler(s_RLR);
 TextureCubeArray<float4> WithSampler(s_IBLProbeArray);
 
-void something(inout float3 emission, inout float3 albedo_5, float sggi_thing_w)
-{
-	if(sggi_thing_w <= 0.00001)
-	{
-		return;
-	}
-
-	//TODO
-}
-
 float4 CompositeLighting(LightingParameters parameters)
 {
 	//////////////////////////////////////////////////
-	// Ambient Occlusion
+	// Occlusion
 
 	float lf_ambient_occlusion = 1.0;
 	float shadow = 1.0;
@@ -77,14 +68,9 @@ float4 CompositeLighting(LightingParameters parameters)
 	float ambient_occlusion = GetAmbientOcclusion(parameters);
 
 	//////////////////////////////////////////////////
+	// reflection stuff
 
-	something(parameters.emission, sunlight_specular, ambient_occlusion);
-
-	float ssao_thing = ssao.x * ssao.z;
-	float3 occlusion_capsule_0 = lerp(u_occlusion_capsule_param[0].xyz, 1.0, ssao.x);
-	float3 occlusion_capsule_1 = lerp(u_occlusion_capsule_param[1].xyz, 1.0, ssao.y);
-
-	float3 occlusion_capsule_3 = parameters.shader_model == ShaderModel_1 ? 1.0 : occlusion_capsule_0;
+	ApplyReflection(parameters.emission, sunlight_specular, ambient_occlusion);
 
 	if(!enable_ibl_plus_directional_specular)
 	{
@@ -104,23 +90,38 @@ float4 CompositeLighting(LightingParameters parameters)
 		sunlight_specular *= debug_factor;
 	}
 
+	//////////////////////////////////////////////////
+	// Combining lights
+
+	float3 occlusion_capsule_0 = lerp(u_occlusion_capsule_param[0].xyz, 1.0, ssao.x);
+	float3 occlusion_capsule_1 = lerp(u_occlusion_capsule_param[1].xyz, 1.0, ssao.y);
+	float3 occlusion_capsule_2 = parameters.shader_model == ShaderModel_1 ? 1.0 : occlusion_capsule_0;
+
 	float3 out_diffuse = sunlight_diffuse * occlusion_capsule_1;
 	out_diffuse += local_light_diffuse * occlusion_capsule_0;
 	out_diffuse = max(0.0, out_diffuse);
 	out_diffuse /= Pi;
-	out_diffuse += occlusion_capsule_3 * ambient_color;
+	out_diffuse += occlusion_capsule_2 * ambient_color;
 	out_diffuse *= parameters.albedo;
 
-	float3 out_specular = sunlight_specular * ssao_thing;
-	out_specular += local_light_specular * ssao_thing;
+	float3 out_specular = sunlight_specular * ssao.x * ssao.z;
+	out_specular += local_light_specular * ssao.x * ssao.z;
 	out_specular = max(0.0, out_specular);
-	out_specular += occlusion_capsule_3 * parameters.emission;
+	out_specular += occlusion_capsule_2 * parameters.emission;
+
+
+	//////////////////////////////////////////////////
+	// Debug switch #1 here;
 
 	float out_alpha = 1.0;
 
-	// Debug switch #1 here;
+	//////////////////////////////////////////////////
+	// shadow cascade (?)
 
 	ApplyShadowCascadeThing(parameters.world_position, out_diffuse);
+
+	//////////////////////////////////////////////////
+	// Light scattering
 
 	if(g_LightScatteringColor.w > 0.001)
 	{
@@ -133,6 +134,9 @@ float4 CompositeLighting(LightingParameters parameters)
 		parameters.light_scattering_colors.base = 0.0;
 	}
 
+	//////////////////////////////////////////////////
+	// Fog
+
 	FogValues fog_values = ComputeFogValues(parameters);
 	out_diffuse *= (1.0 - fog_values.fog_factor);
 	out_specular *= (1.0 - fog_values.fog_factor);
@@ -143,7 +147,11 @@ float4 CompositeLighting(LightingParameters parameters)
 		fog_values.fog_factor
 	);
 
+	//////////////////////////////////////////////////
 	// Debug switch #2 here;
+
+	//////////////////////////////////////////////////
+	// final output
 
 	float3 out_color = out_specular + parameters.light_scattering_colors.base;
 
