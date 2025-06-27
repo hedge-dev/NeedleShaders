@@ -17,8 +17,10 @@ float3 FresnelSchlick(float3 f0, float cos_theta)
 }
 
 // GGX normal distribution function
-float NdfGGX(float cos_halfway_normal, float roughness)
+float NdfGGX(float3 halfway, float3 normal, float roughness)
 {
+    float cos_halfway_normal = saturate(dot(halfway, normal));
+
     float alpha = roughness * roughness;
     float alphaSq = alpha * alpha;
 
@@ -26,26 +28,22 @@ float NdfGGX(float cos_halfway_normal, float roughness)
     return alphaSq / (Pi * denom * denom);
 }
 
-float DGGXAniso(float cos_halfway_normal, float3 halfway, float3 tangent, float3 binormal, float roughness, float2 anisotropy)
+float DGGXAniso(float3 halfway, float3 normal, float3 tangent, float3 binormal, float roughness, float2 anisotropy)
 {
-    float alpha = roughness * roughness;
-
-    float cos_halfway_sss = dot(halfway, tangent);
-    float cos_halfway_sss_tan = dot(halfway, binormal);
-
-    float at = anisotropy.x * alpha;
-    float ab = anisotropy.y * alpha;
-    float a2 = at * ab;
+    anisotropy *= roughness * roughness;
+    anisotropy = max(anisotropy, 0.000001);
+    float a2 = anisotropy.x * anisotropy.y;
 
     float3 v = float3(
-        cos_halfway_normal,
-        cos_halfway_sss / (at + 0.000001),
-        cos_halfway_sss_tan / (ab + 0.000001)
+        dot(halfway, tangent) * anisotropy.x,
+        dot(halfway, binormal) * anisotropy.y,
+        dot(halfway, normal) * a2
     );
 
     float v2 = dot(v, v);
+    float w2 = a2 / v2;
 
-    return 1.0 / (Pi * a2 * v2 * v2 + 0.000001);
+    return (a2 * w2 * w2) / Pi;
 }
 
 float VisSchlick(float roughness, float cos_view_normal, float cos_light_normal)
@@ -90,15 +88,14 @@ float3 SpecularBRDF(LightingParameters parameters, float3 light_direction, float
     float3 halfway_direction = normalize(light_direction + parameters.view_direction);
 
 	float cos_light_normal = saturate(dot(light_direction, parameters.world_normal));
-	float cos_halfway_normal = saturate(dot(halfway_direction, parameters.world_normal));
     float cos_halfway_light = saturate(dot(halfway_direction, light_direction));
 
     float distribution;
     if(enable_anisotropy)
     {
         distribution = DGGXAniso(
-            cos_halfway_normal,
             halfway_direction,
+            parameters.world_normal,
             parameters.anisotropic_tangent,
             parameters.anisotropic_binormal,
             parameters.roughness,
@@ -107,7 +104,7 @@ float3 SpecularBRDF(LightingParameters parameters, float3 light_direction, float
     }
     else
     {
-        distribution = NdfGGX(cos_halfway_normal, parameters.roughness);
+        distribution = NdfGGX(halfway_direction, parameters.world_normal, parameters.roughness);
     }
 
     float visibility = VisSchlick(parameters.roughness, parameters.cos_view_normal, cos_light_normal);
