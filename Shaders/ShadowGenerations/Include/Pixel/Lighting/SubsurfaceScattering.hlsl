@@ -1,14 +1,14 @@
 #ifndef SSS_LIGHTING_INCLUDED
 #define SSS_LIGHTING_INCLUDED
 
+//#include "../../Common.hlsl"
+//DefineFeature(enable_ssss);
+static const uint FEATURE_enable_ssss;
+
 #include "../../ConstantBuffer/World.hlsl"
-#include "../../Common.hlsl"
 #include "../../Texture.hlsl"
 
 #include "Struct.hlsl"
-
-static const uint FEATURE_enable_ssss;
-//DefineFeature(enable_ssss);
 
 float4 ssss_param;
 float4 ssss_colors[16];

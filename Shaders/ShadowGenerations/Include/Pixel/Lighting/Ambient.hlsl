@@ -34,44 +34,49 @@ float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlu
 
 	lf_ambient_occlusion = min(lf_ambient_occlusion, parameters.ambient_occlusion);
 
-	SGLightFieldInfo light_field = ComputeSGLightFieldInfo(parameters.world_position, parameters.world_normal);
 
 	float3 result = 0.0;
 
-	if(light_field.data.unk2 == 0)
-	{
-		result = ComputeSGLightFieldColor(parameters.world_normal, light_field.axis_colors);
-
-		if(shlightfield_param.x > 0)
-		{
-			result += ComputeSHProbeColor(parameters.tile_position, parameters.world_position, parameters.world_normal, lf_ambient_occlusion);
-		}
-	}
-	else if(shlightfield_param.x > 0)
-	{
+	#ifdef enable_deferred_ambient
 		result = ComputeSHProbeColor(parameters.tile_position, parameters.world_position, parameters.world_normal, lf_ambient_occlusion);
-	}
-	else if(light_field.data.unk2 == 2)
-	{
-		if(!light_field.in_field)
+	#else
+		SGLightFieldInfo light_field = ComputeSGLightFieldInfo(parameters.world_position, parameters.world_normal);
+
+		if(light_field.data.unk2 == 0)
 		{
-			for(int i = 0; i < 6; i++)
+			result = ComputeSGLightFieldColor(parameters.world_normal, light_field.axis_colors);
+
+			if(shlightfield_param.x > 0)
 			{
-				light_field.axis_colors[i] = 1.0;
+				result += ComputeSHProbeColor(parameters.tile_position, parameters.world_position, parameters.world_normal, lf_ambient_occlusion);
 			}
 		}
+		else if(shlightfield_param.x > 0)
+		{
+			result = ComputeSHProbeColor(parameters.tile_position, parameters.world_position, parameters.world_normal, lf_ambient_occlusion);
+		}
+		else if(light_field.data.unk2 == 2)
+		{
+			if(!light_field.in_field)
+			{
+				for(int i = 0; i < 6; i++)
+				{
+					light_field.axis_colors[i] = 1.0;
+				}
+			}
 
-		float3 combined_buffer = lerp(
-			float3(light_field.axis_colors[1].x, light_field.axis_colors[3].x, light_field.axis_colors[5].x),
-			float3(light_field.axis_colors[0].x, light_field.axis_colors[2].x, light_field.axis_colors[4].x),
-			parameters.world_normal * 0.5 + 0.5
-		);
+			float3 combined_buffer = lerp(
+				float3(light_field.axis_colors[1].x, light_field.axis_colors[3].x, light_field.axis_colors[5].x),
+				float3(light_field.axis_colors[0].x, light_field.axis_colors[2].x, light_field.axis_colors[4].x),
+				parameters.world_normal * 0.5 + 0.5
+			);
 
-		float sglf_ao = saturate(dot(combined_buffer, parameters.world_normal * parameters.world_normal));
-		lf_ambient_occlusion = min(lf_ambient_occlusion, sglf_ao);
+			float sglf_ao = saturate(dot(combined_buffer, parameters.world_normal * parameters.world_normal));
+			lf_ambient_occlusion = min(lf_ambient_occlusion, sglf_ao);
 
-		result = ComputeSHProbeColor(parameters.tile_position, parameters.world_position, parameters.world_normal, lf_ambient_occlusion);
-	}
+			result = ComputeSHProbeColor(parameters.tile_position, parameters.world_position, parameters.world_normal, lf_ambient_occlusion);
+		}
+	#endif
 
 	result = max(0.0, result);
 
