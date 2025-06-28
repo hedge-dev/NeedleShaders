@@ -15,6 +15,9 @@ float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlu
 {
 	switch(GetDebugMode())
 	{
+		case DebugMode_4:
+			// replaces parameters.ambient_occlusion with 0
+			return 0.0;
 		case DebugMode_43:
 			return lf_ambient_occlusion;
 		case DebugMode_44:
@@ -26,14 +29,7 @@ float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlu
 		return 0.0;
 	}
 
-	float ambient_occlusion = parameters.ambient_occlusion;
-	if(GetDebugMode() == DebugMode_4)
-	{
-		ambient_occlusion = 0.0;
-	}
-
 	lf_ambient_occlusion = min(lf_ambient_occlusion, parameters.ambient_occlusion);
-
 
 	float3 result = 0.0;
 
@@ -57,22 +53,17 @@ float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlu
 		}
 		else if(light_field.data.unk2 == 2)
 		{
-			if(!light_field.in_field)
+			if(light_field.in_field)
 			{
-				for(int i = 0; i < 6; i++)
-				{
-					light_field.axis_colors[i] = 1.0;
-				}
+				float3 combined_buffer = lerp(
+					float3(light_field.axis_colors[1].x, light_field.axis_colors[3].x, light_field.axis_colors[5].x),
+					float3(light_field.axis_colors[0].x, light_field.axis_colors[2].x, light_field.axis_colors[4].x),
+					parameters.world_normal * 0.5 + 0.5
+				);
+
+				float sglf_ao = saturate(dot(combined_buffer, parameters.world_normal * parameters.world_normal));
+				lf_ambient_occlusion = min(lf_ambient_occlusion, sglf_ao);
 			}
-
-			float3 combined_buffer = lerp(
-				float3(light_field.axis_colors[1].x, light_field.axis_colors[3].x, light_field.axis_colors[5].x),
-				float3(light_field.axis_colors[0].x, light_field.axis_colors[2].x, light_field.axis_colors[4].x),
-				parameters.world_normal * 0.5 + 0.5
-			);
-
-			float sglf_ao = saturate(dot(combined_buffer, parameters.world_normal * parameters.world_normal));
-			lf_ambient_occlusion = min(lf_ambient_occlusion, sglf_ao);
 
 			result = ComputeSHProbeColor(parameters.tile_position, parameters.world_position, parameters.world_normal, lf_ambient_occlusion);
 		}
@@ -89,7 +80,7 @@ float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlu
 	result *= shlightfield_param.y;
 	result *= 1.0 - parameters.metallic;
 	result *= 1.0 - parameters.fresnel_reflectance;
-	result *= ambient_occlusion;
+	result *= parameters.ambient_occlusion;
 
 	return result;
 }

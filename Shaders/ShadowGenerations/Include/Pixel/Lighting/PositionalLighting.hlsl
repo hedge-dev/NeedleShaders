@@ -149,7 +149,7 @@ void ComputePositionalLighting(LightingParameters parameters, out float3 out_dif
 
 	for(int i = 0; i < llh.positional_light_count; i++)
 	{
-		uint light_index = GetLightIndex(llh, i);
+		uint light_index = GetPositionalLightIndex(llh, i);
 		PositionalLightData light_data = GetPositionalLightData(light_index);
 
 		float3 light_diffuse, light_specular;

@@ -98,17 +98,17 @@ float4 CompositeLighting(LightingParameters parameters)
 	float3 occlusion_capsule_1 = lerp(u_occlusion_capsule_param[1].xyz, 1.0, ssao.y);
 	float3 occlusion_capsule_2 = parameters.shader_model == ShaderModel_1 ? 1.0 : occlusion_capsule_0;
 
-	float3 out_diffuse = sunlight_diffuse * occlusion_capsule_1;
-	out_diffuse += local_light_diffuse * occlusion_capsule_0;
-	out_diffuse = max(0.0, out_diffuse);
-	out_diffuse /= Pi;
-	out_diffuse += occlusion_capsule_2 * ambient_color;
-	out_diffuse *= parameters.albedo;
+	float3 out_dif_amb = sunlight_diffuse * occlusion_capsule_1;
+	out_dif_amb += local_light_diffuse * occlusion_capsule_0;
+	out_dif_amb = max(0.0, out_dif_amb);
+	out_dif_amb /= Pi;
+	out_dif_amb += occlusion_capsule_2 * ambient_color;
+	out_dif_amb *= parameters.albedo;
 
-	float3 out_specular = sunlight_specular * ssao.x * ssao.z;
-	out_specular += local_light_specular * ssao.x * ssao.z;
-	out_specular = max(0.0, out_specular);
-	out_specular += occlusion_capsule_2 * parameters.emission;
+	float3 out_spc_ems = sunlight_specular * ssao.x * ssao.z;
+	out_spc_ems += local_light_specular * ssao.x * ssao.z;
+	out_spc_ems = max(0.0, out_spc_ems);
+	out_spc_ems += occlusion_capsule_2 * parameters.emission;
 
 
 	//////////////////////////////////////////////////
@@ -119,15 +119,15 @@ float4 CompositeLighting(LightingParameters parameters)
 	//////////////////////////////////////////////////
 	// shadow cascade (?)
 
-	ApplyShadowCascadeThing(parameters.world_position, out_diffuse);
+	ApplyShadowCascadeThing(parameters.world_position, out_dif_amb);
 
 	//////////////////////////////////////////////////
 	// Light scattering
 
 	if(g_LightScatteringColor.w > 0.001)
 	{
-		out_diffuse *= lerp(1.0, parameters.light_scattering_colors.factor, g_LightScatteringColor.w);
-		out_specular *= lerp(1.0, parameters.light_scattering_colors.factor, g_LightScatteringColor.w);
+		out_dif_amb *= lerp(1.0, parameters.light_scattering_colors.factor, g_LightScatteringColor.w);
+		out_spc_ems *= lerp(1.0, parameters.light_scattering_colors.factor, g_LightScatteringColor.w);
 		parameters.light_scattering_colors.base *= g_LightScatteringColor.w;
 	}
 	else
@@ -139,8 +139,8 @@ float4 CompositeLighting(LightingParameters parameters)
 	// Fog
 
 	FogValues fog_values = ComputeFogValues(parameters);
-	out_diffuse *= (1.0 - fog_values.fog_factor);
-	out_specular *= (1.0 - fog_values.fog_factor);
+	out_dif_amb *= (1.0 - fog_values.fog_factor);
+	out_spc_ems *= (1.0 - fog_values.fog_factor);
 
 	parameters.light_scattering_colors.base = lerp(
 		parameters.light_scattering_colors.base,
@@ -154,7 +154,7 @@ float4 CompositeLighting(LightingParameters parameters)
 	//////////////////////////////////////////////////
 	// final output
 
-	float3 out_color = out_specular + parameters.light_scattering_colors.base;
+	float3 out_color = out_spc_ems + parameters.light_scattering_colors.base;
 
 	WriteSSSOutput(
 		parameters.pixel_position,
@@ -162,12 +162,12 @@ float4 CompositeLighting(LightingParameters parameters)
 		parameters.world_normal,
 		parameters.albedo,
 		ambient_color,
-		out_diffuse,
+		out_dif_amb,
 		parameters.sss_param,
 		out_color
 	);
 
-	return float4(ambient_color, out_alpha);
+	return float4(out_color, out_alpha);
 }
 
 #endif

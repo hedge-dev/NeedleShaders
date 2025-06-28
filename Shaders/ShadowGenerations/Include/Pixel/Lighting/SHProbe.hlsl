@@ -38,7 +38,7 @@ float3 ComputeSHProbeColor(uint2 tile_position, float4 world_position, float3 wo
 
 	for(int i = 0; i < llh.shprobe_count && shprobe_remainder > 0.0; i++)
 	{
-		uint probe_index = GetLightIndex(llh, i);
+		uint probe_index = GetSHProbeIndex(llh, i);
 		SHProbeData probe_data = GetSHProbeData(probe_index);
 
 		float probe_factor;

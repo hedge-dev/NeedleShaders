@@ -24,6 +24,7 @@ struct SHLightFieldData
 SHLightFieldData GetSGLightFieldData(int index)
 {
 	int offset = index * SGLightFieldDataSize;
+
 	SHLightFieldData result;
     result.index = index;
 
@@ -32,7 +33,7 @@ SHLightFieldData GetSGLightFieldData(int index)
 
 	for(int i = 0; i < 4; i++)
 	{
-		result.inv_world_matrix[i] = shlightfield_probes_SHLightFieldProbe[offset + 5];
+		result.inv_world_matrix[i] = shlightfield_probes_SHLightFieldProbe[offset + 5 + i];
 	}
 
 	return result;

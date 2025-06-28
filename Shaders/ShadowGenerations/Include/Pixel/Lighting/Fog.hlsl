@@ -16,7 +16,8 @@ float3 ComputeFogColor(float3 view_direction)
 		return fog_color;
 	}
 
-	float3 ibl_color = SampleTextureLevel(s_IBL,
+	float3 ibl_color = SampleTextureLevel(
+		s_IBL,
 		view_direction * float3(-1,-1,1),
 		6 * sqrt(saturate(u_fog_param_2.y))
 	).xyz;
@@ -30,7 +31,7 @@ float3 ComputeFogColor(float3 view_direction)
 
 float ComputeFogFactor(float4 world_position)
 {
-	float4 view_depth = mul(view_matrix, world_position).z;
+	float4 view_depth = mul(world_position, view_matrix).z;
 
 	float t1 = -u_fog_param_1.x - view_depth.z;
 	float t2 =  u_fog_param_1.y - u_fog_param_1.x;

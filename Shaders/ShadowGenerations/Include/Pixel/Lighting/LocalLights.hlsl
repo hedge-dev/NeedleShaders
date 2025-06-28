@@ -10,12 +10,13 @@ struct LocalLightHeader
 {
 	int positional_light_count;
 	int shprobe_count;
-	int data_offset;
+	int positional_data_offset;
+	int shprobe_data_offset;
 };
 
 LocalLightHeader GetLocalLightHeader(uint2 tile_position)
 {
-	LocalLightHeader result = { 0, 0, 0 };
+	LocalLightHeader result = { 0, 0, 0, 0 };
 
 	uint2 tile_resolution = ((uint2)u_tile_info.zw + 15) >> 4;
 
@@ -28,15 +29,24 @@ LocalLightHeader GetLocalLightHeader(uint2 tile_position)
 	int tile_index = (tile_position.y * (int)u_tile_info.x + tile_position.x) * 3;
 
 	result.positional_light_count = min(max_light_count, s_LocalLightIndexData[tile_index] & 0xFFFF);
-	result.shprobe_count = min(max_light_count, s_LocalLightIndexData[tile_index + 2] & 0xFFFF);
-	result.data_offset = (tile_index * max_light_count) + (int)u_tile_info.y;
+	result.positional_data_offset = (tile_index * max_light_count) + (int)u_tile_info.y;
+
+	tile_index += 2;
+
+	result.shprobe_count = min(max_light_count, s_LocalLightIndexData[tile_index] & 0xFFFF);
+	result.shprobe_data_offset = (tile_index * max_light_count) + (int)u_tile_info.y;
 
 	return result;
 }
 
-int GetLightIndex(LocalLightHeader header, int index)
+int GetPositionalLightIndex(LocalLightHeader header, int index)
 {
-	return s_LocalLightIndexData[header.data_offset + index] & 0xFFFF;
+	return s_LocalLightIndexData[header.positional_data_offset + index] & 0xFFFF;
+}
+
+int GetSHProbeIndex(LocalLightHeader header, int index)
+{
+	return s_LocalLightIndexData[header.shprobe_data_offset + index] & 0xFFFF;
 }
 
 #endif
