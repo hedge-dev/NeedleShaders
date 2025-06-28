@@ -11,7 +11,6 @@
 #include "SubsurfaceScattering.hlsl"
 #include "Light.hlsl"
 
-StructuredBuffer<int> s_LocalLightIndexData;
 TextureCubeArray<float4> WithSamplerComparison(s_LocalShadowMap);
 
 static const uint max_light_count = 64;
@@ -23,39 +22,6 @@ static const float2 shadow_angles[5] = {
 	{ -1.0, 1.0 },
 	{ -1.0, -1.0 }
 };
-
-struct LightInfo
-{
-	float3 color;
-	float3 position;
-	float radius_squared;
-	float3 direction;
-	float factor_offset;
-	float factor_strength;
-	uint flags;
-};
-
-LightInfo GetLightInfo(int index)
-{
-	LightInfo result;
-	float4x4 data = g_local_light_data[index];
-
-	result.color = data._m00_m01_m02;
-	// m03 missing
-
-	result.position = data._m10_m11_m12;
-	result.radius_squared = data._m13;
-
-	result.direction = data._m20_m21_m22;
-	// m23 missing
-
-	result.factor_offset = data._m30;
-	result.factor_strength = data._m31;
-	// m32 missing
-	result.flags = asuint(data._m33);
-
-	return result;
-}
 
 float ComputeShadowSomething(LightingParameters parameters, uint index)
 {
@@ -110,21 +76,21 @@ float ComputeShadowSomething(LightingParameters parameters, uint index)
 	return lerp(1.0, result, abs(shadow_param.w));
 }
 
-void CalculateLight(LightingParameters parameters, LightInfo light_info, out float3 out_diffuse, out float3 out_specular)
+void CalculateLight(LightingParameters parameters, LocalLightData light_data, out float3 out_diffuse, out float3 out_specular)
 {
 	out_diffuse = 0.0;
 	out_specular = 0.0;
 
-	if(!(light_info.flags & (1 << parameters.flags_unk2)))
+	if(!(light_data.flags & (1 << parameters.flags_unk2)))
 	{
 		return;
 	}
 
-	float3 light_offset = light_info.position - parameters.world_position.xyz;
+	float3 light_offset = light_data.position - parameters.world_position.xyz;
 	float light_distance_squared = dot(light_offset, light_offset);
 
-	if(light_distance_squared >= light_info.radius_squared
-		&& abs(light_info.color.x + light_info.color.y + light_info.color.z) >= 0.000001)
+	if(light_distance_squared >= light_data.radius_squared
+		&& abs(light_data.color.x + light_data.color.y + light_data.color.z) >= 0.000001)
 	{
 		return;
 	}
@@ -133,11 +99,11 @@ void CalculateLight(LightingParameters parameters, LightInfo light_info, out flo
 
 	float light_base = 1.0;
 
-	if(0x100 & light_info.flags)
+	if(0x100 & light_data.flags)
 	{
-		light_base = dot(light_info.direction, -light_direction);
-		light_base -= light_info.factor_offset;
-		light_base *= light_info.factor_strength;
+		light_base = dot(light_data.direction, -light_direction);
+		light_base -= light_data.factor_offset;
+		light_base *= light_data.factor_strength;
 		light_base = saturate(light_base);
 		light_base *= light_base;
 
@@ -147,24 +113,24 @@ void CalculateLight(LightingParameters parameters, LightInfo light_info, out flo
 		}
 	}
 
-	float light_mask = light_distance_squared / light_info.radius_squared;
+	float light_mask = light_distance_squared / light_data.radius_squared;
 	light_mask = saturate(1 - light_mask * light_mask);
 	light_mask *= light_mask;
 
 	float light_attenuation = light_base / max(1.0, light_distance_squared);
 	light_attenuation *= light_mask;
 
-	float3 light_color = light_info.color / (Pi * 4.0);
+	float3 light_color = light_data.color / (Pi * 4.0);
 
-	uint shadow_index = UnpackUIntBits(light_info.flags, 3, 16) - 1;
+	uint shadow_index = UnpackUIntBits(light_data.flags, 3, 16) - 1;
 	light_attenuation *= ComputeShadowSomething(parameters, shadow_index);
 
-	if(light_info.flags & 0x10)
+	if(light_data.flags & 0x10)
 	{
 		out_diffuse = DiffuseBDRF(parameters, light_direction, light_color, 1.0) * light_attenuation;
 	}
 
-	if(light_info.flags & 0x20)
+	if(light_data.flags & 0x20)
 	{
 		out_specular = SpecularBRDF(parameters, light_direction, light_color, 1.0, false) * light_attenuation;
 	}
@@ -196,10 +162,10 @@ void GetLightColors(LightingParameters parameters, out float3 out_diffuse, out f
 	for(int i = 0; i < tile_light_count; i++)
 	{
 		uint light_index = s_LocalLightIndexData[tile_light_data_offset + i] & 0xFFFF;
-		LightInfo light_info = GetLightInfo(light_index);
+		LocalLightData light_data = GetLocalLightData(light_index);
 
 		float3 light_diffuse, light_specular;
-		CalculateLight(parameters, light_info, light_diffuse, light_specular);
+		CalculateLight(parameters, light_data, light_diffuse, light_specular);
 
 		out_diffuse += light_diffuse;
 		out_specular += light_specular;
