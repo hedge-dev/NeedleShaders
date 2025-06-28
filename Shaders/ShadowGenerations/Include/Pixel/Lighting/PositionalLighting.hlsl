@@ -1,5 +1,5 @@
-#ifndef LOCALLIGHTS_LIGHTING_INCLUDED
-#define LOCALLIGHTS_LIGHTING_INCLUDED
+#ifndef POSITIONAL_LIGHTING_INCLUDED
+#define POSITIONAL_LIGHTING_INCLUDED
 
 #include "../../ConstantBuffer/World.hlsl"
 #include "../../ConstantBuffer/LocalLightContextData.hlsl"
@@ -10,10 +10,9 @@
 #include "Struct.hlsl"
 #include "SubsurfaceScattering.hlsl"
 #include "Light.hlsl"
+#include "LocalLights.hlsl"
 
 TextureCubeArray<float4> WithSamplerComparison(s_LocalShadowMap);
-
-static const uint max_light_count = 64;
 
 static const float2 shadow_angles[5] = {
 	{ 0.0, 0.0 },
@@ -76,7 +75,7 @@ float ComputeShadowSomething(LightingParameters parameters, uint index)
 	return lerp(1.0, result, abs(shadow_param.w));
 }
 
-void CalculateLight(LightingParameters parameters, LocalLightData light_data, out float3 out_diffuse, out float3 out_specular)
+void CalculateLight(LightingParameters parameters, PositionalLightData light_data, out float3 out_diffuse, out float3 out_specular)
 {
 	out_diffuse = 0.0;
 	out_specular = 0.0;
@@ -136,33 +135,22 @@ void CalculateLight(LightingParameters parameters, LocalLightData light_data, ou
 	}
 }
 
-void GetLightColors(LightingParameters parameters, out float3 out_diffuse, out float3 out_specular)
+void ComputePositionalLighting(LightingParameters parameters, out float3 out_diffuse, out float3 out_specular)
 {
 	out_diffuse = 0.0;
 	out_specular = 0.0;
 
-	uint light_count = g_local_light_count.x;
-	if(light_count == 0)
+	if(g_local_light_count.x == 0)
 	{
 		return;
 	}
 
-	uint2 tile_resolution = ((uint2)u_tile_info.zw + 15) >> 4;
+	LocalLightHeader llh = GetLocalLightHeader(parameters.tile_position);
 
-	if(parameters.tile_position.x >= tile_resolution.x
-		|| parameters.tile_position.y >= tile_resolution.y)
+	for(int i = 0; i < llh.positional_light_count; i++)
 	{
-		return;
-	}
-
-	int tile_index = (parameters.tile_position.y * (int)u_tile_info.x + parameters.tile_position.x) * 3;
-	int tile_light_count = min(max_light_count, s_LocalLightIndexData[tile_index] & 0xFFFF);
-	int tile_light_data_offset = (tile_index * max_light_count) + (int)u_tile_info.y;
-
-	for(int i = 0; i < tile_light_count; i++)
-	{
-		uint light_index = s_LocalLightIndexData[tile_light_data_offset + i] & 0xFFFF;
-		LocalLightData light_data = GetLocalLightData(light_index);
+		uint light_index = GetLightIndex(llh, i);
+		PositionalLightData light_data = GetPositionalLightData(light_index);
 
 		float3 light_diffuse, light_specular;
 		CalculateLight(parameters, light_data, light_diffuse, light_specular);

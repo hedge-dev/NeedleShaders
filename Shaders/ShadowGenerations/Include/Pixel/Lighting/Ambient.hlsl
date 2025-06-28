@@ -1,14 +1,15 @@
 #ifndef AMBIENT_LIGHTING_INCLUDED
 #define AMBIENT_LIGHTING_INCLUDED
 
-#include "../../Texture.hlsl"
+//#include "../../Common.hlsl"
+//DefineFeature(enable_deferred_ambient);
+static const uint FEATURE_enable_deferred_ambient;
+
 #include "../../Debug.hlsl"
 
 #include "Struct.hlsl"
-
-Texture3D<float4> WithSampler(s_SHLightField0);
-Texture3D<float4> WithSampler(s_SHLightField1);
-Texture3D<float4> WithSampler(s_SHLightField2);
+#include "SHProbe.hlsl"
+#include "SGLightField.hlsl"
 
 float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlusion)
 {
@@ -25,8 +26,67 @@ float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlu
 		return 0.0;
 	}
 
-	// TODO
-	return 0.0;
+	float ambient_occlusion = parameters.ambient_occlusion;
+	if(GetDebugMode() == DebugMode_4)
+	{
+		ambient_occlusion = 0.0;
+	}
+
+	lf_ambient_occlusion = min(lf_ambient_occlusion, parameters.ambient_occlusion);
+
+	SGLightFieldInfo light_field = ComputeSGLightFieldInfo(parameters.world_position, parameters.world_normal);
+
+	float3 result = 0.0;
+
+	if(light_field.data.unk2 == 0)
+	{
+		result = ComputeSGLightFieldColor(parameters.world_normal, light_field.axis_colors);
+
+		if(shlightfield_param.x > 0)
+		{
+			result += ComputeSHProbeColor(parameters.tile_position, parameters.world_position, parameters.world_normal, lf_ambient_occlusion);
+		}
+	}
+	else if(shlightfield_param.x > 0)
+	{
+		result = ComputeSHProbeColor(parameters.tile_position, parameters.world_position, parameters.world_normal, lf_ambient_occlusion);
+	}
+	else if(light_field.data.unk2 == 2)
+	{
+		if(!light_field.in_field)
+		{
+			for(int i = 0; i < 6; i++)
+			{
+				light_field.axis_colors[i] = 1.0;
+			}
+		}
+
+		float3 combined_buffer = lerp(
+			float3(light_field.axis_colors[1].x, light_field.axis_colors[3].x, light_field.axis_colors[5].x),
+			float3(light_field.axis_colors[0].x, light_field.axis_colors[2].x, light_field.axis_colors[4].x),
+			parameters.world_normal * 0.5 + 0.5
+		);
+
+		float sglf_ao = saturate(dot(combined_buffer, parameters.world_normal * parameters.world_normal));
+		lf_ambient_occlusion = min(lf_ambient_occlusion, sglf_ao);
+
+		result = ComputeSHProbeColor(parameters.tile_position, parameters.world_position, parameters.world_normal, lf_ambient_occlusion);
+	}
+
+	result = max(0.0, result);
+
+	result *= lerp(
+		shlightfield_multiply_color_down.xyz,
+		shlightfield_multiply_color_up.xyz,
+		parameters.world_normal.y * 0.5 + 0.5
+	);
+
+	result *= shlightfield_param.y;
+	result *= 1.0 - parameters.metallic;
+	result *= 1.0 - parameters.fresnel_reflectance;
+	result *= ambient_occlusion;
+
+	return result;
 }
 
 float GetAmbientOcclusion(LightingParameters parameters)
@@ -67,6 +127,5 @@ float GetAmbientOcclusion(LightingParameters parameters)
 
 	return result;
 }
-
 
 #endif

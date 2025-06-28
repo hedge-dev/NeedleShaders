@@ -17,8 +17,9 @@
 
 #include "Struct.hlsl"
 #include "SubsurfaceScattering.hlsl"
-#include "LocalLights.hlsl"
+#include "PositionalLighting.hlsl"
 #include "Fog.hlsl"
+#include "Light.hlsl"
 #include "Ambient.hlsl"
 #include "Reflection.hlsl"
 
@@ -62,7 +63,7 @@ float4 CompositeLighting(LightingParameters parameters)
 
 	float3 local_light_diffuse;
 	float3 local_light_specular;
-	GetLightColors(parameters, local_light_diffuse, local_light_specular);
+	ComputePositionalLighting(parameters, local_light_diffuse, local_light_specular);
 
 	float3 ambient_color = ComputeAmbientColor(parameters, lf_ambient_occlusion);
 	float ambient_occlusion = GetAmbientOcclusion(parameters);
@@ -166,7 +167,7 @@ float4 CompositeLighting(LightingParameters parameters)
 		out_color
 	);
 
-	return float4(out_color, out_alpha);
+	return float4(ambient_color, out_alpha);
 }
 
 #endif

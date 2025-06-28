@@ -1,10 +1,4 @@
-#include "Include/Common.hlsl"
-
-//DefineFeature(enable_deferred_ambient);
-static const uint FEATURE_enable_deferred_ambient;
-
 #include "Include/Pixel/Lighting/Composite.hlsl"
-
 
 Texture2D<float4> s_DepthBuffer;
 Texture2D<float4> s_GBuffer0;

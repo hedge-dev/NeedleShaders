@@ -43,7 +43,7 @@ float3 ComputeSGGIDiffuse(float3 colors[4], SurfaceParameters parameters)
 		result += colors[i] * ComputeSGDiffuseFactor(parameters.normal, i);
 	}
 
-	return result * 0.640009105;
+	return result * 0.64;
 }
 
 float ComputeSGGISpecularFactor(float3 normal, int index, float fac)

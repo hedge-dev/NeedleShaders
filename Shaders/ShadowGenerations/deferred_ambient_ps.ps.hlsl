@@ -127,7 +127,7 @@ float4 main(
 		normal * 0.5 + 0.5
 	);
 
-	float output = max(0.0001, saturate(dot(combined_buffer, pow(normal, 2))));
+	float output = max(0.0001, saturate(dot(combined_buffer, normal * normal)));
 
 	return float4(0, 0, 0, output);
 }
