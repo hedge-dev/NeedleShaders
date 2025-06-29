@@ -61,7 +61,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                         continue;
                     }
 
-                    macros.Add(new(features[j], features[j]));
+                    macros.Add(new(features[j], j));
                 }
 
                 macros.Add(_nullMacro);
