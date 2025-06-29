@@ -2,8 +2,10 @@
 #define SHPROBE_LIGHTING_INCLUDED
 
 #include "../../ConstantBuffer/World.hlsl"
-#include "LocalLights.hlsl"
 #include "../../Math.hlsl"
+
+#include "LocalLights.hlsl"
+#include "EnvironmentalProbe.hlsl"
 
 float3 ComputeSHColor(float3 world_normal, SHColors sh_colors)
 {
@@ -33,35 +35,15 @@ float3 ComputeSHProbeColor(uint2 tile_position, float4 world_position, float3 wo
 {
 	LocalLightHeader llh = GetLocalLightHeader(tile_position);
 
-	float shprobe_remainder = 1.0;
-	float3 shprobe_colors = 0.0;
+	float remainder = 1.0;
+	float3 probes_color = 0.0;
 
-	for(int i = 0; i < llh.shprobe_count && shprobe_remainder > 0.0; i++)
+	for(int i = 0; i < llh.env_probe_count && remainder > 0.0; i++)
 	{
-		uint probe_index = GetSHProbeIndex(llh, i);
-		SHProbeData probe_data = GetSHProbeData(probe_index);
+		uint probe_index = GetEnvProbeIndex(llh, i);
+		EnvProbeData probe_data = GetEnvProbeData(probe_index);
 
-		float probe_factor;
-
-		if (probe_data.type == 3 || probe_data.type == 2)
-		{
-			probe_factor = length(world_position.xyz - probe_data.position) / probe_data.unk2;
-		}
-		else
-		{
-			float3 probe_pos = mul(probe_data.inv_world_matrix, world_position);
-			probe_factor = max(max(abs(probe_pos.x), abs(probe_pos.y)), abs(probe_pos.z));
-		}
-
-		if(probe_factor > 0.99)
-		{
-			continue;
-		}
-
-		float t = (1.0 - clamp(g_probe_param[probe_index].y, 0.01, 0.99));
-
-		probe_factor -= g_probe_param[probe_index].y;
-		probe_factor = saturate(1 - probe_factor / t);
+		float probe_factor = ComputeProbeInfluence(probe_data, world_position);
 
 		if (probe_factor <= 0.0)
 		{
@@ -70,15 +52,15 @@ float3 ComputeSHProbeColor(uint2 tile_position, float4 world_position, float3 wo
 
 		float3 probe_color = ComputeSHColor(world_normal, probe_data.sh_colors);
 
-		probe_factor = min(probe_factor, shprobe_remainder);
-		shprobe_colors += probe_color * probe_factor;
+		probe_factor = min(probe_factor, remainder);
+		probes_color += probe_color * probe_factor;
 
-		shprobe_remainder -= probe_factor;
+		remainder -= probe_factor;
 	}
 
 	float3 result = ComputeSHColor(world_normal, GetSkySHColors());
 	result *= ambient_occlusion;
-	result += shprobe_colors * u_sggi_param[1].w * (1.0 - ambient_occlusion);
+	result += probes_color * u_sggi_param[1].w * (1.0 - ambient_occlusion);
 
 	return result;
 }

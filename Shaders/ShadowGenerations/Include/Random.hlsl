@@ -32,4 +32,13 @@ float Random1From3(float3 seed)
 	return lerp(result2.x, result2.y, smoothed.x);
 }
 
+float3 Random3From3Simple(float3 seed)
+{
+	return float3(
+		Random1From3Simple(seed.xyz),
+		Random1From3Simple(seed.yzx),
+		Random1From3Simple(seed.zxy)
+	);
+}
+
 #endif

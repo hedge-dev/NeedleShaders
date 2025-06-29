@@ -9,9 +9,9 @@ StructuredBuffer<int> s_LocalLightIndexData;
 struct LocalLightHeader
 {
 	int positional_light_count;
-	int shprobe_count;
+	int env_probe_count;
 	int positional_data_offset;
-	int shprobe_data_offset;
+	int env_probe_data_offset;
 };
 
 LocalLightHeader GetLocalLightHeader(uint2 tile_position)
@@ -33,8 +33,8 @@ LocalLightHeader GetLocalLightHeader(uint2 tile_position)
 
 	tile_index += 2;
 
-	result.shprobe_count = min(max_light_count, s_LocalLightIndexData[tile_index] & 0xFFFF);
-	result.shprobe_data_offset = (tile_index * max_light_count) + (int)u_tile_info.y;
+	result.env_probe_count = min(max_light_count, s_LocalLightIndexData[tile_index] & 0xFFFF);
+	result.env_probe_data_offset = (tile_index * max_light_count) + (int)u_tile_info.y;
 
 	return result;
 }
@@ -44,9 +44,9 @@ int GetPositionalLightIndex(LocalLightHeader header, int index)
 	return s_LocalLightIndexData[header.positional_data_offset + index] & 0xFFFF;
 }
 
-int GetSHProbeIndex(LocalLightHeader header, int index)
+int GetEnvProbeIndex(LocalLightHeader header, int index)
 {
-	return s_LocalLightIndexData[header.shprobe_data_offset + index] & 0xFFFF;
+	return s_LocalLightIndexData[header.env_probe_data_offset + index] & 0xFFFF;
 }
 
 #endif

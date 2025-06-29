@@ -23,10 +23,7 @@
 #include "Ambient.hlsl"
 #include "Reflection.hlsl"
 
-Texture2D<float4> WithSampler(s_EnvBRDF);
 Texture2D<float4> WithSampler(s_SSAO);
-Texture2D<float4> WithSampler(s_RLR);
-TextureCubeArray<float4> WithSampler(s_IBLProbeArray);
 
 float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 {
@@ -50,10 +47,6 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 	ssao.xyz = saturate(ssao.xyz + u_ssao_param.x);
 	shadow = min(shadow, ssao.w);
 
-	if(parameters.flags_unk1 != 0)
-	{
-		parameters.emission *= shadow * u_lightColor.xyz * parameters.albedo;
-	}
 
 	//////////////////////////////////////////////////
 	// Lighting
@@ -68,28 +61,19 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 	float3 ambient_color = ComputeAmbientColor(parameters, lf_ambient_occlusion);
 	float ambient_occlusion = GetAmbientOcclusion(parameters);
 
+	float3 emission = parameters.emission;
+	if(parameters.flags_unk1 != 0)
+	{
+		emission *= shadow * u_lightColor.xyz * parameters.albedo;
+	}
+
 	//////////////////////////////////////////////////
 	// reflection stuff
 
-	ApplyReflection(parameters.emission, sunlight_specular, ambient_occlusion);
+	float4 reflection_color = ComputeReflectionColor(parameters, ambient_occlusion, shadow);
 
-	if(!enable_ibl_plus_directional_specular)
-	{
-		sunlight_specular *= min(1, parameters.occlusion_mode);
-
-		float debug_factor = 0.0;
-		switch(GetDebug2Mode())
-		{
-			case 1:
-				debug_factor = 1.0;
-				break;
-			case 2:
-				debug_factor = saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
-				break;
-		}
-
-		sunlight_specular *= debug_factor;
-	}
+    emission += reflection_color.xyz;
+	sunlight_specular *= reflection_color.w;
 
 	//////////////////////////////////////////////////
 	// Combining lights
@@ -108,7 +92,7 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 	float3 out_spc_ems = sunlight_specular * ssao.x * ssao.z;
 	out_spc_ems += local_light_specular * ssao.x * ssao.z;
 	out_spc_ems = max(0.0, out_spc_ems);
-	out_spc_ems += occlusion_capsule_2 * parameters.emission;
+	out_spc_ems += occlusion_capsule_2 * emission;
 
 
 	//////////////////////////////////////////////////

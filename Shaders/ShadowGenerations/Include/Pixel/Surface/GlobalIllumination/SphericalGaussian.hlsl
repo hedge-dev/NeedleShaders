@@ -6,10 +6,9 @@
 #include "../../../Math.hlsl"
 
 #include "../../ShaderModel.hlsl"
+#include "../../EnvironmentBRDF.hlsl"
 
 #include "Common.hlsl"
-
-Texture2D<float4> WithSampler(s_EnvBRDF);
 
 static const float3 SGGIAxis[4] =
 {
@@ -56,35 +55,6 @@ float ComputeSGGISpecularFactor(float3 normal, int index, float fac)
 	return (12.566371 / exp(4 + fac - l)) * ((1.0 - exp((l) * -2)) * 0.5 / l);
 }
 
-float2 ApproximateEnvironmentBRDF(float angle, float roughness)
-{
-	float4 remap = roughness
-		* float4(-1.0, -0.275, -0.572, 0.022)
-		+ float4( 1.0, 0.0425, 1.04, -0.04);
-
-	float value = min(
-		exp2(angle * -9.28),
-		pow(remap.x, 2)
-	);
-
-	value *= remap.x;
-	value += remap.y;
-
-	return value * float2(-1.04, 1.04) + remap.zw;
-}
-
-float2 ComputeEnvironmentBRDF(SurfaceParameters parameters, float angle)
-{
-	if(parameters.shader_model == ShaderModel_2)
-	{
-		return ApproximateEnvironmentBRDF(angle, parameters.roughness);
-	}
-	else
-	{
-		return SampleTextureLevel(s_EnvBRDF, float2(angle, parameters.roughness), 0).xy;
-	}
-}
-
 float3 ComputeSGGISpecular(float3 colors[4], SurfaceParameters parameters)
 {
 	if(!IsSGGIEnabled())
@@ -98,13 +68,13 @@ float3 ComputeSGGISpecular(float3 colors[4], SurfaceParameters parameters)
 		return 0.0;
 	}
 
-	float3 camera_dir = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
-	float camera_dir_dif = dot(camera_dir, parameters.normal);
-	float camera_dir_dif_clamped = saturate(camera_dir_dif);
+	float3 view_dir = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
+	float cos_view_normal_raw = dot(view_dir, parameters.normal);
+	float cos_view_normal = saturate(cos_view_normal_raw);
 
-	float3 t = parameters.normal * 2 * camera_dir_dif_clamped - camera_dir;
+	float3 t = parameters.normal * 2 * cos_view_normal - view_dir;
 	float t2 = 2.0 / pow(max(0.05, pow(saturate(parameters.roughness * 2.5 - 1.5), 2)), 2);
-	float t3 = min(70, (t2 / (4 * max(0.05, abs(camera_dir_dif)))) * 2);
+	float t3 = min(70, (t2 / (4 * max(0.05, abs(cos_view_normal_raw)))) * 2);
 
 	float3 result = 0.0;
 
@@ -115,7 +85,7 @@ float3 ComputeSGGISpecular(float3 colors[4], SurfaceParameters parameters)
 
 	result /= (1.0 - exp2(t3 * -2.88539004)) * (Tau / t3);
 
-	float2 env_brdf = ComputeEnvironmentBRDF(parameters, camera_dir_dif_clamped);
+	float2 env_brdf = ComputeEnvironmentBRDF(parameters.shader_model, parameters.roughness, cos_view_normal);
 	result *= parameters.fresnel_reflectance * env_brdf.x + env_brdf.y;
 
 	return max(result, 0.0);

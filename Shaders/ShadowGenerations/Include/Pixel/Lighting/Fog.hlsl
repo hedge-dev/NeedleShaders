@@ -3,9 +3,8 @@
 
 #include "../../ConstantBuffer/World.hlsl"
 #include "../../Texture.hlsl"
+#include "Reflection.hlsl"
 #include "Struct.hlsl"
-
-TextureCube<float4> WithSampler(s_IBL);
 
 float3 ComputeFogColor(float3 view_direction)
 {

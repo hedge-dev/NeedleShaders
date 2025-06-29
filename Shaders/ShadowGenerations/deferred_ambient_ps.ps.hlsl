@@ -45,7 +45,7 @@ void ComputeProbeSample(uint index, float4 position, float3 normal, Texture3D<fl
 	// getting the sampling influence; The point at which the influence
 	// starts falling (fading out) is controlled with u_lf_param.z
 	float distance_falloff_start = saturate(1.0 - u_lf_param.z);
-    float factor = saturate(1.0 - (1.0 / (1.0 - max(0.01, distance_falloff_start))) * (distance - distance_falloff_start));
+    float factor = saturate(1.0 - (distance - distance_falloff_start) / (1.0 - max(0.01, distance_falloff_start)));
 
 	// Note: There was originally an if check here that checks if factor is above 0,
 	// but it can only be 0 when distance is >= 1.0, which we rule out before already
