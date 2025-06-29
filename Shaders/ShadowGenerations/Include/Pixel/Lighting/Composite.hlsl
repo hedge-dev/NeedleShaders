@@ -28,7 +28,7 @@ Texture2D<float4> WithSampler(s_SSAO);
 Texture2D<float4> WithSampler(s_RLR);
 TextureCubeArray<float4> WithSampler(s_IBLProbeArray);
 
-float4 CompositeLighting(LightingParameters parameters)
+float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 {
 	//////////////////////////////////////////////////
 	// Occlusion
@@ -124,15 +124,13 @@ float4 CompositeLighting(LightingParameters parameters)
 	//////////////////////////////////////////////////
 	// Light scattering
 
+	float3 out_fog = 0.0;
+
 	if(g_LightScatteringColor.w > 0.001)
 	{
 		out_dif_amb *= lerp(1.0, parameters.light_scattering_colors.factor, g_LightScatteringColor.w);
 		out_spc_ems *= lerp(1.0, parameters.light_scattering_colors.factor, g_LightScatteringColor.w);
-		parameters.light_scattering_colors.base *= g_LightScatteringColor.w;
-	}
-	else
-	{
-		parameters.light_scattering_colors.base = 0.0;
+		out_fog = parameters.light_scattering_colors.base * g_LightScatteringColor.w;
 	}
 
 	//////////////////////////////////////////////////
@@ -142,8 +140,8 @@ float4 CompositeLighting(LightingParameters parameters)
 	out_dif_amb *= (1.0 - fog_values.fog_factor);
 	out_spc_ems *= (1.0 - fog_values.fog_factor);
 
-	parameters.light_scattering_colors.base = lerp(
-		parameters.light_scattering_colors.base,
+	out_fog = lerp(
+		out_fog,
 		fog_values.fog_color,
 		fog_values.fog_factor
 	);
@@ -152,22 +150,17 @@ float4 CompositeLighting(LightingParameters parameters)
 	// Debug switch #2 here;
 
 	//////////////////////////////////////////////////
+	// Subsurface scattering
+
+	ComputeSSSOutput(parameters, ambient_color, u_lightColor.xyz, out_dif_amb, ssss_output);
+
+	//////////////////////////////////////////////////
 	// final output
 
-	float3 out_color = out_spc_ems + parameters.light_scattering_colors.base;
-
-	WriteSSSOutput(
-		parameters.pixel_position,
-		parameters.shader_model,
-		parameters.world_normal,
-		parameters.albedo,
-		ambient_color,
-		out_dif_amb,
-		parameters.sss_param,
-		out_color
+	return float4(
+		out_dif_amb + out_spc_ems + out_fog,
+		out_alpha
 	);
-
-	return float4(out_color, out_alpha);
 }
 
 #endif

@@ -36,7 +36,7 @@ void main(ThreadInfo input)
 		|| (float)input.dispatchThreadId.y >= u_viewport_info.y)
 	{
 		rw_Output0[input.dispatchThreadId.xy] = clear_color;
-		ClearSSSOutput(input.dispatchThreadId.xy);
+		WriteSSSSOutput(input.dispatchThreadId.xy, 0.0);
 		return;
 	}
 
@@ -53,5 +53,7 @@ void main(ThreadInfo input)
 	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
 	parameters.light_scattering_colors = ComputeLightScatteringColors(view_distance, parameters.view_direction);
 
-	rw_Output0[input.dispatchThreadId.xy] = CompositeLighting(parameters);
+	float4 ssss_color;
+	rw_Output0[input.dispatchThreadId.xy] = CompositeLighting(parameters, ssss_color);
+	WriteSSSSOutput(input.dispatchThreadId.xy, ssss_color);
 }
