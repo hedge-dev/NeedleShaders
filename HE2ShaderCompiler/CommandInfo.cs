@@ -308,7 +308,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 WriteLine(legend);
                 WriteLine(new string('-', legend.Length));
 
-                foreach(Texture texture in variables.Textures.OrderBy(x => x.ID))
+                foreach(Resource texture in variables.Textures.OrderBy(x => x.ID))
                 {
                     WriteLine($" {texture.ID,2} | {texture.Name.PadRight(nameLength)} | {texture.Type}");
                 }
@@ -316,19 +316,19 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 WriteLine();
             }
 
-            if(variables.ComputeBuffers.Count > 0)
+            if(variables.UnorderedAccessViews.Count > 0)
             {
-                WriteLine("==== Compute Buffers ==== ");
+                WriteLine("==== UAVs ==== ");
                 WriteLine();
 
-                int nameLength = variables.ComputeBuffers.Max(x => x.Name.Length);
-                string legend = $" ID | {"Name".PadRight(nameLength)} | Unknown ";
+                int nameLength = variables.UnorderedAccessViews.Max(x => x.Name.Length);
+                string legend = $" ID | {"Name".PadRight(nameLength)} | Type ";
                 WriteLine(legend);
                 WriteLine(new string('-', legend.Length));
 
-                foreach(ComputeBuffer computeBuffer in variables.ComputeBuffers.OrderBy(x => x.ID))
+                foreach(Resource computeBuffer in variables.UnorderedAccessViews.OrderBy(x => x.ID))
                 {
-                    WriteLine($" {computeBuffer.ID,2} | {computeBuffer.Name.PadRight(nameLength)} | {computeBuffer.Unknown1}");
+                    WriteLine($" {computeBuffer.ID,2} | {computeBuffer.Name.PadRight(nameLength)} | {computeBuffer.Type}");
                 }
 
                 WriteLine();

@@ -19,8 +19,8 @@ can be specified via the file extension, which will get used as a "loose" profil
 options:
     -o <filename>       Output filename
     -odir <directory>   Output directory (automated filename)
-	-nobp               Don't include build path in shader
-	-v1	                Compile the shader for HE2 games released before Shadow Generations
+    -nobp               Don't include build path in shader
+    -v1	                Compile the shader for HE2 games released before Shadow Generations
     
     -T <profile>        Manually specify a directx shader profile (disregards file extension),
                         Can be loosely specified (like "vs") or specific (like "vs_5_0").

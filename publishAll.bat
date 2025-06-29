@@ -32,7 +32,7 @@ cd ..
 
 cd .\Releases
 
-set version="1.0.1"
+set version="1.0.3"
 
 tar --strip-components 1 -acf HE2ShaderCompiler-%version%-linux-arm64.zip -C .\linux-arm64 .
 tar --strip-components 1 -acf HE2ShaderCompiler-%version%-linux-x64.zip -C .\linux-x64 .

@@ -1,5 +1,6 @@
 ﻿using SharpNeedle.Framework.HedgehogEngine.Needle.Shader;
 using SharpNeedle.Framework.HedgehogEngine.Needle.Shader.Variable;
+using Vortice.Direct3D;
 using Vortice.Direct3D11.Shader;
 
 namespace HedgeDev.NeedleShaders.HE2.Compiler
@@ -53,7 +54,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             {
                 InputBindingDescription? bindingDescription = reflection.BoundResources.FirstOrDefault(
                     x => x.Name == constantBuffer.Description.Name 
-                        && x.Type == Vortice.Direct3D.ShaderInputType.ConstantBuffer);
+                        && x.Type == ShaderInputType.ConstantBuffer);
                 
                 if(!bindingDescription.HasValue)
                 {
@@ -81,13 +82,13 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
                     switch(variable.VariableType.Description.Type)
                     {
-                        case Vortice.Direct3D.ShaderVariableType.Bool:
+                        case ShaderVariableType.Bool:
                             result.CBBooleans.Add(field);
                             break;
-                        case Vortice.Direct3D.ShaderVariableType.Int:
+                        case ShaderVariableType.Int:
                             result.CBIntegers.Add(field);
                             break;
-                        case Vortice.Direct3D.ShaderVariableType.Float:
+                        case ShaderVariableType.Float:
                             result.CBFloats.Add(field);
                             break;
                         default:
@@ -100,35 +101,57 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             {
                 switch(resource.Type)
                 {
-                    case Vortice.Direct3D.ShaderInputType.Texture:
+                    case ShaderInputType.ConstantBuffer:
+                        // handled above
+                        break;
 
-                        TextureType texType = resource.Dimension switch
-                        {
-                            Vortice.Direct3D.ShaderResourceViewDimension.Buffer => TextureType.Buffer,
-                            Vortice.Direct3D.ShaderResourceViewDimension.Texture1D => TextureType.Texture1D,
-                            Vortice.Direct3D.ShaderResourceViewDimension.Texture1DArray => TextureType.Texture1DArray,
-                            Vortice.Direct3D.ShaderResourceViewDimension.Texture2D => TextureType.Texture2D,
-                            Vortice.Direct3D.ShaderResourceViewDimension.Texture2DArray => TextureType.Texture2DArray,
-                            Vortice.Direct3D.ShaderResourceViewDimension.Texture3D => TextureType.Texture3D,
-                            Vortice.Direct3D.ShaderResourceViewDimension.TextureCube => TextureType.TextureCube,
-                            Vortice.Direct3D.ShaderResourceViewDimension.TextureCubeArray => TextureType.TextureCubeArray,
-                            _ => throw new InvalidDataException($"Unsupported texture type \"{resource.Dimension}\""),
-                        };
-
+                    case ShaderInputType.Texture:
                         result.Textures.Add(new()
                         {
                             ID = (int)resource.BindPoint,
                             Name = resource.Name,
-                            Type = texType
+                            Type = (ResourceType)((int)resource.Dimension - 1)
                         });
-
                         break;
-                    case Vortice.Direct3D.ShaderInputType.Sampler:
+
+                    case ShaderInputType.Sampler:
                         result.Samplers.Add(new()
                         {
                             ID = (int)resource.BindPoint,
                             Name = resource.Name
                         });
+                        break;
+
+                    case ShaderInputType.Structured:
+                        result.Textures.Add(new()
+                        {
+                            ID = (int)resource.BindPoint,
+                            Name = resource.Name,
+                            Type = ResourceType.BufferExtended
+                        });
+                        break;
+
+                    case ShaderInputType.UnorderedAccessViewRWStructured:
+                    case ShaderInputType.UnorderedAccessViewRWByteAddress:
+                        result.UnorderedAccessViews.Add(new()
+                        {
+                            ID = (int)resource.BindPoint,
+                            Name = resource.Name,
+                            Type = ResourceType.BufferExtended
+                        });
+                        break;
+
+                    case ShaderInputType.UnorderedAccessViewRWTyped:
+                        result.UnorderedAccessViews.Add(new()
+                        {
+                            ID = (int)resource.BindPoint,
+                            Name = resource.Name,
+                            Type = (ResourceType)((int)resource.Dimension - 1)
+                        });
+                        break;
+
+                    default:
+                        Console.WriteLine($"Unsupported resource type \"{resource.Type}\" with name \"{resource.Name}\" at bind point {resource.BindPoint}");
                         break;
                 }
             }
