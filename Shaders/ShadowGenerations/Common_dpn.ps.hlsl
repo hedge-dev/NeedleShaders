@@ -1,7 +1,9 @@
-static const uint FEATURE_is_compute_instancing;
-static const uint FEATURE_is_use_tex_srt_anim;
-static const uint FEATURE_enable_deferred_rendering;
-static const uint FEATURE_enable_alpha_threshold;
+
+#include "Include/Common.hlsl"
+DefineFeature(is_compute_instancing);
+DefineFeature(is_use_tex_srt_anim);
+DefineFeature(enable_deferred_rendering);
+DefineFeature(enable_alpha_threshold);
 
 #include "Include/ConstantBuffer/World.hlsl"
 #include "Include/ConstantBuffer/MaterialDynamic.hlsl"

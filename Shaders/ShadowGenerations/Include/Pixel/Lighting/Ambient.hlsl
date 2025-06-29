@@ -1,9 +1,8 @@
 #ifndef AMBIENT_LIGHTING_INCLUDED
 #define AMBIENT_LIGHTING_INCLUDED
 
-//#include "../../Common.hlsl"
-//DefineFeature(enable_deferred_ambient);
-static const uint FEATURE_enable_deferred_ambient;
+#include "../../Common.hlsl"
+DefineFeature(enable_deferred_ambient);
 
 #include "../../Debug.hlsl"
 

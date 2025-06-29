@@ -1,13 +1,14 @@
 #ifndef USERMODEL_PIXEL_INCLUDED
 #define USERMODEL_PIXEL_INCLUDED
 
+#include "../Common.hlsl"
+DefineFeature(u_model_user_flag_0);
+
 #include "../ConstantBuffer/World.hlsl"
 #include "../ConstantBuffer/MaterialDynamic.hlsl"
 #include "../Random.hlsl"
 
 #include "Luminance.hlsl"
-
-static const uint FEATURE_u_model_user_flag_0;
 
 // TODO What even is this
 float3 UserModel1Stuff(float3 world_position)

@@ -1,18 +1,18 @@
 #ifndef COMMON_GI_SURFACE_INCLUDED
 #define COMMON_GI_SURFACE_INCLUDED
 
+//////////////////////////////////////////////////
+// Shader Features
+
+#include "../../../Common.hlsl"
+DefineFeature(is_use_gi_prt);
+DefineFeature(is_use_gi_sg);
+DefineFeature(is_use_gi);
+
 #include "../../../ConstantBuffer/World.hlsl"
 #include "../../../Texture.hlsl"
 #include "../../../Debug.hlsl"
 #include "../../PBRUtils.hlsl"
-
-//////////////////////////////////////////////////
-// Shader Features
-
-static const uint FEATURE_is_use_gi_prt;
-static const uint FEATURE_is_use_gi_sg;
-static const uint FEATURE_is_use_gi;
-
 
 //////////////////////////////////////////////////
 // Constants
