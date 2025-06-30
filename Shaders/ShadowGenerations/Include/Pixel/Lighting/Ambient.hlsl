@@ -12,21 +12,6 @@ DefineFeature(enable_deferred_ambient);
 
 float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlusion)
 {
-	switch(GetDebugMode())
-	{
-		case DebugMode_Emission2:
-			return 0.0;
-		case DebugMode_43:
-			return lf_ambient_occlusion;
-		case DebugMode_44:
-			return 0.0;
-	}
-
-	if(parameters.shader_model == ShaderModel_1 || parameters.occlusion_mode != 0)
-	{
-		return 0.0;
-	}
-
 	lf_ambient_occlusion = min(lf_ambient_occlusion, parameters.ambient_occlusion);
 
 	float3 result = 0.0;
@@ -76,10 +61,6 @@ float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlu
 	);
 
 	result *= shlightfield_param.y;
-	result *= 1.0 - parameters.metallic;
-	result *= 1.0 - parameters.fresnel_reflectance;
-	result *= parameters.ambient_occlusion;
-
 	return result;
 }
 
@@ -92,7 +73,7 @@ float GetAmbientOcclusion(LightingParameters parameters)
 
 	int debug_mode = GetDebugMode();
 	if(debug_mode == DebugMode_Emission
-		|| debug_mode == DebugMode_19
+		|| debug_mode == DebugMode_WeirdIndirect
 		|| debug_mode == DebugMode_43
 		|| debug_mode == DebugMode_44)
 	{

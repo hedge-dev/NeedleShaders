@@ -25,6 +25,7 @@ struct LightingParameters
 	uint2 pixel_position;
 	uint2 tile_position;
 
+	float view_distance;
 	float2 screen_position;
 	float4 world_position;
 
@@ -63,6 +64,7 @@ LightingParameters InitLightingParameters()
 		{0, 0},
 		{0, 0},
 
+		0.0,
 		{0.0, 0.0},
 		{0.0, 0.0, 0.0, 0.0},
 

@@ -41,7 +41,7 @@ void main(ThreadInfo input)
 	}
 
 	float depth = s_DepthBuffer.Load(buffer_uv).x;
-	float view_distance = DepthToViewDistance(depth);
+	parameters.view_distance = DepthToViewDistance(depth);
 
 	parameters.pixel_position = input.dispatchThreadId.xy;
 	parameters.tile_position = input.groupId.xy >> 1;
@@ -51,7 +51,7 @@ void main(ThreadInfo input)
 
 	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
 	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
-	parameters.light_scattering_colors = ComputeLightScatteringColors(view_distance, parameters.view_direction);
+	parameters.light_scattering_colors = ComputeLightScatteringColors(parameters.view_distance, parameters.view_direction);
 
 	float4 ssss_color;
 	rw_Output0[input.dispatchThreadId.xy] = CompositeLighting(parameters, ssss_color);
