@@ -27,7 +27,8 @@ float3 ComputeReflectionDirection(float3 normal, float3 view_direction, float ro
 
 float ComputeIBLLevel(float roughness)
 {
-	return 6 * sqrt(saturate(roughness));
+	float ibl_probe_lod = 6;
+	return sqrt(saturate(roughness)) * ibl_probe_lod;
 }
 
 float4 SampleReflectionProbe(EnvProbeData probe, float4 position, float3 normal, float3 view_direction, float roughness)
@@ -35,19 +36,21 @@ float4 SampleReflectionProbe(EnvProbeData probe, float4 position, float3 normal,
 	float3 reflection_direction = ComputeReflectionDirection(normal, view_direction, roughness);
 	float3 probe_offset = position.xyz - probe.position;
 
-	float3 ibl_direction;
+	float3 intersection_position;
 	switch(probe.type)
 	{
 		case EnvProbeType_Box_PCR:
-			float3 pos_rel_to_probe = mul(probe.inv_world_matrix, position).xyz;
-			float3 probe_reflection_dir = mul((float3x3)probe.inv_world_matrix, reflection_direction);
+			float3 local_pos = mul(probe.inv_world_matrix, position).xyz;
+			float3 local_refl_dir = mul((float3x3)probe.inv_world_matrix, reflection_direction);
 
-			float3 t = max(
-				(1.0 - pos_rel_to_probe) / probe_reflection_dir,
-				(-1.0 - pos_rel_to_probe) / probe_reflection_dir
-			);
+			float3 unitary = 1.0f;
+			float3 firstPlaneIntersect = (unitary - local_pos) / local_refl_dir;
+			float3 secondPlaneIntersect = (-unitary - local_pos) / local_refl_dir;
 
-			ibl_direction = reflection_direction * min(t.x, min(t.y, t.z)) + probe_offset;
+			float3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
+			float distance = min(furthestPlane.x, min(furthestPlane.y, furthestPlane.z));
+
+			intersection_position = reflection_direction * distance + probe_offset;
 			break;
 
 		case EnvProbeType_Sphere_PCR:
@@ -62,19 +65,16 @@ float4 SampleReflectionProbe(EnvProbeData probe, float4 position, float3 normal,
 			t2 = sqrt(t2);
 			t2 += cos_probe_refl_2;
 
-			ibl_direction = reflection_direction * t2 + probe_offset;
+			intersection_position = reflection_direction * t2 + probe_offset;
 			break;
 
 		default:
-			ibl_direction = reflection_direction;
+			intersection_position = reflection_direction;
 			break;
 	}
-	ibl_direction = reflection_direction;
 
 	float4 sample_pos = float4(
-		ibl_direction.x,
-		ibl_direction.y,
-		-ibl_direction.z,
+		intersection_position * float3(1,1,-1),
 		probe.ibl_index
 	);
 
