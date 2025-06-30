@@ -68,14 +68,14 @@ void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 
 	switch(debug_mode)
 	{
-		case DebugMode_3:
+		case DebugMode_Emission:
 		case DebugMode_43:
 			color_2 = color_1;
 			color_3 = 0.0;
 			color_4 = parameters.emission;
 			break;
 
-		case DebugMode_4:
+		case DebugMode_Emission2:
 			color_2 = 0.0;
 			color_3 = gi_specular;
 			color_4 = parameters.emission;

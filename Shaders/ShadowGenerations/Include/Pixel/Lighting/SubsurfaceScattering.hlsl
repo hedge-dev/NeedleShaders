@@ -66,7 +66,7 @@ void ComputeSSSSTile(uint shader_model, uint groupIndex, uint2 groupThreadId)
 	}
 }
 
-void ComputeSSSOutput(LightingParameters parameters, float3 ambient_color, float3 light_color, inout float3 out_dif_amb, out float4 ssss_output)
+void ComputeSSSOutput(LightingParameters parameters, float3 ambient_color, float3 light_color, inout float3 out_direct, out float4 ssss_output)
 {
 	ssss_output = 0.0;
 
@@ -75,7 +75,7 @@ void ComputeSSSOutput(LightingParameters parameters, float3 ambient_color, float
 		return;
 	}
 
-	out_dif_amb += ssss_ambient_boost.xyz * ambient_color * parameters.albedo;
+	out_direct += ssss_ambient_boost.xyz * ambient_color * parameters.albedo;
 
 	#ifndef enable_ssss
 		return;
@@ -104,8 +104,8 @@ void ComputeSSSOutput(LightingParameters parameters, float3 ambient_color, float
 
 	float t4 = saturate(0.3 + dot(u_lightDirection.xyz, -parameters.world_normal));
 
-	ssss_output.xyz = out_dif_amb + t4 * t3 * t1 * parameters.sss_param.z;
-	out_dif_amb = 0.0;
+	ssss_output.xyz = out_direct + t4 * t3 * t1 * parameters.sss_param.z;
+	out_direct = 0.0;
 }
 
 void WriteSSSSOutput(uint2 pixel, float4 value)

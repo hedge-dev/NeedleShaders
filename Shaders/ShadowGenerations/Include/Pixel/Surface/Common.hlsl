@@ -22,7 +22,7 @@ SurfaceData CreateCommonSurface(SurfaceParameters parameters)
 
     switch(GetDebugMode())
     {
-        case DebugMode_NoNormalMap:
+        case DebugMode_EnvReflectionsSmooth:
             parameters.normal = parameters.debug_normal;
             break;
         case DebugMode_NoAlbedo:

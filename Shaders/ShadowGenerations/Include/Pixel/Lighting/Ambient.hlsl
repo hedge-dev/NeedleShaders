@@ -14,8 +14,7 @@ float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlu
 {
 	switch(GetDebugMode())
 	{
-		case DebugMode_4:
-			// replaces parameters.ambient_occlusion with 0
+		case DebugMode_Emission2:
 			return 0.0;
 		case DebugMode_43:
 			return lf_ambient_occlusion;
@@ -92,7 +91,7 @@ float GetAmbientOcclusion(LightingParameters parameters)
 	}
 
 	int debug_mode = GetDebugMode();
-	if(debug_mode == DebugMode_3
+	if(debug_mode == DebugMode_Emission
 		|| debug_mode == DebugMode_19
 		|| debug_mode == DebugMode_43
 		|| debug_mode == DebugMode_44)

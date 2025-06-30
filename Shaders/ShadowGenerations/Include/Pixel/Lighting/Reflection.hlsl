@@ -122,7 +122,7 @@ float4 ComputeReflectionProbeColor(uint2 tile_position, float4 position, float3 
 	return float4(color, influence);
 }
 
-float4 ComputeEnvironmentReflectionColor(float3 normal, float3 view_direction, float roughness, float occlusion)
+float4 ComputeSkyboxReflectionColor(float3 normal, float3 view_direction, float roughness, float occlusion)
 {
 	float3 reflection_direction = ComputeReflectionDirection(normal, view_direction, roughness);
 	float ibl_level = ComputeIBLLevel(roughness);
@@ -142,7 +142,36 @@ float4 ComputeEnvironmentReflectionColor(float3 normal, float3 view_direction, f
     return ibl_color;
 }
 
-float4 ComputeScreenSpaceReflectionColor(float2 screen_position, float roughness, float3 fresnel_color)
+float4 ComputeEnvironmentReflectionColor(LightingParameters parameters, float shadow)
+{
+	float4 probe_reflection = ComputeReflectionProbeColor(
+		parameters.tile_position,
+		parameters.world_position,
+		parameters.world_normal,
+		parameters.view_direction,
+		parameters.roughness
+	);
+
+	float4 skybox_reflection = ComputeSkyboxReflectionColor(
+		parameters.world_normal,
+		parameters.view_direction,
+		parameters.roughness,
+		parameters.ambient_occlusion * shadow
+	);
+
+	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shader_model, parameters.cos_view_normal, parameters.roughness);
+    float3 fresnel_color = parameters.fresnel_reflectance * env_bdrf.x + env_bdrf.y;
+
+	float4 result = skybox_reflection;
+	result *= saturate(1.0 - probe_reflection.w);
+	result.xyz += probe_reflection.xyz;
+	result.xyz *= fresnel_color;
+	result.xyz = max(0.0, result.xyz);
+
+	return result;
+}
+
+float4 ComputeScreenSpaceReflectionColor(LightingParameters parameters)
 {
 	if(!enable_ibl_plus_directional_specular)
 	{
@@ -151,9 +180,12 @@ float4 ComputeScreenSpaceReflectionColor(float2 screen_position, float roughness
 
 	float4 rlr_color = SampleTextureLevel(
 		s_RLR,
-		screen_position,
-		u_rlr_param[1].w * roughness
+		parameters.screen_position,
+		u_rlr_param[1].w * parameters.roughness
 	);
+
+	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shader_model, parameters.cos_view_normal, parameters.roughness);
+    float3 fresnel_color = parameters.fresnel_reflectance * env_bdrf.x + env_bdrf.y;
 
 	float3 result_color = max(0.0, rlr_color.xyz * fresnel_color);
 	float result_influence = smoothstep(0.0, 1.0, (rlr_color.w - 1.0 + u_sggi_param[1].x) / (u_sggi_param[1].x + 0.0001));
@@ -168,36 +200,18 @@ float4 ComputeReflectionColor(LightingParameters parameters, float ambient_occlu
 		return float4(0, 0, 0, 1);
 	}
 
-	float4 probe_reflection = ComputeReflectionProbeColor(
-		parameters.tile_position,
-		parameters.world_position,
-		parameters.world_normal,
-		parameters.view_direction,
-		parameters.roughness
-	);
-
-	float4 skybox_reflection = ComputeEnvironmentReflectionColor(
-		parameters.world_normal,
-		parameters.view_direction,
-		parameters.roughness,
-		parameters.ambient_occlusion * shadow
-	);
-
-	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shader_model, parameters.cos_view_normal, parameters.roughness);
-    float3 fresnel_color = parameters.fresnel_reflectance * env_bdrf.x + env_bdrf.y;
-
-	float4 ssr = ComputeScreenSpaceReflectionColor(parameters.screen_position, parameters.roughness, fresnel_color);
+	float4 environment_reflection = ComputeEnvironmentReflectionColor(parameters, shadow);
+	float4 ssr = ComputeScreenSpaceReflectionColor(parameters);
 
 	//////////////////////////////////////////////////
 
-	float4 result = skybox_reflection;
-	result *= saturate(1.0 - probe_reflection.w);
-	result.xyz += probe_reflection.xyz;
-	result.xyz *= fresnel_color;
-	result.xyz = max(0.0, result.xyz);
+	float4 result = environment_reflection;
+
 	result.xyz *= ambient_occlusion;
+
 	result = lerp(result, float4(ssr.xyz, 1.0), ssr.w);
 	result.w *= (1.0 - ssr.w);
+
 	result.xyz *= parameters.ambient_occlusion;
 
 	//////////////////////////////////////////////////
@@ -223,5 +237,6 @@ float4 ComputeReflectionColor(LightingParameters parameters, float ambient_occlu
 
 	return result;
 }
+
 
 #endif
