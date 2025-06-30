@@ -12,7 +12,7 @@ DefineFeature(enable_deferred_ambient);
 
 float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlusion)
 {
-	lf_ambient_occlusion = min(lf_ambient_occlusion, parameters.ambient_occlusion);
+	lf_ambient_occlusion = min(lf_ambient_occlusion, parameters.cavity);
 
 	float3 result = 0.0;
 
@@ -61,45 +61,6 @@ float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlu
 	);
 
 	result *= shlightfield_param.y;
-	return result;
-}
-
-float GetAmbientOcclusion(LightingParameters parameters)
-{
-	if(parameters.shader_model == ShaderModel_1)
-	{
-		return 0.0;
-	}
-
-	int debug_mode = GetDebugView();
-	if(debug_mode == DebugView_AmbDiffuse
-		|| debug_mode == DebugView_Ambient
-		|| debug_mode == DebugView_AmbDiffuseLf
-		|| debug_mode == DebugView_SggiOnly)
-	{
-		return 0.0;
-	}
-
-	float result = parameters.ambient_occlusion;
-
-	switch(GetDebug2Mode())
-	{
-		case Debug2Mode_1:
-			result = 1.0 - min(1, parameters.occlusion_mode);
-			break;
-		case Debug2Mode_2:
-			result = 1.0;
-			break;
-		case Debug2Mode_3:
-			result = 1.0 - min(1, parameters.occlusion_mode) * saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
-			break;
-	}
-
-	if(parameters.occlusion_mode == 1)
-	{
-		result = lerp(result, 1.0, parameters.metallic);
-	}
-
 	return result;
 }
 

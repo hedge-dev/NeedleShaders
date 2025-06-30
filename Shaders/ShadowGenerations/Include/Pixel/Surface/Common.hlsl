@@ -30,7 +30,7 @@ SurfaceData CreateCommonSurface(SurfaceParameters parameters)
             break;
         case DebugView_WhiteAlbedoNoAo:
             parameters.albedo = 1.0;
-            parameters.ambient_occlusion = 1.0;
+            parameters.cavity = 1.0;
             break;
     }
 
@@ -41,7 +41,7 @@ SurfaceData CreateCommonSurface(SurfaceParameters parameters)
     result.prm = float4(
         parameters.specular,
         parameters.roughness,
-        parameters.ambient_occlusion,
+        parameters.cavity,
         parameters.metallic
     );
 
@@ -54,7 +54,10 @@ SurfaceData CreateCommonSurface(SurfaceParameters parameters)
     result.normal.xyz = parameters.normal * 0.5 + 0.5;
     result.motion_vector.xy = ComputeMotionVector(parameters.screen_position, parameters.previous_position);
 
-    uint deferred_flags = asuint(u_shading_model_flag.x) | parameters.shader_model;
+    uint deferred_flags = parameters.shading_model_id
+        | (parameters.shading_model_unk ? 0x8 : 0)
+        | (parameters.shading_kind << 4);
+
     result.albedo.w = (0.5 + deferred_flags) / 255.0;
 
     // TODO figure out what these do

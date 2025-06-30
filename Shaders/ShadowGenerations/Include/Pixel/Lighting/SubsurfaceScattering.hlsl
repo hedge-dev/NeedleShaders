@@ -40,7 +40,7 @@ RWTexture2D<float4> rw_Output1 : register(u1);
 RWByteAddressBuffer rw_indirectSSSSDrawArguments : register(u2);
 RWStructuredBuffer<int> rw_IndirectSSSSTiles : register(u3);
 
-void ComputeSSSSTile(uint shader_model, uint groupIndex, uint2 groupThreadId)
+void ComputeSSSSTile(uint shading_model, uint groupIndex, uint2 groupThreadId)
 {
 	#ifndef enable_ssss
 		return;
@@ -52,7 +52,7 @@ void ComputeSSSSTile(uint shader_model, uint groupIndex, uint2 groupThreadId)
 	}
 	GroupMemoryBarrierWithGroupSync();
 
-	if(shader_model == ShaderModel_SSS)
+	if(shading_model == ShadingModelID_SSS)
 	{
 		InterlockedOr(shared_variable, 1);
 	}
@@ -70,7 +70,7 @@ void ComputeSSSOutput(LightingParameters parameters, float3 ambient_color, float
 {
 	ssss_output = 0.0;
 
-	if(parameters.shader_model != ShaderModel_SSS)
+	if(parameters.shading_model_id != ShadingModelID_SSS)
 	{
 		return;
 	}

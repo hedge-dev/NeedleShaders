@@ -14,6 +14,45 @@ TextureCubeArray<float4> WithSampler(s_IBLProbeArray);
 TextureCube<float4> WithSampler(s_IBL);
 Texture2D<float4> WithSampler(s_RLR);
 
+float ComputeReflectioOcclusion(LightingParameters parameters)
+{
+	if(parameters.shading_model_id == ShadingModelID_1)
+	{
+		return 0.0;
+	}
+
+	int debug_view = GetDebugView();
+	if(debug_view == DebugView_AmbDiffuse
+		|| debug_view == DebugView_Ambient
+		|| debug_view == DebugView_AmbDiffuseLf
+		|| debug_view == DebugView_SggiOnly)
+	{
+		return 0.0;
+	}
+
+	float result = parameters.cavity;
+
+	switch(GetDebug2Mode())
+	{
+		case Debug2Mode_1:
+			result = 1.0 - min(1, parameters.occlusion_mode);
+			break;
+		case Debug2Mode_2:
+			result = 1.0;
+			break;
+		case Debug2Mode_3:
+			result = 1.0 - min(1, parameters.occlusion_mode) * saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
+			break;
+	}
+
+	if(parameters.occlusion_mode == 1)
+	{
+		result = lerp(result, 1.0, parameters.metallic);
+	}
+
+	return result;
+}
+
 float3 ComputeReflectionDirection(float3 normal, float3 view_direction, float roughness)
 {
 	float3 result = normalize(saturate(dot(view_direction, normal)) * 2 * normal - view_direction);
@@ -156,10 +195,10 @@ float4 ComputeEnvironmentReflectionColor(LightingParameters parameters, float sh
 		parameters.world_normal,
 		parameters.view_direction,
 		parameters.roughness,
-		parameters.ambient_occlusion * shadow
+		parameters.cavity * shadow
 	);
 
-	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shader_model, parameters.cos_view_normal, parameters.roughness);
+	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shading_model_id, parameters.cos_view_normal, parameters.roughness);
     float3 fresnel_color = parameters.fresnel_reflectance * env_bdrf.x + env_bdrf.y;
 
 	float4 result = skybox_reflection;
@@ -184,7 +223,7 @@ float4 ComputeScreenSpaceReflectionColor(LightingParameters parameters)
 		u_rlr_param[1].w * parameters.roughness
 	);
 
-	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shader_model, parameters.cos_view_normal, parameters.roughness);
+	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shading_model_id, parameters.cos_view_normal, parameters.roughness);
     float3 fresnel_color = parameters.fresnel_reflectance * env_bdrf.x + env_bdrf.y;
 
 	float3 result_color = max(0.0, rlr_color.xyz * fresnel_color);
@@ -193,9 +232,11 @@ float4 ComputeScreenSpaceReflectionColor(LightingParameters parameters)
 	return float4(result_color, result_influence);
 }
 
-float4 ComputeReflectionColor(LightingParameters parameters, float ambient_occlusion, float shadow)
+float4 ComputeReflectionColor(LightingParameters parameters, float shadow)
 {
-	if(ambient_occlusion <= 0.00001)
+	float reflection_occlusion = ComputeReflectioOcclusion(parameters);
+
+	if(reflection_occlusion <= 0.00001)
 	{
 		return float4(0, 0, 0, 1);
 	}
@@ -207,33 +248,12 @@ float4 ComputeReflectionColor(LightingParameters parameters, float ambient_occlu
 
 	float4 result = environment_reflection;
 
-	result.xyz *= ambient_occlusion;
+	result.xyz *= reflection_occlusion;
 
 	result = lerp(result, float4(ssr.xyz, 1.0), ssr.w);
 	result.w *= (1.0 - ssr.w);
 
-	result.xyz *= parameters.ambient_occlusion;
-
-	//////////////////////////////////////////////////
-	// Debug stuff
-
-	if(!enable_ibl_plus_directional_specular)
-	{
-		result.w *= min(1, parameters.occlusion_mode);
-
-		float debug_factor = 0.0;
-		switch(GetDebug2Mode())
-		{
-			case 1:
-				debug_factor = 1.0;
-				break;
-			case 2:
-				debug_factor = saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
-				break;
-		}
-
-		result.w *= debug_factor;
-	}
+	result.xyz *= parameters.cavity;
 
 	return result;
 }

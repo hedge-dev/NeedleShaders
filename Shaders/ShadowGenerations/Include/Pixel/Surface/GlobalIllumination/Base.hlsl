@@ -59,8 +59,8 @@ void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 		color_3 = gi_specular;
 	}
 
-	color_2 *= parameters.ambient_occlusion;
-	color_3 *= parameters.ambient_occlusion;
+	color_2 *= parameters.cavity;
+	color_3 *= parameters.cavity;
 
 	// Note: This is probably something else that gets added together with emission,
 	// but it has yet to be found where this would happen.

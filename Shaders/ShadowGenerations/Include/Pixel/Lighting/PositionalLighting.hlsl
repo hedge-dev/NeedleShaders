@@ -80,7 +80,7 @@ void CalculateLight(LightingParameters parameters, PositionalLightData light_dat
 	out_diffuse = 0.0;
 	out_specular = 0.0;
 
-	if(!(light_data.flags & (1 << parameters.flags_unk2)))
+	if(!(light_data.flags & (1 << parameters.shading_kind)))
 	{
 		return;
 	}

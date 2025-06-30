@@ -4,22 +4,14 @@
 #include "../../ConstantBuffer/World.hlsl"
 #include "../../ConstantBuffer/MaterialDynamic.hlsl"
 
-#include "../../Math.hlsl"
-
+#include "../ShadingFlags.hlsl"
 #include "Struct.hlsl"
-
-#define WeatherMode_1 1
-
-uint GetWeatherMode()
-{
-	return UnpackUIntBits((uint)u_shading_model_flag.x, 2, 4);
-}
 
 void ApplyWeatherEffects(inout SurfaceParameters parameters)
 {
 	float weather_param = u_weather_param.x;
 
-    if(GetWeatherMode() == WeatherMode_1)
+    if(parameters.shading_kind == ShadingKind_Character)
     {
         weather_param *= u_weather_param.w;
     }
@@ -40,7 +32,7 @@ void ApplyWeatherEffects(inout SurfaceParameters parameters)
 
 	WeatherLerp(parameters.specular, 0.02, 0.2, 1.25);
 	WeatherLerp(parameters.roughness, 0.02, 0.2, 1.25);
-	WeatherLerp(parameters.ambient_occlusion, 1.0, 0.45, 2);
+	WeatherLerp(parameters.cavity, 1.0, 0.45, 2);
 
 	#undef WeatherLerp
 }

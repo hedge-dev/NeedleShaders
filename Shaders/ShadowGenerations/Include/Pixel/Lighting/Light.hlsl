@@ -70,7 +70,7 @@ float3 DiffuseBDRF(LightingParameters parameters, float3 light_direction, float3
 {
     float3 cos_light_normal = saturate(dot(light_direction, parameters.world_normal)) * shadow;
 
-	if (parameters.shader_model == ShaderModel_SSS)
+	if (parameters.shading_model_id == ShadingModelID_SSS)
 	{
 		SampleCDRF(parameters, light_direction, shadow, cos_light_normal);
 	}

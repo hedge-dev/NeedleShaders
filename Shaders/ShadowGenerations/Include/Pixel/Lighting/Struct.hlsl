@@ -8,13 +8,13 @@
 #include "../Surface/Struct.hlsl"
 
 #include "../Normals.hlsl"
-#include "../ShaderModel.hlsl"
+#include "../ShadingFlags.hlsl"
 
 struct LightingParameters
 {
-	uint shader_model;
-	bool flags_unk1;
-	uint flags_unk2; // affects weather
+	uint shading_model_id;
+	bool shading_model_unk;
+	uint shading_kind;
 
     float3 albedo;
     float3 emission;
@@ -40,7 +40,7 @@ struct LightingParameters
 	float specular;
 	float roughness;
 	float metallic;
-	float ambient_occlusion;
+	float cavity;
 	float3 fresnel_reflectance;
 
 	uint occlusion_mode;
@@ -106,22 +106,22 @@ void TransferInputData(PixelInput input, inout LightingParameters parameters)
 void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 {
 	uint flags = (uint)(data.albedo.w * 255);
-	parameters.shader_model = UnpackUIntBits(flags, 3, 0);
-	parameters.flags_unk1 = (bool)UnpackUIntBits(flags, 1, 3);
-	parameters.flags_unk2 = UnpackUIntBits(flags, 2, 4);
+	parameters.shading_model_id = flags & 0x7;;
+	parameters.shading_model_unk = (flags & 0x8) != 0;
+	parameters.shading_kind = (flags >> 4) & 0x3;;
 
 	parameters.albedo = data.albedo.xyz;
 
 	parameters.world_normal = data.normal * 2.0 - 1.0;
 	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
 
-	switch(parameters.shader_model)
+	switch(parameters.shading_model_id)
 	{
-		case ShaderModel_SSS:
+		case ShadingModelID_SSS:
 			parameters.sss_param = data.emission.xyz;
 			break;
 
-		case ShaderModel_AnisotropicReflection:
+		case ShadingModelID_AnisotropicReflection:
 			parameters.anisotropy = float2(
 				2 * floor(abs(data.emission.z)),
 				10 * frac(abs(data.emission.z))
@@ -142,7 +142,7 @@ void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 
 	parameters.specular = data.prm.x;
 	parameters.roughness = data.prm.y;
-	parameters.ambient_occlusion = data.prm.z;
+	parameters.cavity = data.prm.z;
 	parameters.metallic = data.prm.w;
 
 	parameters.fresnel_reflectance = lerp(

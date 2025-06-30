@@ -179,7 +179,7 @@ void DebugAfterFog(
 			break;
 
 		case DebugView_Cavity:
-			out_direct = parameters.ambient_occlusion;
+			out_direct = parameters.cavity;
 			break;
 
 		case DebugView_Reflectance:
@@ -236,11 +236,11 @@ void DebugAfterFog(
 			break;
 
 		case DebugView_ShadingModelId:
-			out_direct = (parameters.shader_model & uint3(1, 2, 4)) ? 1.0 : 0.0;
+			out_direct = (parameters.shading_model_id & uint3(1, 2, 4)) ? 1.0 : 0.0;
 			break;
 
 		case DebugView_CharacterMask:
-			out_direct = (1 << parameters.flags_unk2) & 2 ? 1.0 : 0.0;
+			out_direct = parameters.shading_kind == ShadingKind_Character ? 1.0 : 0.0;
 			break;
 
 		case DebugView_Distance:
@@ -250,15 +250,15 @@ void DebugAfterFog(
 			break;
 
 		case DebugView_ShadingModel:
-			out_direct = (parameters.shader_model & uint3(1, 2, 4)) ? 0.5 : 0.0;
-			if(parameters.flags_unk1)
+			out_direct = (parameters.shading_model_id & uint3(1, 2, 4)) ? 0.5 : 0.0;
+			if(parameters.shading_model_unk)
 			{
 				out_direct *= 3;
 			}
 			break;
 
 		case DebugView_ShadingKind:
-			out_direct = (parameters.flags_unk2 == int3(1,2,3)) ? 1.0 : 0.0;
+			out_direct = (parameters.shading_kind == int3(1,2,3)) ? 1.0 : 0.0;
 			break;
 
 		default:
@@ -301,7 +301,7 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 	// Lighting
 
 	float3 sunlight_diffuse = DiffuseBDRF(parameters, u_lightDirection.xyz, u_lightColor.xyz, shadow);
-	float3 sunlight_specular = SpecularBRDF(parameters, u_lightDirection.xyz, u_lightColor.xyz, shadow, parameters.shader_model == ShaderModel_AnisotropicReflection);
+	float3 sunlight_specular = SpecularBRDF(parameters, u_lightDirection.xyz, u_lightColor.xyz, shadow, parameters.shading_model_id == ShadingModelID_AnisotropicReflection);
 
 	float3 positional_light_diffuse;
 	float3 positional_light_specular;
@@ -310,10 +310,15 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 	//////////////////////////////////////////////////
 	// Ambient Lighting
 
-	float3 ambient_color = ComputeAmbientColor(parameters, lf_ambient_occlusion);
-	ambient_color *= 1.0 - parameters.metallic;
-	ambient_color *= 1.0 - parameters.fresnel_reflectance;
-	ambient_color *= parameters.ambient_occlusion;
+	float3 ambient_color = 0.0;
+
+	if(parameters.shading_model_id != ShadingModelID_1 && parameters.occlusion_mode == 0)
+	{
+		ambient_color = ComputeAmbientColor(parameters, lf_ambient_occlusion);
+		ambient_color *= 1.0 - parameters.metallic;
+		ambient_color *= 1.0 - parameters.fresnel_reflectance;
+		ambient_color *= parameters.cavity;
+	}
 
 	switch(GetDebugView())
 	{
@@ -326,18 +331,11 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 			break;
 	}
 
-	if(parameters.shader_model == ShaderModel_1 || parameters.occlusion_mode != 0)
-	{
-		ambient_color = 0.0;
-	}
-
-	float ambient_occlusion = GetAmbientOcclusion(parameters);
-
 	//////////////////////////////////////////////////
 	// Emission
 
 	float3 emission_color = parameters.emission;
-	if(parameters.flags_unk1 != 0)
+	if(parameters.shading_model_unk)
 	{
 		emission_color *= shadow * u_lightColor.xyz * parameters.albedo;
 	}
@@ -345,17 +343,34 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 	//////////////////////////////////////////////////
 	// reflection stuff
 
-	float4 reflection_color = ComputeReflectionColor(parameters, ambient_occlusion, shadow);
+	float4 reflection_color = ComputeReflectionColor(parameters, shadow);
 
     float3 indirect_color = emission_color + reflection_color.xyz;
 	sunlight_specular *= reflection_color.w;
 
+	if(!enable_ibl_plus_directional_specular)
+	{
+		switch(GetDebug2Mode())
+		{
+			case 1:
+				sunlight_specular *= min(1, parameters.occlusion_mode);
+				break;
+			case 2:
+				sunlight_specular *= min(1, parameters.occlusion_mode);
+				sunlight_specular *= saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
+				break;
+			default:
+				sunlight_specular = 0.0;
+				break;
+		}
+	}
+
 	//////////////////////////////////////////////////
-	// Applying occlusion capsules(?)
+	// Applying occlusion parameters (?)
 
 	float3 occlusion_capsule_0 = lerp(u_occlusion_capsule_param[0].xyz, 1.0, ssao.x);
 	float3 occlusion_capsule_1 = lerp(u_occlusion_capsule_param[1].xyz, 1.0, ssao.y);
-	float3 occlusion_capsule_2 = parameters.shader_model == ShaderModel_1 ? 1.0 : occlusion_capsule_0;
+	float3 occlusion_capsule_2 = parameters.shading_model_id == ShadingModelID_1 ? 1.0 : occlusion_capsule_0;
 
 	float3 out_diffuse = sunlight_diffuse * occlusion_capsule_1
 		+ positional_light_diffuse * occlusion_capsule_0;

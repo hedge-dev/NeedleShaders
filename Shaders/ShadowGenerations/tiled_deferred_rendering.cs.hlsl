@@ -29,9 +29,9 @@ void main(ThreadInfo input)
 	LightingParameters parameters = InitLightingParameters();
 	TransferSurfaceData(deferred_data, parameters);
 
-	ComputeSSSSTile(parameters.shader_model, input.groupIndex, input.groupId.xy);
+	ComputeSSSSTile(parameters.shading_model_id, input.groupIndex, input.groupId.xy);
 
-	if(parameters.shader_model == ShaderModel_Clear
+	if(parameters.shading_model_id == ShadingModelID_Clear
 		|| (float)input.dispatchThreadId.x >= u_viewport_info.x
 		|| (float)input.dispatchThreadId.y >= u_viewport_info.y)
 	{

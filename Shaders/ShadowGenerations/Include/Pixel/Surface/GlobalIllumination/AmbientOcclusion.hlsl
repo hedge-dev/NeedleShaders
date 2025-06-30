@@ -11,12 +11,12 @@ void ApplyAOGI(inout SurfaceParameters parameters)
 	if(IsAOGIEnabled())
 	{
 		gi_ao = saturate(SampleGITextureLevel(parameters.gi_uv, 0.0, 0).x);
-		parameters.ambient_occlusion *= gi_ao;
+		parameters.cavity *= gi_ao;
 	}
 
 	if(GetGIMode() == GIMode5)
 	{
-		parameters.ambient_occlusion = gi_ao;
+		parameters.cavity = gi_ao;
 	}
 }
 

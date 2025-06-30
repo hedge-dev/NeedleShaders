@@ -1,6 +1,12 @@
 #ifndef STRUCT_SURFACE_INCLUDED
 #define STRUCT_SURFACE_INCLUDED
 
+#include "../../ConstantBuffer/World.hlsl"
+#include "../../ConstantBuffer/MaterialDynamic.hlsl"
+
+#include "../../IOStructs.hlsl"
+#include "../../Math.hlsl"
+
 //////////////////////////////////////////////////
 // Surface parameters (input)
 
@@ -12,7 +18,7 @@ struct SurfaceParameters
 	float specular;
 	float roughness;
 	float metallic;
-	float ambient_occlusion;
+	float cavity;
 
 	float3 fresnel_reflectance;
 
@@ -26,7 +32,9 @@ struct SurfaceParameters
 
 	float2 gi_uv;
 
-	uint shader_model;
+	uint shading_model_id;
+	bool shading_model_unk;
+	uint shading_kind;
 };
 
 SurfaceParameters InitSurfaceParameters()
@@ -49,12 +57,31 @@ SurfaceParameters InitSurfaceParameters()
 
 		{0.0, 0.0},
 
-		0
+		0, false, 0
 	};
 
 	return result;
 }
 
+void SetupSurfaceParamFromInput(PixelInput input, inout SurfaceParameters parameters)
+{
+    parameters.screen_position = input.position.xyz;
+    parameters.screen_tile = uint2(input.position.xy * u_screen_info.zw * u_screen_info.xy) >> 4;
+
+    parameters.world_position = WorldPosition4(input);
+    parameters.previous_position = input.previous_position.xyz;
+
+    parameters.gi_uv = input.uv01.zw;
+}
+
+void SetupSurfaceParamShadingModel(int shading_model_id, inout SurfaceParameters parameters)
+{
+	uint shading_flags = asuint(u_shading_model_flag.x);
+
+	parameters.shading_model_id = shading_model_id;
+	parameters.shading_model_unk = (shading_flags & 0x8) != 0;
+	parameters.shading_kind = (shading_flags >> 4) & 0x3;;
+}
 
 //////////////////////////////////////////////////
 // Surface data (output)
@@ -72,7 +99,7 @@ struct SurfaceData
 
 	// --- Emission --
 	// XYZ: RGB Emission color
-	// W: GI Shadow
+	// W: Occlusion + occlusion mode * 10
     float4 emission : SV_Target2;
 
 	// --- Physical rendering parameters ---

@@ -8,7 +8,7 @@ void ProcessPRM(inout SurfaceParameters parameters, float4 prm, float specular_m
 	parameters.specular = prm.x * specular_modifier;
 	parameters.roughness = max(0.01, 1.0 - prm.y);
 	parameters.metallic = prm.z;
-	parameters.ambient_occlusion = prm.w;
+	parameters.cavity = prm.w;
 
 	parameters.fresnel_reflectance = lerp(
 		parameters.specular,
