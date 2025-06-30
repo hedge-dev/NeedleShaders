@@ -11,7 +11,7 @@
 
 void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 {
-	int debug_mode = GetDebugMode();
+	int debug_mode = GetDebugView();
 	int debug2_mode = GetDebug2Mode();
 	int gi_mode = GetGIMode();
 
@@ -40,7 +40,7 @@ void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 		color_1 *= 1.0 - parameters.fresnel_reflectance;
 	}
 
-	if(debug_mode == DebugMode_12 || debug_mode == DebugMode_19)
+	if(debug_mode == DebugView_User2 || debug_mode == DebugView_Ambient)
 	{
 		parameters.emission.xyz = color_1;
 		return;
@@ -68,20 +68,20 @@ void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 
 	switch(debug_mode)
 	{
-		case DebugMode_Emission:
-		case DebugMode_43:
+		case DebugView_AmbDiffuse:
+		case DebugView_AmbDiffuseLf:
 			color_2 = color_1;
 			color_3 = 0.0;
 			color_4 = parameters.emission;
 			break;
 
-		case DebugMode_Emission2:
+		case DebugView_AmbSpecular:
 			color_2 = 0.0;
 			color_3 = gi_specular;
 			color_4 = parameters.emission;
 			break;
 
-		case DebugMode_44:
+		case DebugView_SggiOnly:
 			color_4 = 0.0;
 			break;
 	}

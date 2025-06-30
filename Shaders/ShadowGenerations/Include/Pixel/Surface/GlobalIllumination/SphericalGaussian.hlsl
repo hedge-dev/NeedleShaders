@@ -62,8 +62,8 @@ float3 ComputeSGGISpecular(float3 colors[4], SurfaceParameters parameters)
 		return 0.0;
 	}
 
-	int debug_mode = GetDebugMode();
-	if(!debug_mode || debug_mode == DebugMode_SpecularLighting)
+	int debug_mode = GetDebugView();
+	if(!debug_mode || debug_mode == DebugView_DirSpecular)
 	{
 		return 0.0;
 	}

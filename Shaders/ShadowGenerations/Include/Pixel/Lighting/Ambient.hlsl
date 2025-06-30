@@ -71,11 +71,11 @@ float GetAmbientOcclusion(LightingParameters parameters)
 		return 0.0;
 	}
 
-	int debug_mode = GetDebugMode();
-	if(debug_mode == DebugMode_Emission
-		|| debug_mode == DebugMode_WeirdIndirect
-		|| debug_mode == DebugMode_43
-		|| debug_mode == DebugMode_44)
+	int debug_mode = GetDebugView();
+	if(debug_mode == DebugView_AmbDiffuse
+		|| debug_mode == DebugView_Ambient
+		|| debug_mode == DebugView_AmbDiffuseLf
+		|| debug_mode == DebugView_SggiOnly)
 	{
 		return 0.0;
 	}

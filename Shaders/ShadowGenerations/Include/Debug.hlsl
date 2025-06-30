@@ -6,50 +6,52 @@
 //////////////////////////////////////////////////
 // First debug modes
 
-#define DefineDebugMode(num, name) static const int DebugMode_##name = num
-#define DefineDebugModeUnk(num) static const int DebugMode_##num = num
+#define DefineDebugView(num, name) static const int DebugView_##name = num
 
-DefineDebugMode(1, DiffuseLighting);
-DefineDebugMode(2, SpecularLighting);
-DefineDebugMode(3, Emission);
-DefineDebugMode(4, Emission2);
-DefineDebugMode(5, EnvReflections);
-DefineDebugMode(6, EnvReflectionsSmooth);
-DefineDebugMode(7, Shadow);
-DefineDebugMode(8, NoAlbedo);
-DefineDebugMode(9, NoAlbedoNoAO);
-DefineDebugModeUnk(10);
-DefineDebugModeUnk(11);
-DefineDebugModeUnk(12);
-DefineDebugModeUnk(13);
-DefineDebugMode(14, Albedo);
-DefineDebugMode(15, Albedo2);
-DefineDebugMode(16, White);
-DefineDebugMode(17, Normal);
-DefineDebugMode(18, Roughness);
-DefineDebugMode(19, WeirdIndirect);
-DefineDebugMode(20, AmbientOcclusion);
-DefineDebugMode(21, FresnelReflectance);
-DefineDebugMode(22, Metallic);
-DefineDebugModeUnk(23);
-DefineDebugModeUnk(37);
-DefineDebugModeUnk(38);
-DefineDebugMode(26, SSAO);
-DefineDebugMode(27, ScreenSpaceReflections);
-DefineDebugMode(28, EnvReflectionNoFogNoFresnel);
-DefineDebugMode(29, EnvReflectionNoFog);
-DefineDebugMode(30, EnvBRDF);
-DefineDebugMode(31, Position);
-DefineDebugMode(32, ShaderModel);
-DefineDebugMode(33, FirstProbe);
-DefineDebugModeUnk(35);
-DefineDebugMode(36, Smoothness);
-DefineDebugMode(39, FlagUnk2);
-DefineDebugMode(40, ViewDistance);
-DefineDebugMode(41, ShaderModel2);
-DefineDebugMode(42, FlagUnk2_2);
-DefineDebugModeUnk(43);
-DefineDebugModeUnk(44);
+DefineDebugView( 1, DirDiffuse);
+DefineDebugView( 2, DirSpecular);
+DefineDebugView( 3, AmbDiffuse);
+DefineDebugView( 4, AmbSpecular);
+DefineDebugView( 5, OnlyIbl);
+DefineDebugView( 6, OnlyIblSurfNormal);
+DefineDebugView( 7, Shadow);
+DefineDebugView( 8, WhiteAlbedo);
+DefineDebugView( 9, WhiteAlbedoNoAo);
+DefineDebugView(10, User0);
+DefineDebugView(11, User1);
+DefineDebugView(12, User2);
+DefineDebugView(13, User3);
+DefineDebugView(14, Albedo);
+DefineDebugView(15, AlbedoCheckOutlier);
+DefineDebugView(16, Opacity);
+DefineDebugView(17, Normal);
+DefineDebugView(18, Roughness);
+DefineDebugView(19, Ambient);
+DefineDebugView(20, Cavity);
+DefineDebugView(21, Reflectance);
+DefineDebugView(22, Metallic);
+DefineDebugView(23, LocalLight);
+DefineDebugView(24, ScatteringFex);
+DefineDebugView(25, ScatteringLin);
+DefineDebugView(26, SSAO);
+DefineDebugView(27, RLR);
+DefineDebugView(28, IblDiffuse);
+DefineDebugView(29, IblSpecular);
+DefineDebugView(30, EnvBRDF);
+DefineDebugView(31, WorldPosition);
+DefineDebugView(32, ShadingModelId);
+DefineDebugView(33, IblCapture);
+DefineDebugView(34, IblSkyTerrain);
+DefineDebugView(35, WriteDepthToAlpha);
+DefineDebugView(36, Smoothness);
+DefineDebugView(37, OcclusionCapsule);
+DefineDebugView(38, Probe);
+DefineDebugView(39, CharacterMask);
+DefineDebugView(40, Distance);
+DefineDebugView(41, ShadingModel);
+DefineDebugView(42, ShadingKind);
+DefineDebugView(43, AmbDiffuseLf);
+DefineDebugView(44, SggiOnly);
 
 //////////////////////////////////////////////////
 // Second debug modes
@@ -61,7 +63,7 @@ static const int Debug2Mode_3 = 3;
 //////////////////////////////////////////////////
 // Methods
 
-int GetDebugMode()
+int GetDebugView()
 {
 	return (int)round(g_debug_option.x);
 }

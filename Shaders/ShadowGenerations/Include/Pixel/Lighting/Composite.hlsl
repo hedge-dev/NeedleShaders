@@ -38,44 +38,44 @@ void DebugBeforeFog(
 {
 	bool only_direct = true;
 
-	switch(GetDebugMode())
+	switch(GetDebugView())
 	{
-		case DebugMode_DiffuseLighting:
+		case DebugView_DirDiffuse:
 			out_direct = out_diffuse / Pi;
 			break;
 
-		case DebugMode_SpecularLighting:
+		case DebugView_DirSpecular:
 			out_direct = out_specular;
 			break;
 
-		case DebugMode_Emission:
+		case DebugView_AmbDiffuse:
 			out_direct = indirect_color;
 			break;
 
-		case DebugMode_43:
+		case DebugView_AmbDiffuseLf:
 			out_direct = ambient_color;
 			break;
 
-		case DebugMode_44:
+		case DebugView_SggiOnly:
 			out_direct = ambient_color + indirect_color;
 			break;
 
-		case DebugMode_Emission2:
+		case DebugView_AmbSpecular:
 			out_direct = indirect_color;
 			break;
 
-		case DebugMode_EnvReflections:
-		case DebugMode_EnvReflectionsSmooth:
+		case DebugView_OnlyIbl:
+		case DebugView_OnlyIblSurfNormal:
 			LightingParameters debug_param = parameters;
 			debug_param.fresnel_reflectance = 1.0;
 			out_direct = ComputeEnvironmentReflectionColor(debug_param, shadow).xyz;
 			break;
 
-		case DebugMode_Shadow:
+		case DebugView_Shadow:
 			out_direct = shadow;
 			break;
 
-		case DebugMode_FirstProbe:
+		case DebugView_IblCapture:
 			only_direct = false;
 			out_alpha = 1.0;
 
@@ -98,7 +98,7 @@ void DebugBeforeFog(
 			}
 			break;
 
-		case DebugMode_35:
+		case DebugView_WriteDepthToAlpha:
 			break;
 		default:
 			only_direct = false;
@@ -125,7 +125,7 @@ void DebugAfterFog(
 	inout float out_alpha)
 {
 
-	uint debug_mode = GetDebugMode();
+	uint debug_mode = GetDebugView();
 	if(debug_mode == 0)
 	{
 		return;
@@ -135,22 +135,22 @@ void DebugAfterFog(
 
 	bool only_direct = true;
 
-	switch(GetDebugMode())
+	switch(GetDebugView())
 	{
-		case DebugMode_10: break;
-		case DebugMode_11: break;
+		case DebugView_User0: break;
+		case DebugView_User1: break;
 
-		case DebugMode_12:
+		case DebugView_User2:
 			out_direct = debug_ambient;
 			break;
 
-		case DebugMode_13: break;
+		case DebugView_User3: break;
 
-		case DebugMode_Albedo:
+		case DebugView_Albedo:
 			out_direct = parameters.albedo;
 			break;
 
-		case DebugMode_Albedo2:
+		case DebugView_AlbedoCheckOutlier:
 			float3 debug_1 = saturate(0.010398 - parameters.albedo);
 			float3 debug_2 = saturate(parameters.albedo - 0.899384);
     		out_direct = dot(debug_1, debug_1) != 0.0 || dot(debug_2, debug_2) != 0.0
@@ -158,51 +158,51 @@ void DebugAfterFog(
 				: parameters.albedo;
 			break;
 
-		case DebugMode_White:
+		case DebugView_Opacity:
 			out_direct = 1.0;
 			break;
 
-		case DebugMode_Normal:
+		case DebugView_Normal:
 			out_direct = saturate(parameters.world_normal * 0.5 + 0.5);
 			break;
 
-		case DebugMode_Roughness:
+		case DebugView_Roughness:
 			out_direct = parameters.roughness;
 			break;
 
-		case DebugMode_Smoothness:
+		case DebugView_Smoothness:
 			out_direct = 1.0 - parameters.roughness;
 			break;
 
-		case DebugMode_WeirdIndirect:
+		case DebugView_Ambient:
 			out_direct = debug_ambient + emission_color * ambient_color;
 			break;
 
-		case DebugMode_AmbientOcclusion:
+		case DebugView_Cavity:
 			out_direct = parameters.ambient_occlusion;
 			break;
 
-		case DebugMode_FresnelReflectance:
+		case DebugView_Reflectance:
 			out_direct = parameters.fresnel_reflectance;
 			break;
 
-		case DebugMode_Metallic:
+		case DebugView_Metallic:
 			out_direct = parameters.metallic;
 			break;
 
-		case DebugMode_23: break;
-		case DebugMode_37: break;
-		case DebugMode_38: break;
+		case DebugView_LocalLight: break;
+		case DebugView_OcclusionCapsule: break;
+		case DebugView_Probe: break;
 
-		case DebugMode_SSAO:
+		case DebugView_SSAO:
 			out_direct = ssao.x;
 			break;
 
-		case DebugMode_ScreenSpaceReflections:
+		case DebugView_RLR:
 			out_direct = SampleTextureLevel(s_RLR, parameters.screen_position, 0).xyz;
 			break;
 
-		case DebugMode_EnvReflectionNoFogNoFresnel:
+		case DebugView_IblDiffuse:
 			float4 debug_probe_reflection = ComputeReflectionProbeColor(
 				parameters.tile_position,
 				parameters.world_position,
@@ -221,35 +221,35 @@ void DebugAfterFog(
 			out_direct = debug_probe_reflection.xyz + debug_skybox_reflection.xyz * saturate(1.0 - debug_probe_reflection.w);
 			break;
 
-		case DebugMode_EnvReflectionNoFog:
+		case DebugView_IblSpecular:
 			out_direct = ComputeEnvironmentReflectionColor(parameters, shadow).xyz;
 			break;
 
-		case DebugMode_EnvBRDF:
+		case DebugView_EnvBRDF:
 			out_direct = float3(SampleTextureLevel(s_EnvBRDF, float2(parameters.cos_view_normal, parameters.roughness), 0).xy, 0);
 			break;
 
-		case DebugMode_Position:
+		case DebugView_WorldPosition:
 			float3 debug_pos = 0.01 * parameters.world_position.xyz;
 			out_direct = 1.0 + frac(abs(debug_pos)) * sign(debug_pos);
 			out_direct += out_direct >= 0.0 ? 1.0 : 0.0;
 			break;
 
-		case DebugMode_ShaderModel:
+		case DebugView_ShadingModelId:
 			out_direct = (parameters.shader_model & uint3(1, 2, 4)) ? 1.0 : 0.0;
 			break;
 
-		case DebugMode_FlagUnk2:
+		case DebugView_CharacterMask:
 			out_direct = (1 << parameters.flags_unk2) & 2 ? 1.0 : 0.0;
 			break;
 
-		case DebugMode_ViewDistance:
+		case DebugView_Distance:
 			out_direct =
 				( parameters.view_distance - g_global_user_param_3.x)
 				/ (g_global_user_param_3.y - g_global_user_param_3.x);
 			break;
 
-		case DebugMode_ShaderModel2:
+		case DebugView_ShadingModel:
 			out_direct = (parameters.shader_model & uint3(1, 2, 4)) ? 0.5 : 0.0;
 			if(parameters.flags_unk1)
 			{
@@ -257,7 +257,7 @@ void DebugAfterFog(
 			}
 			break;
 
-		case DebugMode_FlagUnk2_2:
+		case DebugView_ShadingKind:
 			out_direct = (parameters.flags_unk2 == int3(1,2,3)) ? 1.0 : 0.0;
 			break;
 
@@ -315,13 +315,13 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 	ambient_color *= 1.0 - parameters.fresnel_reflectance;
 	ambient_color *= parameters.ambient_occlusion;
 
-	switch(GetDebugMode())
+	switch(GetDebugView())
 	{
-		case DebugMode_Emission2:
-		case DebugMode_44:
+		case DebugView_AmbSpecular:
+		case DebugView_SggiOnly:
 			ambient_color = 0.0;
 			break;
-		case DebugMode_43:
+		case DebugView_AmbDiffuseLf:
 			ambient_color = lf_ambient_occlusion;
 			break;
 	}

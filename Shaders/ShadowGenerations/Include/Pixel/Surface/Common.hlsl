@@ -20,15 +20,15 @@ SurfaceData CreateCommonSurface(SurfaceParameters parameters)
 {
 	SurfaceData result;
 
-    switch(GetDebugMode())
+    switch(GetDebugView())
     {
-        case DebugMode_EnvReflectionsSmooth:
+        case DebugView_OnlyIblSurfNormal:
             parameters.normal = parameters.debug_normal;
             break;
-        case DebugMode_NoAlbedo:
+        case DebugView_WhiteAlbedo:
             parameters.albedo = 1.0;
             break;
-        case DebugMode_NoAlbedoNoAO:
+        case DebugView_WhiteAlbedoNoAo:
             parameters.albedo = 1.0;
             parameters.ambient_occlusion = 1.0;
             break;
