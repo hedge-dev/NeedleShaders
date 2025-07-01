@@ -1,5 +1,5 @@
-#ifndef SHADING_FLAGS_PIXEL_INCLUDED
-#define SHADING_FLAGS_PIXEL_INCLUDED
+#ifndef SHADING_MODEL_PIXEL_INCLUDED
+#define SHADING_MODEL_PIXEL_INCLUDED
 
 #include "../ConstantBuffer/MaterialDynamic.hlsl"
 
