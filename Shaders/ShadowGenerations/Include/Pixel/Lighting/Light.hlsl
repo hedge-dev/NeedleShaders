@@ -22,10 +22,9 @@ float NdfGGX(float3 halfway, float3 normal, float roughness)
     float cos_halfway_normal = saturate(dot(halfway, normal));
 
     float alpha = roughness * roughness;
-    float alphaSq = alpha * alpha;
 
-    float denom = (cos_halfway_normal * alphaSq - cos_halfway_normal) * cos_halfway_normal + 1;
-    return alphaSq / (Pi * denom * denom);
+    float denom = (cos_halfway_normal * alpha - cos_halfway_normal) * cos_halfway_normal + 1;
+    return alpha / (Pi * denom * denom);
 }
 
 float DGGXAniso(float3 halfway, float3 normal, float3 tangent, float3 binormal, float roughness, float2 anisotropy)
