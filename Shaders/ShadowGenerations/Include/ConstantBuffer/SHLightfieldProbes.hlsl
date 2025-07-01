@@ -13,23 +13,26 @@ cbuffer cb_shlightfield_probes : register(b6)
     float4 shlightfield_probe_SHLightFieldProbe_end;
 }
 
-struct SHLightFieldData
+static const uint SGLightFieldType_AmbientLighting = 0;
+static const uint SGLightFieldType_AmbientOcclusion = 2;
+
+struct SGLightFieldData
 {
     int index;
     float3 scale;
-    int unk2;
+    uint type;
 	float4x4 inv_world_matrix;
 };
 
-SHLightFieldData GetSGLightFieldData(int index)
+SGLightFieldData GetSGLightFieldData(int index)
 {
 	int offset = index * SGLightFieldDataSize;
 
-	SHLightFieldData result;
+	SGLightFieldData result;
     result.index = index;
 
     result.scale = shlightfield_probes_SHLightFieldProbe[offset].xyz;
-    result.unk2 = (int)floor(shlightfield_probes_SHLightFieldProbe[offset + 1].x + 0.5);
+    result.type = (int)floor(shlightfield_probes_SHLightFieldProbe[offset + 1].x + 0.5);
 
 	for(int i = 0; i < 4; i++)
 	{

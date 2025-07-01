@@ -4,14 +4,13 @@
 #include "../../ConstantBuffer/World.hlsl"
 #include "../../ConstantBuffer/MaterialDynamic.hlsl"
 
-#include "../ShadingFlags.hlsl"
 #include "Struct.hlsl"
 
 void ApplyWeatherEffects(inout SurfaceParameters parameters)
 {
 	float weather_param = u_weather_param.x;
 
-    if(parameters.shading_kind == ShadingKind_Character)
+    if(parameters.shading_model.kind == ShadingModelKind_Character)
     {
         weather_param *= u_weather_param.w;
     }

@@ -24,11 +24,11 @@ struct SGLightFieldInfo
 {
 	float3 position;
 	bool in_field;
-	SHLightFieldData data;
+	SGLightFieldData data;
 	float3 axis_colors[6];
 };
 
-SHLightFieldData FindClostestSGLightField(float4 world_position, out bool in_field)
+SGLightFieldData FindClostestSGLightField(float4 world_position, out bool in_field)
 {
 	float clostest_dist_sq = -1.0;
 	int closest_prob_index = 0;

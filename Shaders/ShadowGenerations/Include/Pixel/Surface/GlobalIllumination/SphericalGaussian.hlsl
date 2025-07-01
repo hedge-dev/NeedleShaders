@@ -5,7 +5,7 @@
 #include "../../../Texture.hlsl"
 #include "../../../Math.hlsl"
 
-#include "../../ShadingFlags.hlsl"
+#include "../../ShadingModel.hlsl"
 #include "../../EnvironmentBRDF.hlsl"
 
 #include "Common.hlsl"
@@ -85,7 +85,7 @@ float3 ComputeSGGISpecular(float3 colors[4], SurfaceParameters parameters)
 
 	result /= (1.0 - exp2(t3 * -2.88539004)) * (Tau / t3);
 
-	float2 env_brdf = ComputeEnvironmentBRDF(parameters.shading_model_id, parameters.roughness, cos_view_normal);
+	float2 env_brdf = ComputeEnvironmentBRDF(parameters.shading_model.type, parameters.roughness, cos_view_normal);
 	result *= parameters.fresnel_reflectance * env_brdf.x + env_brdf.y;
 
 	return max(result, 0.0);

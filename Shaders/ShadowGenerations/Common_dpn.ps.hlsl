@@ -39,7 +39,7 @@ PixelOutput main(const PixelInput input)
 
     SurfaceParameters parameters = InitSurfaceParameters();
     SetupSurfaceParamFromInput(input, parameters);
-    SetupSurfaceParamShadingModel(ShadingModelID_2, parameters);
+    parameters.shading_model = ShadingModelFromCB(ShadingModelType_2);
 
     //////////////////////////////////////////////////
 

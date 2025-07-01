@@ -236,11 +236,11 @@ void DebugAfterFog(
 			break;
 
 		case DebugView_ShadingModelId:
-			out_direct = (parameters.shading_model_id & uint3(1, 2, 4)) ? 1.0 : 0.0;
+			out_direct = (parameters.shading_model.type & uint3(1, 2, 4)) ? 1.0 : 0.0;
 			break;
 
 		case DebugView_CharacterMask:
-			out_direct = parameters.shading_kind == ShadingKind_Character ? 1.0 : 0.0;
+			out_direct = parameters.shading_model.kind == ShadingModelKind_Character ? 1.0 : 0.0;
 			break;
 
 		case DebugView_Distance:
@@ -250,15 +250,15 @@ void DebugAfterFog(
 			break;
 
 		case DebugView_ShadingModel:
-			out_direct = (parameters.shading_model_id & uint3(1, 2, 4)) ? 0.5 : 0.0;
-			if(parameters.shading_model_unk)
+			out_direct = (parameters.shading_model.type & uint3(1, 2, 4)) ? 0.5 : 0.0;
+			if(parameters.shading_model.unknown)
 			{
 				out_direct *= 3;
 			}
 			break;
 
 		case DebugView_ShadingKind:
-			out_direct = (parameters.shading_kind == int3(1,2,3)) ? 1.0 : 0.0;
+			out_direct = (parameters.shading_model.kind == int3(1,2,3)) ? 1.0 : 0.0;
 			break;
 
 		default:
@@ -284,7 +284,6 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 
 	if(parameters.occlusion_mode == 0 && shlightfield_param.x > 0)
 	{
-		// light field AO
 		lf_ambient_occlusion = parameters.occlusion_value;
 	}
 	else
@@ -296,12 +295,20 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 	ssao.xyz = saturate(ssao.xyz + u_ssao_param.x);
 	shadow = min(shadow, ssao.w);
 
+	//////////////////////////////////////////////////
+	// Emission
+
+	float3 emission_color = parameters.emission;
+	if(parameters.shading_model.unknown)
+	{
+		emission_color *= shadow * u_lightColor.xyz * parameters.albedo;
+	}
 
 	//////////////////////////////////////////////////
 	// Lighting
 
 	float3 sunlight_diffuse = DiffuseBDRF(parameters, u_lightDirection.xyz, u_lightColor.xyz, shadow);
-	float3 sunlight_specular = SpecularBRDF(parameters, u_lightDirection.xyz, u_lightColor.xyz, shadow, parameters.shading_model_id == ShadingModelID_AnisotropicReflection);
+	float3 sunlight_specular = SpecularBRDF(parameters, u_lightDirection.xyz, u_lightColor.xyz, shadow, parameters.shading_model.type == ShadingModelType_AnisotropicReflection);
 
 	float3 positional_light_diffuse;
 	float3 positional_light_specular;
@@ -312,7 +319,7 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 
 	float3 ambient_color = 0.0;
 
-	if(parameters.shading_model_id != ShadingModelID_1 && parameters.occlusion_mode == 0)
+	if(parameters.shading_model.type != ShadingModelType_1 && parameters.occlusion_mode == 0)
 	{
 		ambient_color = ComputeAmbientColor(parameters, lf_ambient_occlusion);
 		ambient_color *= 1.0 - parameters.metallic;
@@ -329,15 +336,6 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 		case DebugView_AmbDiffuseLf:
 			ambient_color = lf_ambient_occlusion;
 			break;
-	}
-
-	//////////////////////////////////////////////////
-	// Emission
-
-	float3 emission_color = parameters.emission;
-	if(parameters.shading_model_unk)
-	{
-		emission_color *= shadow * u_lightColor.xyz * parameters.albedo;
 	}
 
 	//////////////////////////////////////////////////
@@ -370,7 +368,7 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 
 	float3 occlusion_capsule_0 = lerp(u_occlusion_capsule_param[0].xyz, 1.0, ssao.x);
 	float3 occlusion_capsule_1 = lerp(u_occlusion_capsule_param[1].xyz, 1.0, ssao.y);
-	float3 occlusion_capsule_2 = parameters.shading_model_id == ShadingModelID_1 ? 1.0 : occlusion_capsule_0;
+	float3 occlusion_capsule_2 = parameters.shading_model.type == ShadingModelType_1 ? 1.0 : occlusion_capsule_0;
 
 	float3 out_diffuse = sunlight_diffuse * occlusion_capsule_1
 		+ positional_light_diffuse * occlusion_capsule_0;

@@ -16,7 +16,7 @@ Texture2D<float4> WithSampler(s_RLR);
 
 float ComputeReflectioOcclusion(LightingParameters parameters)
 {
-	if(parameters.shading_model_id == ShadingModelID_1)
+	if(parameters.shading_model.type == ShadingModelType_1)
 	{
 		return 0.0;
 	}
@@ -198,7 +198,7 @@ float4 ComputeEnvironmentReflectionColor(LightingParameters parameters, float sh
 		parameters.cavity * shadow
 	);
 
-	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shading_model_id, parameters.cos_view_normal, parameters.roughness);
+	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shading_model.type, parameters.cos_view_normal, parameters.roughness);
     float3 fresnel_color = parameters.fresnel_reflectance * env_bdrf.x + env_bdrf.y;
 
 	float4 result = skybox_reflection;
@@ -223,7 +223,7 @@ float4 ComputeScreenSpaceReflectionColor(LightingParameters parameters)
 		u_rlr_param[1].w * parameters.roughness
 	);
 
-	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shading_model_id, parameters.cos_view_normal, parameters.roughness);
+	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shading_model.type, parameters.cos_view_normal, parameters.roughness);
     float3 fresnel_color = parameters.fresnel_reflectance * env_bdrf.x + env_bdrf.y;
 
 	float3 result_color = max(0.0, rlr_color.xyz * fresnel_color);

@@ -54,11 +54,7 @@ SurfaceData CreateCommonSurface(SurfaceParameters parameters)
     result.normal.xyz = parameters.normal * 0.5 + 0.5;
     result.motion_vector.xy = ComputeMotionVector(parameters.screen_position, parameters.previous_position);
 
-    uint deferred_flags = parameters.shading_model_id
-        | (parameters.shading_model_unk ? 0x8 : 0)
-        | (parameters.shading_kind << 4);
-
-    result.albedo.w = (0.5 + deferred_flags) / 255.0;
+    result.albedo.w = (0.5 + ShadingModelToFlags(parameters.shading_model)) / 255.0;
 
     // TODO figure out what these do
     result.o5.xy = u_model_user_param_3.xy;

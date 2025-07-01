@@ -52,7 +52,7 @@ void ComputeSSSSTile(uint shading_model, uint groupIndex, uint2 groupThreadId)
 	}
 	GroupMemoryBarrierWithGroupSync();
 
-	if(shading_model == ShadingModelID_SSS)
+	if(shading_model == ShadingModelType_SSS)
 	{
 		InterlockedOr(shared_variable, 1);
 	}
@@ -70,7 +70,7 @@ void ComputeSSSOutput(LightingParameters parameters, float3 ambient_color, float
 {
 	ssss_output = 0.0;
 
-	if(parameters.shading_model_id != ShadingModelID_SSS)
+	if(parameters.shading_model.type != ShadingModelType_SSS)
 	{
 		return;
 	}

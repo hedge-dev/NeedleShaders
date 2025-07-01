@@ -2,7 +2,7 @@
 #define ENV_BRDF_PIXEL_INCLUDED
 
 #include "../Texture.hlsl"
-#include "ShadingFlags.hlsl"
+#include "ShadingModel.hlsl"
 
 Texture2D<float4> WithSampler(s_EnvBRDF);
 
@@ -25,7 +25,7 @@ float2 ApproximateEnvironmentBRDF(float cos_view_normal, float roughness)
 
 float2 ComputeEnvironmentBRDF(uint shading_model, float cos_view_normal, float roughness)
 {
-	if(shading_model == ShadingModelID_2)
+	if(shading_model == ShadingModelType_2)
 	{
 		return ApproximateEnvironmentBRDF(cos_view_normal, roughness);
 	}

@@ -21,7 +21,7 @@ float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlu
 	#else
 		SGLightFieldInfo light_field = ComputeSGLightFieldInfo(parameters.world_position, parameters.world_normal);
 
-		if(light_field.data.unk2 == 0)
+		if(light_field.data.type == SGLightFieldType_AmbientLighting)
 		{
 			result = ComputeSGLightFieldColor(parameters.world_normal, light_field.axis_colors);
 
@@ -34,7 +34,7 @@ float3 ComputeAmbientColor(LightingParameters parameters, float lf_ambient_occlu
 		{
 			result = ComputeSHProbeColor(parameters.tile_position, parameters.world_position, parameters.world_normal, lf_ambient_occlusion);
 		}
-		else if(light_field.data.unk2 == 2)
+		else if(light_field.data.type == SGLightFieldType_AmbientOcclusion)
 		{
 			if(light_field.in_field)
 			{

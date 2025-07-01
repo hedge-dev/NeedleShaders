@@ -8,13 +8,11 @@
 #include "../Surface/Struct.hlsl"
 
 #include "../Normals.hlsl"
-#include "../ShadingFlags.hlsl"
+#include "../ShadingModel.hlsl"
 
 struct LightingParameters
 {
-	uint shading_model_id;
-	bool shading_model_unk;
-	uint shading_kind;
+	ShadingModel shading_model;
 
     float3 albedo;
     float3 emission;
@@ -53,7 +51,7 @@ struct LightingParameters
 LightingParameters InitLightingParameters()
 {
 	LightingParameters result = {
-		0, false, 0,
+		{ 0, false, 0 },
 
 		{0.0, 0.0, 0.0},
 		{0.0, 0.0, 0.0},
@@ -105,23 +103,20 @@ void TransferInputData(PixelInput input, inout LightingParameters parameters)
 
 void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 {
-	uint flags = (uint)(data.albedo.w * 255);
-	parameters.shading_model_id = flags & 0x7;;
-	parameters.shading_model_unk = (flags & 0x8) != 0;
-	parameters.shading_kind = (flags >> 4) & 0x3;;
+	parameters.shading_model = ShadingModelFromFlags((uint)(data.albedo.w * 255));
 
 	parameters.albedo = data.albedo.xyz;
 
 	parameters.world_normal = data.normal * 2.0 - 1.0;
 	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
 
-	switch(parameters.shading_model_id)
+	switch(parameters.shading_model.type)
 	{
-		case ShadingModelID_SSS:
+		case ShadingModelType_SSS:
 			parameters.sss_param = data.emission.xyz;
 			break;
 
-		case ShadingModelID_AnisotropicReflection:
+		case ShadingModelType_AnisotropicReflection:
 			parameters.anisotropy = float2(
 				2 * floor(abs(data.emission.z)),
 				10 * frac(abs(data.emission.z))

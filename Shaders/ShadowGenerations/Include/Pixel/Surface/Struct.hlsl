@@ -2,16 +2,19 @@
 #define STRUCT_SURFACE_INCLUDED
 
 #include "../../ConstantBuffer/World.hlsl"
-#include "../../ConstantBuffer/MaterialDynamic.hlsl"
 
 #include "../../IOStructs.hlsl"
 #include "../../Math.hlsl"
+
+#include "../ShadingModel.hlsl"
 
 //////////////////////////////////////////////////
 // Surface parameters (input)
 
 struct SurfaceParameters
 {
+	ShadingModel shading_model;
+
 	float3 albedo;
 	float3 emission;
 
@@ -31,15 +34,13 @@ struct SurfaceParameters
 	float3 debug_normal;
 
 	float2 gi_uv;
-
-	uint shading_model_id;
-	bool shading_model_unk;
-	uint shading_kind;
 };
 
 SurfaceParameters InitSurfaceParameters()
 {
 	SurfaceParameters result = {
+		{ 0, false, 0 },
+
 		{0.0, 0.0, 0.0},
 		{0.0, 0.0, 0.0},
 
@@ -55,9 +56,7 @@ SurfaceParameters InitSurfaceParameters()
 		{0.0, 0.0, 0.0},
 		{0.0, 0.0, 0.0},
 
-		{0.0, 0.0},
-
-		0, false, 0
+		{0.0, 0.0}
 	};
 
 	return result;
@@ -72,15 +71,6 @@ void SetupSurfaceParamFromInput(PixelInput input, inout SurfaceParameters parame
     parameters.previous_position = input.previous_position.xyz;
 
     parameters.gi_uv = input.uv01.zw;
-}
-
-void SetupSurfaceParamShadingModel(int shading_model_id, inout SurfaceParameters parameters)
-{
-	uint shading_flags = asuint(u_shading_model_flag.x);
-
-	parameters.shading_model_id = shading_model_id;
-	parameters.shading_model_unk = (shading_flags & 0x8) != 0;
-	parameters.shading_kind = (shading_flags >> 4) & 0x3;;
 }
 
 //////////////////////////////////////////////////
