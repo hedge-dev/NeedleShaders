@@ -1,3 +1,5 @@
+#define IS_COMPUTE_SHADER
+
 #include "Include/Pixel/Lighting/Composite.hlsl"
 
 Texture2D<float4> s_DepthBuffer;
@@ -7,6 +9,7 @@ Texture2D<float4> s_GBuffer2;
 Texture2D<float4> s_GBuffer3;
 
 RWTexture2D<float4> rw_Output0 : register(u0);
+RWTexture2D<float4> rw_Output1 : register(u1);
 
 struct ThreadInfo {
 	uint3 groupId : SV_GroupID;
@@ -14,6 +17,15 @@ struct ThreadInfo {
     uint3 dispatchThreadId : SV_DispatchThreadID;
     uint groupIndex : SV_GroupIndex;
 };
+
+void WriteSSSSOutput(uint2 pixel, float4 value)
+{
+	#ifndef enable_ssss
+		return;
+	#endif
+
+	rw_Output1[pixel] = value;
+}
 
 [numthreads(8, 8, 1)]
 void main(ThreadInfo input)
@@ -54,6 +66,7 @@ void main(ThreadInfo input)
 	parameters.light_scattering_colors = ComputeLightScatteringColors(parameters.view_distance, parameters.view_direction);
 
 	float4 ssss_color;
-	rw_Output0[input.dispatchThreadId.xy] = CompositeLighting(parameters, ssss_color);
+	float ssss_mask;
+	rw_Output0[input.dispatchThreadId.xy] = CompositeLighting(parameters, ssss_color, ssss_mask);
 	WriteSSSSOutput(input.dispatchThreadId.xy, ssss_color);
 }

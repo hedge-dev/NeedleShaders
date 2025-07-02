@@ -31,12 +31,7 @@ void SampleCDRF(LightingParameters parameters, float3 light_direction, float sha
 //////////////////////////////////////////////////
 // Screen space subsurface scattering
 
-float4 ssss_param;
-float4 ssss_colors[16];
-float4 ssss_ambient_boost;
-
 static groupshared int shared_variable;
-RWTexture2D<float4> rw_Output1 : register(u1);
 RWByteAddressBuffer rw_indirectSSSSDrawArguments : register(u2);
 RWStructuredBuffer<int> rw_IndirectSSSSTiles : register(u3);
 
@@ -66,9 +61,15 @@ void ComputeSSSSTile(uint shading_model, uint groupIndex, uint2 groupThreadId)
 	}
 }
 
-void ComputeSSSOutput(LightingParameters parameters, float3 ambient_color, float3 light_color, inout float3 out_direct, out float4 ssss_output)
+
+float4 ssss_param;
+float4 ssss_colors[16];
+float4 ssss_ambient_boost;
+
+void ComputeSSSSOutput(LightingParameters parameters, float3 ambient_color, float3 light_color, inout float3 out_direct, out float4 ssss_output, out float ssss_mask)
 {
 	ssss_output = 0.0;
+	ssss_mask = 0.0;
 
 	if(parameters.shading_model.type != ShadingModelType_SSS)
 	{
@@ -106,15 +107,7 @@ void ComputeSSSOutput(LightingParameters parameters, float3 ambient_color, float
 
 	ssss_output.xyz = out_direct + t4 * t3 * t1 * parameters.sss_param.z;
 	out_direct = 0.0;
-}
-
-void WriteSSSSOutput(uint2 pixel, float4 value)
-{
-	#ifndef enable_ssss
-		return;
-	#endif
-
-	rw_Output1[pixel] = value;
+	ssss_mask = 1.0;
 }
 
 #endif

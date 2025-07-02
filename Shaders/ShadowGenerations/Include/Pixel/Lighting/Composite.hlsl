@@ -196,10 +196,21 @@ void DebugAfterFog(
 
 		case DebugView_SSAO:
 			out_direct = ssao.x;
+
+			out_direct.xy = parameters.screen_position;
+			out_direct.z = 0.0;
 			break;
 
 		case DebugView_RLR:
 			out_direct = SampleTextureLevel(s_RLR, parameters.screen_position, 0).xyz;
+
+			out_direct.xy = ComputeScreenSpaceCoords(
+				parameters.screen_position,
+				parameters.world_position.xyz,
+				parameters.world_normal,
+				parameters.view_direction
+			);
+			out_direct.z = 0.0;
 			break;
 
 		case DebugView_IblDiffuse:
@@ -274,7 +285,7 @@ void DebugAfterFog(
 	}
 }
 
-float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
+float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output, out float ssss_mask)
 {
 	//////////////////////////////////////////////////
 	// Occlusion
@@ -452,7 +463,14 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output)
 	//////////////////////////////////////////////////
 	// Subsurface scattering
 
-	ComputeSSSOutput(parameters, ambient_color, u_lightColor.xyz, out_direct, ssss_output);
+	ComputeSSSSOutput(
+		parameters,
+		ambient_color,
+		u_lightColor.xyz,
+		out_direct,
+		ssss_output,
+		ssss_mask
+	);
 
 	//////////////////////////////////////////////////
 	// final output

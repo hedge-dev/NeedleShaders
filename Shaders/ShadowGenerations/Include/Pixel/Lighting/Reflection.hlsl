@@ -210,6 +210,45 @@ float4 ComputeEnvironmentReflectionColor(LightingParameters parameters, float sh
 	return result;
 }
 
+float2 ComputeScreenSpaceCoords(float2 screen_position, float3 position, float3 normal, float3 view_direction)
+{
+	#ifdef IS_COMPUTE_SHADER
+		return screen_position;
+	#else
+		float3 ddx = ddx_coarse(position.yzx);
+		float3 ddy = ddy_coarse(position.zxy);
+		float3 dd_tan = normalize(cross(ddx, ddy));
+		float3 dd_reflection = reflect(view_direction, dd_tan);
+		float3 dd_reflection_2 = view_direction - normal.xyz * saturate(dot(view_direction, normal)) * 2;
+		float cos_view_ddrefl_raw = dot(view_direction, dd_reflection);
+		float cos_view_ddrefl = abs(cos_view_ddrefl_raw);
+
+		float t = sqrt(1 - cos_view_ddrefl);
+
+		float t2 =
+			(Pi * 2.0)
+			- 0.212114394 * cos_view_ddrefl
+			+ 0.0742610022 * pow(cos_view_ddrefl, 2)
+			- 0.0187292993 * pow(cos_view_ddrefl, 3);
+
+		float t3 = cos_view_ddrefl_raw < 0
+			? Pi - t2 * t * 2
+			: 0;
+
+		float t4 = min(1.0, (t * t2 + t3) * 0.9);
+
+		float3 dd_reflection_3 = lerp(dd_reflection, dd_reflection_2, t4) - dd_reflection_2;
+
+		float2 result = mul(dd_reflection_3, (float3x3)view_matrix).xy;
+		result.y = abs(result.y);
+
+		result *= u_rlr_param[0].z;
+		result = clamp(result, -u_rlr_param[0].w, u_rlr_param[0].w);
+		result += screen_position;
+		return min(u_rlr_param[0].xy, result);
+	#endif
+}
+
 float4 ComputeScreenSpaceReflectionColor(LightingParameters parameters)
 {
 	if(!enable_ibl_plus_directional_specular)
@@ -217,9 +256,16 @@ float4 ComputeScreenSpaceReflectionColor(LightingParameters parameters)
 		return 0.0;
 	}
 
+	float2 sample_pos = ComputeScreenSpaceCoords(
+		parameters.screen_position,
+		parameters.world_position.xyz,
+		parameters.world_normal,
+		parameters.view_direction
+	);
+
 	float4 rlr_color = SampleTextureLevel(
 		s_RLR,
-		parameters.screen_position,
+		sample_pos,
 		u_rlr_param[1].w * parameters.roughness
 	);
 
