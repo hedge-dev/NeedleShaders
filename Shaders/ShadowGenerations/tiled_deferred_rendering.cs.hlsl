@@ -57,17 +57,7 @@ void main(ThreadInfo input)
 	}
 
 	float depth = s_DepthBuffer.Load(buffer_uv).x;
-	parameters.view_distance = DepthToViewDistance(depth);
-
-	parameters.pixel_position = input.dispatchThreadId.xy;
-	parameters.tile_position = input.groupId.xy >> 1;
-
-	parameters.screen_position = PixelToScreen(input.dispatchThreadId.xy);
-	parameters.world_position = ScreenDepthToWorldPosition(parameters.screen_position, depth);
-
-	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
-	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
-	parameters.light_scattering_colors = ComputeLightScatteringColors(parameters.view_distance, parameters.view_direction);
+	TransferPixelData(input.dispatchThreadId.xy, depth, parameters);
 
 	float4 ssss_color;
 	float ssss_mask;

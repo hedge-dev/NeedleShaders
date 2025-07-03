@@ -46,21 +46,12 @@ DeferredOut main(DeferredIn input)
 			result.ssss_color = 0.0;
 			result.ssss_mask = 0.0;
 		#endif
+
 		return result;
 	}
 
 	float depth = s_DepthBuffer.Load(buffer_uv).x;
-	parameters.view_distance = DepthToViewDistance(depth);
-
-	parameters.pixel_position = buffer_uv.xy;
-	parameters.tile_position = buffer_uv.xy >> 4;
-
-	parameters.screen_position = PixelToScreen(parameters.pixel_position);
-	parameters.world_position = ScreenDepthToWorldPosition(parameters.screen_position, depth);
-
-	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
-	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
-	parameters.light_scattering_colors = ComputeLightScatteringColors(parameters.view_distance, parameters.view_direction);
+	TransferPixelData(buffer_uv.xy, depth, parameters);
 
 	float4 ssss_color;
 	float ssss_mask;

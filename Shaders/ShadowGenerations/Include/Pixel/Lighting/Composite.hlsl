@@ -196,21 +196,10 @@ void DebugAfterFog(
 
 		case DebugView_SSAO:
 			out_direct = ssao.x;
-
-			out_direct.xy = parameters.screen_position;
-			out_direct.z = 0.0;
 			break;
 
 		case DebugView_RLR:
 			out_direct = SampleTextureLevel(s_RLR, parameters.screen_position, 0).xyz;
-
-			out_direct.xy = ComputeScreenSpaceCoords(
-				parameters.screen_position,
-				parameters.world_position.xyz,
-				parameters.world_normal,
-				parameters.view_direction
-			);
-			out_direct.z = 0.0;
 			break;
 
 		case DebugView_IblDiffuse:

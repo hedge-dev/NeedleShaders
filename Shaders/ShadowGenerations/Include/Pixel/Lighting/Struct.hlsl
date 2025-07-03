@@ -4,6 +4,7 @@
 #include "../../IOStructs.hlsl"
 #include "../../LightScattering.hlsl"
 #include "../../Math.hlsl"
+#include "../../Transform.hlsl"
 
 #include "../Surface/Struct.hlsl"
 
@@ -84,7 +85,7 @@ LightingParameters InitLightingParameters()
 	return result;
 }
 
-void TransferInputData(PixelInput input, inout LightingParameters parameters)
+void TransferVertexData(PixelInput input, inout LightingParameters parameters)
 {
 	parameters.screen_position = input.position.xy * u_screen_info.zw;
 	parameters.world_position = WorldPosition4(input);
@@ -145,8 +146,21 @@ void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 		parameters.albedo,
 		parameters.metallic
 	);
+}
 
+void TransferPixelData(uint2 pixel_position, float depth, inout LightingParameters parameters)
+{
+	parameters.view_distance = DepthToViewDistance(depth);
 
+	parameters.pixel_position = pixel_position;
+	parameters.tile_position = pixel_position.xy >> 4;
+
+	parameters.screen_position = PixelToScreen(pixel_position);
+	parameters.world_position = ScreenDepthToWorldPosition(parameters.screen_position, depth);
+
+	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
+	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
+	parameters.light_scattering_colors = ComputeLightScatteringColors(parameters.view_distance, parameters.view_direction);
 }
 
 #endif
