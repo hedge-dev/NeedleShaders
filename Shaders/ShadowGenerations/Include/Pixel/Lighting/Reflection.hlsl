@@ -51,7 +51,7 @@ float ComputeReflectioOcclusion(LightingParameters parameters)
 			break;
 	}
 
-	if(parameters.occlusion_mode == 1)
+	if(parameters.occlusion_mode == OcclusionMode_ShadowGI)
 	{
 		result = lerp(result, 1.0, parameters.metallic);
 	}
@@ -220,36 +220,25 @@ float4 ComputeEnvironmentReflectionColor(LightingParameters parameters, float sh
 	return result;
 }
 
-float2 ComputeScreenSpaceCoords(float2 screen_position, float3 position, float3 normal, float3 view_direction)
+float2 ComputeRLRPosition(float2 screen_position, float3 position, float3 normal, float3 view_direction)
 {
 	#ifdef IS_COMPUTE_SHADER
 		return screen_position;
 	#else
-		float3 ddx = ddx_coarse(position.yzx);
-		float3 ddy = ddy_coarse(position.zxy);
-		float3 dd_tan = normalize(cross(ddx, ddy));
-		float3 dd_reflection = reflect(view_direction, dd_tan);
-		float3 dd_reflection_2 = view_direction - normal.xyz * saturate(dot(view_direction, normal)) * 2;
-		float cos_view_ddrefl_raw = dot(view_direction, dd_reflection);
-		float cos_view_ddrefl = abs(cos_view_ddrefl_raw);
+		float3 ddx = ddx_coarse(position);
+		float3 ddy = ddy_coarse(position);
+		float3 geo_normal = normalize(cross(ddx, ddy));
 
-		float t = sqrt(1 - cos_view_ddrefl);
+		float3 ref_view_geonrm = reflect(view_direction, geo_normal);
+		float3 ref_view_nrm = view_direction - normal * saturate(dot(view_direction, normal)) * 2;
 
-		float t2 =
-			(Pi * 2.0)
-			- 0.212114394 * cos_view_ddrefl
-			+ 0.0742610022 * pow(cos_view_ddrefl, 2)
-			- 0.0187292993 * pow(cos_view_ddrefl, 3);
+		float cos_view_geonrm_raw = dot(view_direction, ref_view_geonrm);
+		float cos_view_geonrm = abs(cos_view_geonrm_raw);
+		float asin_view_geonrm = asin_view_geonrm = min(1.0, asin(cos_view_geonrm) * 0.9);
 
-		float t3 = cos_view_ddrefl_raw < 0
-			? Pi - t2 * t * 2
-			: 0;
+		float3 reflection_dir = lerp(ref_view_geonrm, ref_view_nrm, asin_view_geonrm) - ref_view_nrm;
 
-		float t4 = min(1.0, (t * t2 + t3) * 0.9);
-
-		float3 dd_reflection_3 = lerp(dd_reflection, dd_reflection_2, t4) - dd_reflection_2;
-
-		float2 result = mul(dd_reflection_3, (float3x3)view_matrix).xy;
+		float2 result = mul(reflection_dir, (float3x3)view_matrix).xy;
 		result.y = abs(result.y);
 
 		result *= u_rlr_param[0].z;
@@ -266,7 +255,7 @@ float4 ComputeScreenSpaceReflectionColor(LightingParameters parameters)
 		return 0.0;
 	}
 
-	float2 sample_pos = ComputeScreenSpaceCoords(
+	float2 sample_pos = ComputeRLRPosition(
 		parameters.screen_position,
 		parameters.world_position.xyz,
 		parameters.world_normal,

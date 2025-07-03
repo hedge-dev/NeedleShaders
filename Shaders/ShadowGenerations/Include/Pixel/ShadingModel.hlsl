@@ -21,6 +21,12 @@ static const uint ShadingModelKind_Character = 1;
 static const uint ShadingModelKind_2 = 2;
 static const uint ShadingModelKind_3 = 3;
 
+// idk where else to put these, so they go here right now
+static const uint OcclusionMode_AOLightField = 0;
+static const uint OcclusionMode_ShadowGI = 1;
+static const uint OcclusionMode_SGGI = 2;
+static const uint OcclusionMode_AOGI = 3;
+
 struct ShadingModel
 {
 	uint type;

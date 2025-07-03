@@ -4,13 +4,8 @@
 #define enable_local_light_shadow
 #define enable_para_corr
 
+#include "Include/Pixel/Deferred.hlsl"
 #include "Include/Pixel/Lighting/Composite.hlsl"
-
-Texture2D<float4> s_DepthBuffer;
-Texture2D<float4> s_GBuffer0;
-Texture2D<float4> s_GBuffer1;
-Texture2D<float4> s_GBuffer2;
-Texture2D<float4> s_GBuffer3;
 
 RWTexture2D<float4> rw_Output0 : register(u0);
 RWTexture2D<float4> rw_Output1 : register(u1);
@@ -34,16 +29,10 @@ void WriteSSSSOutput(uint2 pixel, float4 value)
 [numthreads(8, 8, 1)]
 void main(ThreadInfo input)
 {
-	SurfaceData deferred_data = InitSurfaceData();
-
-	uint3 buffer_uv = int3(input.dispatchThreadId.xy, 0);
-	deferred_data.albedo = s_GBuffer0.Load(buffer_uv);
-	deferred_data.normal = s_GBuffer1.Load(buffer_uv).xyz;
-	deferred_data.emission = s_GBuffer2.Load(buffer_uv);
-	deferred_data.prm = s_GBuffer3.Load(buffer_uv);
+	DeferredData deferred_data = LoadDeferredData(input.dispatchThreadId.xy);
 
 	LightingParameters parameters = InitLightingParameters();
-	TransferSurfaceData(deferred_data, parameters);
+	TransferSurfaceData(deferred_data.surface, parameters);
 
 	ComputeSSSSTile(parameters.shading_model.type, input.groupIndex, input.groupId.xy);
 
@@ -56,8 +45,7 @@ void main(ThreadInfo input)
 		return;
 	}
 
-	float depth = s_DepthBuffer.Load(buffer_uv).x;
-	TransferPixelData(input.dispatchThreadId.xy, depth, parameters);
+	TransferPixelData(input.dispatchThreadId.xy, deferred_data.depth, parameters);
 
 	float4 ssss_color;
 	float ssss_mask;

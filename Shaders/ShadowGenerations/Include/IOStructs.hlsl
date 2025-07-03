@@ -99,4 +99,13 @@ struct Vertex2Pixel
 	};
 #endif
 
+//////////////////////////////////////////////////
+// Blit shader structs
+
+struct BlitIn
+{
+	float4 pixel_position : SV_POSITION0;
+	float2 screen_position : TEXCOORD0;
+};
+
 #endif

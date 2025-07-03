@@ -1,16 +1,6 @@
+#include "Include/IOStructs.hlsl"
+#include "Include/Pixel/Deferred.hlsl"
 #include "Include/Pixel/Lighting/Composite.hlsl"
-
-Texture2D<float4> s_DepthBuffer;
-Texture2D<float4> s_GBuffer0;
-Texture2D<float4> s_GBuffer1;
-Texture2D<float4> s_GBuffer2;
-Texture2D<float4> s_GBuffer3;
-
-struct DeferredIn
-{
-	float4 pixel_position : SV_POSITION0;
-	float2 screen_position : TEXCOORD0;
-};
 
 struct DeferredOut
 {
@@ -23,18 +13,12 @@ struct DeferredOut
 };
 
 
-DeferredOut main(DeferredIn input)
+DeferredOut main(BlitIn input)
 {
-	SurfaceData deferred_data = InitSurfaceData();
-
-	uint3 buffer_uv = int3(input.pixel_position.xy, 0);
-	deferred_data.albedo = s_GBuffer0.Load(buffer_uv);
-	deferred_data.normal = s_GBuffer1.Load(buffer_uv).xyz;
-	deferred_data.emission = s_GBuffer2.Load(buffer_uv);
-	deferred_data.prm = s_GBuffer3.Load(buffer_uv);
+	DeferredData deferred_data = LoadDeferredData(input.pixel_position.xy);
 
 	LightingParameters parameters = InitLightingParameters();
-	TransferSurfaceData(deferred_data, parameters);
+	TransferSurfaceData(deferred_data.surface, parameters);
 
 	DeferredOut result;
 
@@ -50,8 +34,7 @@ DeferredOut main(DeferredIn input)
 		return result;
 	}
 
-	float depth = s_DepthBuffer.Load(buffer_uv).x;
-	TransferPixelData(buffer_uv.xy, depth, parameters);
+	TransferPixelData((uint2)input.pixel_position.xy, deferred_data.depth, parameters);
 
 	float4 ssss_color;
 	float ssss_mask;

@@ -112,6 +112,49 @@ void DebugBeforeFog(
 	}
 }
 
+void DebugLocalLight(LightingParameters parameters, int type, inout float3 out_direct)
+{
+	#ifdef IS_COMPUTE_SHADER
+		return;
+	#endif
+
+	LocalLightHeader pos_header = GetLocalLightHeader(parameters.tile_position);
+
+	uint2 count;
+
+	if(type == 0)
+	{
+		count = uint2(
+			pos_header.positional_light_count,
+			pos_header.positional_light_vol_count
+		);
+	}
+	else if(type == 1)
+	{
+		count = uint2(
+			pos_header.occlusion_capsule_count,
+			pos_header.occlusion_capsule_vol_count
+		);
+	}
+	else
+	{
+		count = uint2(
+			pos_header.env_probe_count,
+			pos_header.env_probe_vol_count
+		);
+	}
+
+	out_direct = DebugTile_UInt2(
+		parameters.pixel_position,
+		count,
+		out_direct
+	);
+
+	#ifndef enable_local_light_shadow
+		out_direct = DebugTile_NumText(parameters.pixel_position, count.x, out_direct);
+	#endif
+}
+
 void DebugAfterFog(
 	LightingParameters parameters,
 	float3 ssao,
@@ -137,7 +180,13 @@ void DebugAfterFog(
 
 	switch(GetDebugView())
 	{
-		case DebugView_User0: break;
+		case DebugView_User0:
+			// User0 is not actually used, so i repurposed it for debugging shadow cascades
+			// ~ Justin113D
+			out_direct = 1.0;
+			ApplyShadowCascadeThing(parameters.world_position, out_direct);
+			break;
+
 		case DebugView_User1: break;
 
 		case DebugView_User2:
@@ -190,9 +239,16 @@ void DebugAfterFog(
 			out_direct = parameters.metallic;
 			break;
 
-		case DebugView_LocalLight: break;
-		case DebugView_OcclusionCapsule: break;
-		case DebugView_Probe: break;
+		case DebugView_LocalLight:
+			DebugLocalLight(parameters, 0, out_direct);
+			break;
+
+		case DebugView_OcclusionCapsule:
+			DebugLocalLight(parameters, 1, out_direct);
+			break;
+		case DebugView_Probe:
+			DebugLocalLight(parameters, 2, out_direct);
+			break;
 
 		case DebugView_SSAO:
 			out_direct = ssao.x;
@@ -282,7 +338,7 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output, 
 	float lf_ambient_occlusion = 1.0;
 	float shadow = 1.0;
 
-	if(parameters.occlusion_mode == 0 && shlightfield_param.x > 0)
+	if(parameters.occlusion_mode == OcclusionMode_AOLightField && shlightfield_param.x > 0)
 	{
 		lf_ambient_occlusion = parameters.occlusion_value;
 	}
@@ -319,7 +375,7 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output, 
 
 	float3 ambient_color = 0.0;
 
-	if(parameters.shading_model.type != ShadingModelType_1 && parameters.occlusion_mode == 0)
+	if(parameters.shading_model.type != ShadingModelType_1 && parameters.occlusion_mode == OcclusionMode_AOLightField)
 	{
 		ambient_color = ComputeAmbientColor(parameters, lf_ambient_occlusion);
 		ambient_color *= 1.0 - parameters.metallic;

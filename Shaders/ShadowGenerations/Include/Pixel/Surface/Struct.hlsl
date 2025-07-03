@@ -101,7 +101,7 @@ struct SurfaceData
 
 	// --- Motion Vector ---
 	// XY: Motion vector direction
-    float2 motion_vector : SV_Target4;
+    float2 velocity : SV_Target4;
 
 	// ???
     float2 o5 : SV_Target5;
