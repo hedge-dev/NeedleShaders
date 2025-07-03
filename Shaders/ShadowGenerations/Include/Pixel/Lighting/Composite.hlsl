@@ -68,7 +68,8 @@ void DebugBeforeFog(
 		case DebugView_OnlyIblSurfNormal:
 			LightingParameters debug_param = parameters;
 			debug_param.fresnel_reflectance = 1.0;
-			out_direct = ComputeEnvironmentReflectionColor(debug_param, shadow).xyz;
+			debug_param.roughness = 0.0;
+			out_direct = ComputeEnvironmentReflectionColor(debug_param, shadow, true).xyz;
 			break;
 
 		case DebugView_Shadow:
@@ -99,6 +100,16 @@ void DebugBeforeFog(
 			break;
 
 		case DebugView_WriteDepthToAlpha:
+			// the way its implemented here is different from the original...
+			// Because here it will actually work lol.
+			// In the original, it statically writes 0.
+
+			// Its also not actually part of tiled_deferred_rendering.cso,
+			// for some reason but imma include it anyway. (not like it gets used,
+			// since debugging uses the pixel shader...)
+			// ~ Justin113D
+
+			out_alpha = parameters.depth;
 			break;
 		default:
 			only_direct = false;
@@ -161,7 +172,6 @@ void DebugAfterFog(
 	float3 ambient_color,
 	float3 emission_color,
 	float lf_ambient_occlusion,
-	float shadow,
 	inout float3 out_direct,
 	inout float3 out_indirect,
 	inout float3 out_fog,
@@ -259,26 +269,14 @@ void DebugAfterFog(
 			break;
 
 		case DebugView_IblDiffuse:
-			float4 debug_probe_reflection = ComputeReflectionProbeColor(
-				parameters.tile_position,
-				parameters.world_position,
-				parameters.world_normal,
-				parameters.view_direction,
-				parameters.roughness
-			);
-
-			float4 debug_skybox_reflection = ComputeSkyboxReflectionColor(
-				parameters.world_normal,
-				parameters.view_direction,
-				parameters.roughness,
-				1.0
-			);
-
-			out_direct = debug_probe_reflection.xyz + debug_skybox_reflection.xyz * saturate(1.0 - debug_probe_reflection.w);
+			LightingParameters debug_param = parameters;
+			debug_param.roughness = 1.0;
+			debug_param.cavity = 1.0;
+			out_direct = ComputeEnvironmentReflectionColor(debug_param, 1.0, false).xyz;
 			break;
 
 		case DebugView_IblSpecular:
-			out_direct = ComputeEnvironmentReflectionColor(parameters, shadow).xyz;
+			out_direct = ComputeEnvironmentReflectionColor(parameters, 1.0, true).xyz;
 			break;
 
 		case DebugView_EnvBRDF:
@@ -498,7 +496,6 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output, 
 		ambient_color,
 		emission_color,
 		lf_ambient_occlusion,
-		shadow,
 		out_direct,
 		out_indirect,
 		out_fog,

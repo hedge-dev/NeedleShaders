@@ -28,8 +28,12 @@ static const float2 shadow_angles[5] = {
 	{ -1.0, -1.0 }
 };
 
-float ComputeShadowSomething(LightingParameters parameters, uint index)
+float ComputePositionalLightShadow(LightingParameters parameters, uint index)
 {
+	#ifndef enable_local_light_shadow
+		return 1.0;
+	#endif
+
 	float4 shadow_param = g_local_light_shadow_param[index];
 
 	if(index < 0 || abs(shadow_param.w) <= 0.01)
@@ -128,7 +132,7 @@ void CalculateLight(LightingParameters parameters, PositionalLightData light_dat
 	float3 light_color = light_data.color / (Pi * 4.0);
 
 	uint shadow_index = UnpackUIntBits(light_data.flags, 3, 16) - 1;
-	light_attenuation *= ComputeShadowSomething(parameters, shadow_index);
+	light_attenuation *= ComputePositionalLightShadow(parameters, shadow_index);
 
 	if(light_data.flags & 0x10)
 	{

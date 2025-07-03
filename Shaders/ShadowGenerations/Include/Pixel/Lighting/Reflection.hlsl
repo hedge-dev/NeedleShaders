@@ -191,7 +191,7 @@ float4 ComputeSkyboxReflectionColor(float3 normal, float3 view_direction, float 
     return ibl_color;
 }
 
-float4 ComputeEnvironmentReflectionColor(LightingParameters parameters, float shadow)
+float4 ComputeEnvironmentReflectionColor(LightingParameters parameters, float skybox_occlusion, bool specular)
 {
 	float4 probe_reflection = ComputeReflectionProbeColor(
 		parameters.tile_position,
@@ -201,21 +201,28 @@ float4 ComputeEnvironmentReflectionColor(LightingParameters parameters, float sh
 		parameters.roughness
 	);
 
+	#ifdef enable_para_corr
+		skybox_occlusion *= parameters.cavity;
+	#endif
+
 	float4 skybox_reflection = ComputeSkyboxReflectionColor(
 		parameters.world_normal,
 		parameters.view_direction,
 		parameters.roughness,
-		parameters.cavity * shadow
+		skybox_occlusion
 	);
-
-	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shading_model.type, parameters.cos_view_normal, parameters.roughness);
-    float3 fresnel_color = parameters.fresnel_reflectance * env_bdrf.x + env_bdrf.y;
 
 	float4 result = skybox_reflection;
 	result *= saturate(1.0 - probe_reflection.w);
 	result.xyz += probe_reflection.xyz;
-	result.xyz *= fresnel_color;
-	result.xyz = max(0.0, result.xyz);
+
+	if(specular)
+	{
+		float2 env_brdf = ComputeEnvironmentBRDF(parameters.shading_model.type, parameters.cos_view_normal, parameters.roughness);
+		float3 fresnel_color = parameters.fresnel_reflectance * env_brdf.x + env_brdf.y;
+		result.xyz *= fresnel_color;
+		result.xyz = max(0.0, result.xyz);
+	}
 
 	return result;
 }
@@ -286,7 +293,7 @@ float4 ComputeReflectionColor(LightingParameters parameters, float shadow)
 		return float4(0, 0, 0, 1);
 	}
 
-	float4 environment_reflection = ComputeEnvironmentReflectionColor(parameters, shadow);
+	float4 environment_reflection = ComputeEnvironmentReflectionColor(parameters, shadow, true);
 	float4 ssr = ComputeScreenSpaceReflectionColor(parameters);
 
 	//////////////////////////////////////////////////

@@ -24,6 +24,7 @@ struct LightingParameters
 	uint2 pixel_position;
 	uint2 tile_position;
 
+	float depth;
 	float view_distance;
 	float2 screen_position;
 	float4 world_position;
@@ -63,6 +64,7 @@ LightingParameters InitLightingParameters()
 		{0, 0},
 		{0, 0},
 
+		0.0,
 		0.0,
 		{0.0, 0.0},
 		{0.0, 0.0, 0.0, 0.0},
@@ -150,6 +152,7 @@ void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 
 void TransferPixelData(uint2 pixel_position, float depth, inout LightingParameters parameters)
 {
+	parameters.depth = depth;
 	parameters.view_distance = DepthToViewDistance(depth);
 
 	parameters.pixel_position = pixel_position;
