@@ -1,5 +1,9 @@
 #define IS_COMPUTE_SHADER
 
+// Statically enabled features
+#define enable_local_light_shadow
+#define enable_para_corr
+
 #include "Include/Pixel/Lighting/Composite.hlsl"
 
 Texture2D<float4> s_DepthBuffer;

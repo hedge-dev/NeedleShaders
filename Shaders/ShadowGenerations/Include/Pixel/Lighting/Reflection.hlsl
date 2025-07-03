@@ -1,6 +1,12 @@
 #ifndef REFLECTION_LIGHTING_INCLUDED
 #define REFLECTION_LIGHTING_INCLUDED
 
+#include "../../Common.hlsl"
+
+#ifndef enable_para_corr
+	DefineFeature(enable_para_corr);
+#endif
+
 #include "../../Texture.hlsl"
 #include "../../Debug.hlsl"
 
@@ -124,6 +130,10 @@ float4 SampleReflectionProbe(EnvProbeData probe, float4 position, float3 normal,
 
 float4 ComputeReflectionProbeColor(uint2 tile_position, float4 position, float3 normal, float3 view_direction, float roughness)
 {
+	#ifndef enable_para_corr
+		return 0.0;
+	#endif
+
 	float3 color = 0.0;
 	float influence = 0.0;
 

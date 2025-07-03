@@ -1,6 +1,12 @@
 #ifndef POSITIONAL_LIGHTING_INCLUDED
 #define POSITIONAL_LIGHTING_INCLUDED
 
+#include "../../Common.hlsl"
+
+#ifndef enable_local_light_shadow
+	DefineFeature(enable_local_light_shadow);
+#endif
+
 #include "../../ConstantBuffer/World.hlsl"
 #include "../../ConstantBuffer/LocalLightContextData.hlsl"
 
