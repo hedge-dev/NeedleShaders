@@ -9,12 +9,12 @@ Texture2D<float4> WithSampler(s_EnvBRDF);
 float2 ApproximateEnvironmentBRDF(float cos_view_normal, float roughness)
 {
 	float4 remap = roughness
-		* float4(-1.0, -0.275, -0.572, 0.022)
+		* float4(-1.0, -0.0275, -0.572, 0.022)
 		+ float4( 1.0, 0.0425, 1.04, -0.04);
 
 	float value = min(
-		exp2(cos_view_normal * -9.28),
-		pow(remap.x, 2)
+		pow(remap.x, 2),
+		exp2(cos_view_normal * -9.28)
 	);
 
 	value *= remap.x;
