@@ -79,8 +79,8 @@ float ComputePositionalLightShadow(LightingParameters parameters, uint index)
 	}
 
 	result *= 0.2;
-	result += smoothstep(0.0, 1.0, -2.5 * (shadow_distance - 1.0));
-	result = min(result, 0.1);
+	result += smoothstep(-1.5, 1.0, shadow_distance);
+	result = min(result, 1.0);
 
 	return lerp(1.0, result, abs(shadow_param.w));
 }

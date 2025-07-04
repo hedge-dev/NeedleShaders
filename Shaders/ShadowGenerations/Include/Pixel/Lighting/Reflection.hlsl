@@ -278,10 +278,10 @@ float4 ComputeScreenSpaceReflectionColor(LightingParameters parameters)
 	float2 env_bdrf = ComputeEnvironmentBRDF(parameters.shading_model.type, parameters.cos_view_normal, parameters.roughness);
     float3 fresnel_color = parameters.fresnel_reflectance * env_bdrf.x + env_bdrf.y;
 
-	float3 result_color = max(0.0, rlr_color.xyz * fresnel_color);
-	float result_influence = smoothstep(0.0, 1.0, (rlr_color.w - 1.0 + u_sggi_param[1].x) / (u_sggi_param[1].x + 0.0001));
-
-	return float4(result_color, result_influence);
+	return float4(
+		max(0.0, fresnel_color * rlr_color.xyz),
+		smoothstep(1.0 - u_sggi_param[1].x, 1.0001, rlr_color.w)
+	);
 }
 
 float4 ComputeReflectionColor(LightingParameters parameters, float shadow)
