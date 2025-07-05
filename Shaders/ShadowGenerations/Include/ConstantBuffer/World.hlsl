@@ -156,7 +156,7 @@ SHColors GetSkySHColors()
 struct ShadowMapData
 {
     int cascade_count;
-    uint shadow_sample_mode;
+    uint shadow_filter_mode;
 
     float level_end_scale;
     float shadow_base_factor;
@@ -164,12 +164,30 @@ struct ShadowMapData
     float shadow_base_factor_2;
 };
 
+// PCF = Percentage-closer filtering
+// PCSS = Percentage-closer soft shadows
+// ESM = Exponential shadow mapping
+// MSM = Moment shadow mapping
+// VSM = Variance shadow mapping
+
+static const uint ShadowFilterMode_Point = 0;
+static const uint ShadowFilterMode_PCF = 1;
+static const uint ShadowFilterMode_PCSS = 2;
+static const uint ShadowFilterMode_ESM = 3;
+static const uint ShadowFilterMode_MSM = 4;
+static const uint ShadowFilterMode_VSM_Point = 5;
+static const uint ShadowFilterMode_VSM_Linear = 6;
+static const uint ShadowFilterMode_VSM_Aniso2 = 7;
+static const uint ShadowFilterMode_VSM_Aniso4 = 8;
+static const uint ShadowFilterMode_VSM_Aniso8 = 9;
+static const uint ShadowFilterMode_VSM_Aniso16 = 10;
+
 ShadowMapData GetShadowMapData()
 {
     ShadowMapData result;
 
     result.cascade_count = (int)shadow_map_parameter[0].y;
-    result.shadow_sample_mode = (uint)shadow_map_parameter[0].z;
+    result.shadow_filter_mode = (uint)shadow_map_parameter[0].z;
 
     result.level_end_scale = shadow_map_parameter[1].x;
     result.shadow_base_factor = shadow_map_parameter[1].y;
