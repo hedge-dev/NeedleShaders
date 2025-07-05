@@ -49,7 +49,7 @@ float3 ComputeParallaxIntersection(int level, float3 shadow_view_pos)
 	return shadow_view_pos * shadow_cascade_scale[level].xyz + shadow_cascade_offset[level].xyz;
 }
 
-float SampleShadowVSM(float3 view_pos, float3 shadow_sample_pos, int level)
+float SampleShadowVSM(float3 view_pos, float3 shadow_sample_pos, int level, float offset)
 {
 	float2 pos_ddx = ddx_coarse(view_pos.xy);
 	float2 pos_ddy = ddy_coarse(view_pos.xy);
@@ -63,17 +63,17 @@ float SampleShadowVSM(float3 view_pos, float3 shadow_sample_pos, int level)
 	float t2 = shadow.y + pow(shadow_sample_pos.z - shadow.x, 2);
 	float minimum = shadow.x >= shadow_sample_pos.z ? 1.0 : 0.0;
 
-	return max(InvLerp(shadow_map_parameter[0].x, 1.0, t1 / t2), minimum);
+	return max(InvLerp(offset, 1.0, t1 / t2), minimum);
 }
 
-float SampleShadowPoint(float3 shadow_sample_pos, int level)
+float SampleShadowPoint(float3 shadow_sample_pos, int level, float offset)
 {
 	float transition_scale = dot(shadow_cascade_transition_scale, shadow_cascade_levels[level]);
 	float shadow = SampleTextureLevel(s_ShadowMap, float3(shadow_sample_pos.xy, level), 0).x;
-	return saturate((shadow - shadow_sample_pos.z) * transition_scale + shadow_map_parameter[0].x);
+	return saturate((shadow - shadow_sample_pos.z) * transition_scale + offset);
 }
 
-float SampleShadowPCF(float3 shadow_sample_pos, int level)
+float SampleShadowPCF(float3 shadow_sample_pos, int level, float offset)
 {
 	float transition_scale = dot(shadow_cascade_transition_scale, shadow_cascade_levels[level]);
 
@@ -81,7 +81,7 @@ float SampleShadowPCF(float3 shadow_sample_pos, int level)
 	float2 fraction = frac(scaled);
 	float3 sample_pos = float3((floor(scaled) + 0.5 ) * shadow_map_size.zw, level);
 
-	#define GatherShadow(ox, oy) saturate((TextureGather(s_ShadowMap, sample_pos, int2(ox, oy)) - shadow_sample_pos.z) * transition_scale + shadow_map_parameter[0].x);
+	#define GatherShadow(ox, oy) saturate((TextureGather(s_ShadowMap, sample_pos, int2(ox, oy)) - shadow_sample_pos.z) * transition_scale + offset);
 
 	float4 nn = GatherShadow(-1, -1);
 	float4 pn = GatherShadow( 1, -1);
@@ -157,7 +157,7 @@ float SampleShadowPCSS(float2 screen_position, float3 shadow_sample_pos, int lev
 	return result / 16.0;
 }
 
-float SampleShadowESM(float3 shadow_sample_pos, int level)
+float SampleShadowESM(float3 shadow_sample_pos, int level, float offset)
 {
 	float result = SampleTextureLevel(s_ShadowMap, float3(shadow_sample_pos.xy, level), 0).x;
 
@@ -166,10 +166,10 @@ float SampleShadowESM(float3 shadow_sample_pos, int level)
 		return 1.0;
 	}
 
-	return min(1, exp((result - shadow_sample_pos.z) * shadow_map_parameter[0].x));
+	return min(1, exp((result - shadow_sample_pos.z) * offset));
 }
 
-float SampleShadowModes(float2 screen_position, float3 view_pos, float3 shadow_sample_pos, int level)
+float SampleShadow(float2 screen_position, float3 view_pos, float3 shadow_sample_pos, int level)
 {
 	if(shadow_sample_pos.x < 0.0 || shadow_sample_pos.x >= 1.0
 		|| shadow_sample_pos.y < 0.0 || shadow_sample_pos.y >= 1.0
@@ -178,23 +178,25 @@ float SampleShadowModes(float2 screen_position, float3 view_pos, float3 shadow_s
 		return 1.0;
 	}
 
+	ShadowMapData data = GetShadowMapData();
+
 	int filter_mode = ShadowFilterMode_PCF;
 	#ifndef shadow_as_pcf
-		filter_mode = GetShadowMapData().shadow_filter_mode;
+		filter_mode = data.shadow_filter_mode;
 	#endif
 
 	switch(filter_mode)
 	{
 		case ShadowFilterMode_Point:
-			return SampleShadowPoint(shadow_sample_pos, level);
+			return SampleShadowPoint(shadow_sample_pos, level, data.shadow_offset);
 		case ShadowFilterMode_PCF:
-			return SampleShadowPCF(shadow_sample_pos, level);
+			return SampleShadowPCF(shadow_sample_pos, level, data.shadow_offset);
 		case ShadowFilterMode_PCSS:
 			return SampleShadowPCSS(screen_position, shadow_sample_pos, level);
 		case ShadowFilterMode_ESM:
-			return SampleShadowESM(shadow_sample_pos, level);
+			return SampleShadowESM(shadow_sample_pos, level, data.shadow_offset);
 		default:
-			return SampleShadowVSM(view_pos, shadow_sample_pos, level);
+			return SampleShadowVSM(view_pos, shadow_sample_pos, level, data.shadow_offset);
 	}
 }
 
@@ -211,7 +213,7 @@ float ComputeShadowValue(float4 position, float2 screen_position)
 
 	float3 shadow_view_position = mul(position, shadow_view_matrix).xyz;
 	float3 shadow_sample_position = ComputeParallaxIntersection(level, shadow_view_position);
-	float shadow = SampleShadowModes(screen_position, shadow_view_position, shadow_sample_position, level);
+	float shadow = SampleShadow(screen_position, shadow_view_position, shadow_sample_position, level);
 
 	float level_step = 1.0 - ComputeShadowCascadeLevelStep(
 		position,
@@ -225,7 +227,7 @@ float ComputeShadowValue(float4 position, float2 screen_position)
 	if(level != next_level && level_step <= 0.99999 && level_step > 0)
 	{
 		float3 next_shadow_position = ComputeParallaxIntersection(next_level, shadow_view_position);
-		next_shadow = SampleShadowModes(screen_position, shadow_view_position, shadow_sample_position, level);
+		next_shadow = SampleShadow(screen_position, shadow_view_position, shadow_sample_position, level);
 	}
 
 	float result = lerp(shadow, next_shadow, level_step);

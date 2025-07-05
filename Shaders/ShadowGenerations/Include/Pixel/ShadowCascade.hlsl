@@ -89,16 +89,19 @@ float3 ComputeShadowCascadeLevelColor(float4 position, int level, float level_st
 
 float3 ComputeShadowCascadeColor(float4 position)
 {
-    if(shadow_map_parameter[0].z != -1.0)
+    ShadowMapData data = GetShadowMapData();
+
+    if(data.shadow_filter_mode != ShadowFilterMode_Invalid)
     {
         return 1.0;
     }
 
     int level = GetShadowCascadeLevel(position);
+
     float level_step = 1.0 - ComputeShadowCascadeLevelStep(
         position,
         level,
-        GetShadowMapData().level_step_scale
+        data.level_step_scale
     );
 
     return ComputeShadowCascadeLevelColor(position, level, level_step);

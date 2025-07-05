@@ -155,8 +155,9 @@ SHColors GetSkySHColors()
 
 struct ShadowMapData
 {
+    float shadow_offset;
     int cascade_count;
-    uint shadow_filter_mode;
+    int shadow_filter_mode;
 
     float level_end_scale;
     float shadow_base_factor;
@@ -170,24 +171,26 @@ struct ShadowMapData
 // MSM = Moment shadow mapping
 // VSM = Variance shadow mapping
 
-static const uint ShadowFilterMode_Point = 0;
-static const uint ShadowFilterMode_PCF = 1;
-static const uint ShadowFilterMode_PCSS = 2;
-static const uint ShadowFilterMode_ESM = 3;
-static const uint ShadowFilterMode_MSM = 4;
-static const uint ShadowFilterMode_VSM_Point = 5;
-static const uint ShadowFilterMode_VSM_Linear = 6;
-static const uint ShadowFilterMode_VSM_Aniso2 = 7;
-static const uint ShadowFilterMode_VSM_Aniso4 = 8;
-static const uint ShadowFilterMode_VSM_Aniso8 = 9;
-static const uint ShadowFilterMode_VSM_Aniso16 = 10;
+static const int ShadowFilterMode_Invalid = -1;
+static const int ShadowFilterMode_Point = 0;
+static const int ShadowFilterMode_PCF = 1;
+static const int ShadowFilterMode_PCSS = 2;
+static const int ShadowFilterMode_ESM = 3;
+static const int ShadowFilterMode_MSM = 4;
+static const int ShadowFilterMode_VSM_Point = 5;
+static const int ShadowFilterMode_VSM_Linear = 6;
+static const int ShadowFilterMode_VSM_Aniso2 = 7;
+static const int ShadowFilterMode_VSM_Aniso4 = 8;
+static const int ShadowFilterMode_VSM_Aniso8 = 9;
+static const int ShadowFilterMode_VSM_Aniso16 = 10;
 
 ShadowMapData GetShadowMapData()
 {
     ShadowMapData result;
 
+    result.shadow_offset = shadow_map_parameter[0].x;
     result.cascade_count = (int)shadow_map_parameter[0].y;
-    result.shadow_filter_mode = (uint)shadow_map_parameter[0].z;
+    result.shadow_filter_mode = (int)shadow_map_parameter[0].z;
 
     result.level_end_scale = shadow_map_parameter[1].x;
     result.shadow_base_factor = shadow_map_parameter[1].y;
