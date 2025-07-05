@@ -59,10 +59,9 @@ float SampleShadowVSM(float3 view_pos, float3 shadow_sample_pos, int level, floa
 
 	float2 shadow = SampleTextureGrad(s_ShadowMap, float3(shadow_sample_pos.xy, level), pos_ddx, pos_ddy).xy;
 
-	float t1 = max(0.0005, shadow.y - pow(shadow.x, 2));
-	float t2 = shadow.y + pow(shadow_sample_pos.z - shadow.x, 2);
 	float minimum = shadow.x >= shadow_sample_pos.z ? 1.0 : 0.0;
-
+	float t1 = max(0.0005, shadow.y - pow(shadow.x, 2));
+	float t2 = t1 + pow(shadow_sample_pos.z - shadow.x, 2);
 	return max(InvLerp(offset, 1.0, t1 / t2), minimum);
 }
 
