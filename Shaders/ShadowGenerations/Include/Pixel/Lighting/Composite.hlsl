@@ -193,8 +193,7 @@ void DebugAfterFog(
 		case DebugView_User0:
 			// User0 is not actually used, so i repurposed it for debugging shadow cascades
 			// ~ Justin113D
-			out_direct = 1.0;
-			ApplyShadowCascadeThing(parameters.world_position, out_direct);
+			out_direct = ComputeShadowCascadeColor(parameters.world_position);
 			break;
 
 		case DebugView_User1: break;
@@ -460,7 +459,7 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output, 
 	//////////////////////////////////////////////////
 	// shadow cascade (?)
 
-	ApplyShadowCascadeThing(parameters.world_position, out_direct);
+	out_direct *= ComputeShadowCascadeColor(parameters.world_position);
 
 	//////////////////////////////////////////////////
 	// Light scattering

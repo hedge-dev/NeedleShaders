@@ -46,13 +46,13 @@ SurfaceData CreateCommonSurface(SurfaceParameters parameters)
     );
 
     ApplyGlobalIllumination(parameters);
-    ApplyShadowCascadeThing(parameters.world_position, parameters.emission);
+    parameters.emission *= ComputeShadowCascadeColor(parameters.world_position);
 
     result.emission.xyz = parameters.emission;
     result.emission.w = ComputeGIShadow(parameters.gi_uv);
 
     result.normal.xyz = parameters.normal * 0.5 + 0.5;
-    result.motion_vector.xy = ComputeMotionVector(parameters.screen_position, parameters.previous_position);
+    result.velocity.xy = ComputeVelocity(parameters.screen_position, parameters.previous_position);
 
     result.albedo.w = (0.5 + ShadingModelToFlags(parameters.shading_model)) / 255.0;
 

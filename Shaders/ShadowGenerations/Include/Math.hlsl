@@ -37,5 +37,19 @@ uint SwapBits( uint a, uint b, uint input_width, uint output_offset)
 
 #define PlaceBits(a, input_width, output_offset) SwapBits(a, 0, input_width, output_offset)
 
+uint CountTrue(bool4 cond)
+{
+	return dot(1.0.xxxx, cond ? 1.0.xxxx : 0.0.xxxx);
+}
+
+float InvLerp(float minimum, float maximum, float value)
+{
+	return (value - minimum) / (maximum - minimum);
+}
+
+float Remap(float from_min, float from_max, float to_min, float to_max, float value)
+{
+	return lerp(to_min, to_max, InvLerp(from_min, from_max, value));
+}
 
 #endif

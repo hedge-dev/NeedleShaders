@@ -45,7 +45,12 @@ void main(ThreadInfo input)
 		return;
 	}
 
-	TransferPixelData(input.dispatchThreadId.xy, deferred_data.depth, parameters);
+	TransferPixelData(
+		input.dispatchThreadId.xy,
+		PixelToScreen(input.dispatchThreadId.xy),
+		deferred_data.depth,
+		parameters
+	);
 
 	float4 ssss_color;
 	float ssss_mask;

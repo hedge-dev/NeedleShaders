@@ -15,7 +15,8 @@ struct DeferredOut
 
 DeferredOut main(BlitIn input)
 {
-	DeferredData deferred_data = LoadDeferredData(input.pixel_position.xy);
+	uint2 pixel_position = (uint2)input.pixel_position.xy;
+	DeferredData deferred_data = LoadDeferredData(pixel_position);
 
 	LightingParameters parameters = InitLightingParameters();
 	TransferSurfaceData(deferred_data.surface, parameters);
@@ -34,7 +35,12 @@ DeferredOut main(BlitIn input)
 		return result;
 	}
 
-	TransferPixelData((uint2)input.pixel_position.xy, deferred_data.depth, parameters);
+	TransferPixelData(
+		pixel_position,
+		input.screen_position.xy,
+		deferred_data.depth,
+		parameters
+	);
 
 	float4 ssss_color;
 	float ssss_mask;

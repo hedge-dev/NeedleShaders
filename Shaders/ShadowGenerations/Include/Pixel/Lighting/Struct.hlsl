@@ -150,7 +150,7 @@ void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 	);
 }
 
-void TransferPixelData(uint2 pixel_position, float depth, inout LightingParameters parameters)
+void TransferPixelData(uint2 pixel_position, float2 screen_position, float depth, inout LightingParameters parameters)
 {
 	parameters.depth = depth;
 	parameters.view_distance = DepthToViewDistance(depth);
@@ -158,7 +158,7 @@ void TransferPixelData(uint2 pixel_position, float depth, inout LightingParamete
 	parameters.pixel_position = pixel_position;
 	parameters.tile_position = pixel_position.xy >> 4;
 
-	parameters.screen_position = PixelToScreen(pixel_position);
+	parameters.screen_position = screen_position;
 	parameters.world_position = ScreenDepthToWorldPosition(parameters.screen_position, depth);
 
 	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
