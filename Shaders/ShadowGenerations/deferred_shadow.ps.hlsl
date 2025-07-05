@@ -78,6 +78,7 @@ float SampleShadow0(float3 shadow_sample_pos, int level)
 	return saturate((shadow - shadow_sample_pos.z) * transition_scale + shadow_map_parameter[0].x);
 }
 
+
 float SampleShadow1(float3 shadow_sample_pos, int level)
 {
 	float transition_scale = dot(shadow_cascade_transition_scale, shadow_cascade_levels[level]);
@@ -89,27 +90,23 @@ float SampleShadow1(float3 shadow_sample_pos, int level)
 	#define GatherShadow(ox, oy) saturate((TextureGather(s_ShadowMap, sample_pos, int2(ox, oy)) - shadow_sample_pos.z) * transition_scale + shadow_map_parameter[0].x);
 
 	float4 nn = GatherShadow(-1, -1);
-	float4 np = GatherShadow( 1, -1);
-	float4 pn = GatherShadow(-1,  1);
+	float4 pn = GatherShadow( 1, -1);
+	float4 np = GatherShadow(-1,  1);
 	float4 pp = GatherShadow( 1,  1);
 
 	#undef GatherShadow
 
-	float4 t = float4(
-		np.w + nn.z + np.z * fraction.x + nn.w * (1 - fraction.x),
-		np.x + nn.y + np.y * fraction.x + nn.x * (1 - fraction.x),
-		pp.w + pn.z + pp.z * fraction.x + pn.w * (1 - fraction.x),
-		pp.x + pn.y + pp.y * fraction.x + pn.x * (1 - fraction.x)
+	float4x4 gather_matrix = float4x4(
+		pp.xy, np.xy,
+		pp.wz, np.wz,
+		pn.xy, nn.xy,
+		pn.wz, nn.wz
 	);
 
-	float4 t2 = float4(
-		fraction.y,
-		1 - fraction.y,
-		1,
-		1
-	);
+	float4 horizontal = float4(1, fraction.x, 1 - fraction.x, 1);
+	float4 vertical = float4(fraction.y, 1, 1, 1 - fraction.y);
 
-	return min(1, dot(t, t2) / 9.0);
+	return min(1, dot(mul(gather_matrix, horizontal), vertical) / 9.0);
 }
 
 float SampleShadow2(float2 screen_position, float3 shadow_sample_pos, int level)
@@ -285,7 +282,7 @@ bool SampleVolShadow(float3 position, int level, out float value)
 
 void ComputeVolShadow(float3 position, inout float value)
 {
-	if(!enable_ibl_plus_directional_specular)
+	if(!enable_vol_shadow)
 	{
 		return;
 	}
@@ -397,12 +394,12 @@ float4 ComputeSSAO(LightingParameters parameters, float shadow)
 
 float4 main(BlitIn input) : SV_Target0
 {
-	uint2 pixel_position = (uint2)input.pixel_position.xy;
-	DeferredData deferred_data = LoadDeferredData(pixel_position);
+    uint2 pixel_position = (uint2)input.pixel_position.xy;
+    DeferredData deferred_data = LoadDeferredData(pixel_position);
 
-	LightingParameters parameters = InitLightingParameters();
-	TransferSurfaceData(deferred_data.surface, parameters);
-	TransferPixelData(pixel_position, input.screen_position.xy, deferred_data.depth, parameters);
+    LightingParameters parameters = InitLightingParameters();
+    TransferSurfaceData(deferred_data.surface, parameters);
+    TransferPixelData(pixel_position, input.screen_position.xy, deferred_data.depth, parameters);
 
 	float shadow = ComputeShadow(parameters);
 	float4 result = ComputeSSAO(parameters, shadow);
