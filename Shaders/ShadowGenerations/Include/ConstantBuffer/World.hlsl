@@ -153,5 +153,30 @@ SHColors GetSkySHColors()
     return result;
 }
 
+struct ShadowMapData
+{
+    int cascade_count;
+    uint shadow_sample_mode;
+
+    float level_end_scale;
+    float shadow_base_factor;
+    float level_step_scale;
+    float shadow_base_factor_2;
+};
+
+ShadowMapData GetShadowMapData()
+{
+    ShadowMapData result;
+
+    result.cascade_count = (int)shadow_map_parameter[0].y;
+    result.shadow_sample_mode = (uint)shadow_map_parameter[0].z;
+
+    result.level_end_scale = shadow_map_parameter[1].x;
+    result.shadow_base_factor = shadow_map_parameter[1].y;
+    result.level_step_scale = shadow_map_parameter[1].z;
+    result.shadow_base_factor_2 = shadow_map_parameter[1].w;
+
+    return result;
+}
 
 #endif

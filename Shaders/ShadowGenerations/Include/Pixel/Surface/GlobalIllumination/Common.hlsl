@@ -5,9 +5,11 @@
 // Shader Features
 
 #include "../../../Common.hlsl"
-DefineFeature(is_use_gi_prt);
-DefineFeature(is_use_gi_sg);
-DefineFeature(is_use_gi);
+#if !defined(is_use_gi) && !defined(no_is_use_gi)
+	DefineFeature(is_use_gi_prt);
+	DefineFeature(is_use_gi_sg);
+	DefineFeature(is_use_gi);
+#endif
 
 #include "../../../ConstantBuffer/World.hlsl"
 #include "../../../Texture.hlsl"

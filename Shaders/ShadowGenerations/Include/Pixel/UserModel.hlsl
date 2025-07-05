@@ -2,7 +2,9 @@
 #define USERMODEL_PIXEL_INCLUDED
 
 #include "../Common.hlsl"
-DefineFeature(u_model_user_flag_0);
+#if !defined(u_model_user_flag_0) && !defined(no_u_model_user_flag_0)
+	DefineFeature(u_model_user_flag_0);
+#endif
 
 #include "../ConstantBuffer/World.hlsl"
 #include "../ConstantBuffer/MaterialDynamic.hlsl"

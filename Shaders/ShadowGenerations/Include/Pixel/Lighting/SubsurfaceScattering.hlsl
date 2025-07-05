@@ -2,7 +2,10 @@
 #define SSS_LIGHTING_INCLUDED
 
 #include "../../Common.hlsl"
-DefineFeature(enable_ssss);
+#if !defined(enable_ssss) && !defined(no_enable_ssss)
+	DefineFeature(enable_ssss);
+#endif
+
 
 #include "../../Texture.hlsl"
 #include "../../Math.hlsl"

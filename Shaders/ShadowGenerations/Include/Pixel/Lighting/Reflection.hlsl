@@ -3,7 +3,7 @@
 
 #include "../../Common.hlsl"
 
-#ifndef enable_para_corr
+#if !defined(enable_para_corr) && !defined(no_enable_para_corr)
 	DefineFeature(enable_para_corr);
 #endif
 

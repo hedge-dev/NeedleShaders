@@ -2,8 +2,7 @@
 #define POSITIONAL_LIGHTING_INCLUDED
 
 #include "../../Common.hlsl"
-
-#ifndef enable_local_light_shadow
+#if !defined(enable_local_light_shadow) && !defined(no_enable_local_light_shadow)
 	DefineFeature(enable_local_light_shadow);
 #endif
 

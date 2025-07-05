@@ -2,7 +2,9 @@
 #define AMBIENT_LIGHTING_INCLUDED
 
 #include "../../Common.hlsl"
-DefineFeature(enable_deferred_ambient);
+#if !defined(enable_deferred_ambient) && !defined(no_enable_deferred_ambient)
+	DefineFeature(enable_deferred_ambient);
+#endif
 
 #include "../../Debug.hlsl"
 

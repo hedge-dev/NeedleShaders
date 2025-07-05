@@ -9,11 +9,23 @@
 
 #else
 
-	#include "Surface/Lighting.hlsl"
+	#include "Surface/Struct.hlsl"
 	PixelOutput ProcessSurface(SurfaceData surface)
 	{
 		PixelOutput result;
-		result.Color.xyz = LightSurface(surface);
+
+		// placeholder until lighting code is done
+		result.Color.xyz = saturate(surface.albedo.rgb
+			+ surface.emission.rgb
+			+ surface.normal.rgb
+			+ surface.prm.rgb
+			+ surface.velocity.rgg
+			+ surface.o5.rgg
+			+ surface.albedo.www
+			+ surface.emission.www
+			+ surface.prm.www
+		);
+
 		result.Color.w = 1.0f;
 		return result;
 	}

@@ -23,7 +23,10 @@
 #include "Ambient.hlsl"
 #include "Reflection.hlsl"
 
-Texture2D<float4> WithSampler(s_SSAO);
+// disabling the SSAO features
+#define no_enable_ssao
+#define no_enable_noisy_upsample
+#include "SSAO.hlsl"
 
 void DebugBeforeFog(
 	LightingParameters parameters,

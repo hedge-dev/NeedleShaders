@@ -18,32 +18,6 @@ static const float3 shadow_cascade_params[] = {
     { 1.5, 0.3, 5.5 },
 };
 
-struct ShadowCascadeData
-{
-    int cascade_count;
-    uint some_mode;
-
-    float level_end_scale;
-    float shadow_base_factor;
-    float level_step_scale;
-    float shadow_base_factor_2;
-};
-
-ShadowCascadeData GetShadowCascadeData()
-{
-    ShadowCascadeData result;
-
-    result.cascade_count = (int)shadow_map_parameter[0].y;
-    result.some_mode = (uint)shadow_map_parameter[0].z;
-
-    result.level_end_scale = shadow_map_parameter[1].x;
-    result.shadow_base_factor = shadow_map_parameter[1].y;
-    result.level_step_scale = shadow_map_parameter[1].z;
-    result.shadow_base_factor_2 = shadow_map_parameter[1].w;
-
-    return result;
-}
-
 float GetShadowDepth(float4 position)
 {
     return -dot(shadow_camera_view_matrix_third_row, position);
@@ -54,7 +28,7 @@ int GetShadowCascadeLevel(float4 position)
     int result = CountTrue(shadow_cascade_frustums_eye_space_depth < GetShadowDepth(position));
 
     // no idea what this is for, but definitely not for anything here so far
-    if(GetShadowCascadeData().cascade_count <= 0)
+    if(GetShadowMapData().cascade_count <= 0)
     {
         result += 4;
     }
@@ -79,7 +53,7 @@ float ComputeShadowCascadeLevelStep(float4 position, int level, float scale)
 
 float3 ComputeShadowCascadeLevelColor(float4 position, int level, float level_step)
 {
-    ShadowCascadeData data = GetShadowCascadeData();
+    ShadowMapData data = GetShadowMapData();
 
     if(level >= data.cascade_count)
     {
@@ -124,7 +98,7 @@ float3 ComputeShadowCascadeColor(float4 position)
     float level_step = 1.0 - ComputeShadowCascadeLevelStep(
         position,
         level,
-        GetShadowCascadeData().level_step_scale
+        GetShadowMapData().level_step_scale
     );
 
     return ComputeShadowCascadeLevelColor(position, level, level_step);
