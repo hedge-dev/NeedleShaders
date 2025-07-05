@@ -257,7 +257,7 @@ float2 ComputeRLRPosition(float2 screen_position, float3 position, float3 normal
 
 float4 ComputeScreenSpaceReflectionColor(LightingParameters parameters)
 {
-	if(!enable_ibl_plus_directional_specular)
+	if(!enable_rlr)
 	{
 		return 0.0;
 	}

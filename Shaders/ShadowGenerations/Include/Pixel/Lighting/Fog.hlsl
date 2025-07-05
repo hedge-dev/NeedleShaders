@@ -43,7 +43,7 @@ float ComputeFogFactor(float4 world_position)
 		* (1.0 - saturate(( world_position.y - u_fog_param_3.x) / (u_fog_param_3.y - u_fog_param_3.x)))
 		* u_fog_param_1.w;
 
-	return u_enable_fog_d
+	return u_enable_fog_h
 		? lerp(t3, 1.0, t4)
 		: t3;
 }
