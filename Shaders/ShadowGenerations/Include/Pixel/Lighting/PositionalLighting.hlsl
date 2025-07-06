@@ -16,8 +16,7 @@
 #include "SubsurfaceScattering.hlsl"
 #include "Light.hlsl"
 #include "LocalLights.hlsl"
-
-TextureCubeArray<float4> WithSamplerComparison(s_LocalShadowMap);
+#include "Shadow.hlsl"
 
 static const float2 shadow_angles[5] = {
 	{ 0.0, 0.0 },
@@ -133,14 +132,17 @@ void CalculateLight(LightingParameters parameters, PositionalLightData light_dat
 	uint shadow_index = UnpackUIntBits(light_data.flags, 3, 16) - 1;
 	light_attenuation *= ComputePositionalLightShadow(parameters, shadow_index);
 
+	LightingParameters param_no_shadow = parameters;
+	param_no_shadow.shadow = 1.0;
+
 	if(light_data.flags & 0x10)
 	{
-		out_diffuse = DiffuseBDRF(parameters, light_direction, light_color, 1.0) * light_attenuation;
+		out_diffuse = DiffuseBDRF(param_no_shadow, light_direction, light_color) * light_attenuation;
 	}
 
 	if(light_data.flags & 0x20)
 	{
-		out_specular = SpecularBRDF(parameters, light_direction, light_color, 1.0, false) * light_attenuation;
+		out_specular = SpecularBRDF(param_no_shadow, light_direction, light_color, false) * light_attenuation;
 	}
 }
 

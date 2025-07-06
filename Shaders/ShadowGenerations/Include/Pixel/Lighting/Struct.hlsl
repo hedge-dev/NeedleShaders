@@ -10,6 +10,10 @@
 
 #include "../Normals.hlsl"
 #include "../ShadingModel.hlsl"
+#include "../ShadowCascade.hlsl"
+#include "../TypedOcclusion.hlsl"
+
+#include "SHprobe.hlsl"
 
 struct LightingParameters
 {
@@ -43,10 +47,13 @@ struct LightingParameters
 	float cavity;
 	float3 fresnel_reflectance;
 
-	uint occlusion_mode;
-	int occlusion_sign;
-	float occlusion_value;
+	float3 shadow_position;
+	float shadow_depth;
 
+	float lightfield_ao;
+	float shadow;
+
+	TypedOcclusion typed_occlusion;
 	LightScatteringColors light_scattering_colors;
 };
 
@@ -79,8 +86,11 @@ LightingParameters InitLightingParameters()
 		0.0, 0.0, 0.0, 0.0,
 		{0.0, 0.0, 0.0},
 
-		0, 0, 0.0,
+		{0.0, 0.0, 0.0}, 0.0,
 
+		0.0, 0.0,
+
+		{ 0.0, 0, false },
 		{ {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0} }
 	};
 
@@ -99,9 +109,55 @@ void TransferVertexData(PixelInput input, inout LightingParameters parameters)
 	parameters.tile_position = parameters.pixel_position >> 4;
 
 	#ifdef enable_deferred_rendering
+		parameters.shadow_position = input.shadow_position;
+		parameters.shadow_depth = input.shadow_depth;
 		parameters.light_scattering_colors.factor = input.light_scattering_factor;
 		parameters.light_scattering_colors.base = input.light_scattering_base;
 	#endif
+}
+
+void TransferSurfaceParameters(SurfaceParameters in_param, inout LightingParameters out_param)
+{
+	out_param.shading_model = in_param.shading_model;
+
+	out_param.albedo = in_param.albedo;
+
+	out_param.world_normal = in_param.normal;
+	out_param.cos_view_normal = saturate(dot(out_param.view_direction, out_param.world_normal));
+
+	switch(out_param.shading_model.type)
+	{
+		case ShadingModelType_SSS:
+			out_param.sss_param = in_param.emission;
+			break;
+
+		case ShadingModelType_AnisotropicReflection:
+			out_param.anisotropy = float2(
+				2 * floor(abs(in_param.emission.z)),
+				10 * frac(abs(in_param.emission.z))
+			);
+
+			out_param.anisotropic_tangent = CorrectedZNormal(in_param.emission);
+			out_param.anisotropic_binormal = ComputeBinormal(out_param.anisotropic_tangent, out_param.world_normal);
+			break;
+
+		default:
+			out_param.emission = in_param.emission;
+			break;
+	}
+
+	out_param.typed_occlusion = in_param.typed_occlusion;
+
+	out_param.specular = in_param.specular;
+	out_param.roughness = in_param.roughness;
+	out_param.cavity = in_param.cavity;
+	out_param.metallic = in_param.metallic;
+
+	out_param.fresnel_reflectance = lerp(
+		out_param.specular,
+		out_param.albedo,
+		out_param.metallic
+	);
 }
 
 void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
@@ -134,9 +190,19 @@ void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 			break;
 	}
 
-	parameters.occlusion_sign = sign(data.emission.w);
-	parameters.occlusion_mode = (uint)trunc(0.1 * abs(data.emission.w));
-	parameters.occlusion_value = abs(data.emission.w) - parameters.occlusion_mode * 10;
+	parameters.typed_occlusion = DecodeTypedOcclusion(data.emission.w);
+
+	parameters.lightfield_ao = 1.0;
+	parameters.shadow = 1.0;
+
+	if(parameters.typed_occlusion.mode == OcclusionType_AOLightField && AreSHProbesEnabled())
+	{
+		parameters.lightfield_ao = parameters.typed_occlusion.value;
+	}
+	else
+	{
+		parameters.shadow = parameters.typed_occlusion.value;
+	}
 
 	parameters.specular = data.prm.x;
 	parameters.roughness = data.prm.y;
@@ -163,6 +229,10 @@ void TransferPixelData(uint2 pixel_position, float2 screen_position, float depth
 
 	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
 	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
+
+	parameters.shadow_position = ComputeShadowPosition(parameters.world_position).xyz;
+	parameters.shadow_depth = ComputeShadowDepth(parameters.world_position);
+
 	parameters.light_scattering_colors = ComputeLightScatteringColors(parameters.view_distance, parameters.view_direction);
 }
 

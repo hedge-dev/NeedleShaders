@@ -14,12 +14,10 @@
 
 #include "GlobalIllumination/Base.hlsl"
 #include "GlobalIllumination/AmbientOcclusion.hlsl"
-#include "GlobalIllumination/Shadow.hlsl"
+#include "GlobalIllumination/Occlusion.hlsl"
 
-SurfaceData CreateCommonSurface(SurfaceParameters parameters)
+void SetupCommonSurface(inout SurfaceParameters parameters)
 {
-	SurfaceData result;
-
     switch(GetDebugView())
     {
         case DebugView_OnlyIblSurfNormal:
@@ -37,29 +35,15 @@ SurfaceData CreateCommonSurface(SurfaceParameters parameters)
     ApplyAOGI(parameters);
     ApplyWeatherEffects(parameters);
 
-    result.albedo.xyz = parameters.albedo;
-    result.prm = float4(
-        parameters.specular,
-        parameters.roughness,
-        parameters.cavity,
-        parameters.metallic
-    );
-
     ApplyGlobalIllumination(parameters);
     parameters.emission *= ComputeShadowCascadeColor(parameters.world_position);
 
-    result.emission.xyz = parameters.emission;
-    result.emission.w = ComputeGIShadow(parameters.gi_uv);
+    parameters.typed_occlusion = ComputeGIOcclusion(parameters.gi_uv);
 
-    result.normal.xyz = parameters.normal * 0.5 + 0.5;
-    result.velocity.xy = ComputeVelocity(parameters.screen_position, parameters.previous_position);
-
-    result.albedo.w = (0.5 + ShadingModelToFlags(parameters.shading_model)) / 255.0;
+    parameters.velocity = ComputeVelocity(parameters.screen_position, parameters.previous_position);
 
     // TODO figure out what these do
-    result.o5.xy = u_model_user_param_3.xy;
-
-	return result;
+    parameters.unk_o5 = u_model_user_param_3.xy;
 }
 
 #endif

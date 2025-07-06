@@ -17,18 +17,6 @@
 #include "../../PBRUtils.hlsl"
 
 //////////////////////////////////////////////////
-// Constants
-// TODO document their function
-
-static const uint GIMode0 = 0;
-static const uint GIMode1 = 1;
-static const uint GIMode2 = 2;
-static const uint GIMode3 = 3;
-static const uint GIMode5 = 5;
-static const uint GIMode6 = 6;
-
-
-//////////////////////////////////////////////////
 // Textures
 
 #ifdef is_use_gi_sg
@@ -85,38 +73,51 @@ bool UsingDefaultGI()
 }
 
 
-uint GetGIMode()
-{
-	return (uint)u_sggi_param[1].z;
-}
-
 bool IsAOGIEnabled()
 {
-	uint gi_mode = GetGIMode();
+	// Disabled when disable type is
+	// - DebugGITex_DISABLE_AO
+	// - DebugGITex_DISABLE_ALL
+	// - DebugGITex_SGGI_ONLY
+	// - DebugGITex_AOLF_OCCRATE
+
+	uint gi_disable_type = GetDebugGITexDisableType();
 	return UsingAOGI() && (
-		gi_mode == GIMode0
-		|| gi_mode == GIMode1
-		|| gi_mode == GIMode5
+		gi_disable_type == DebugGITex_DisableNone
+		|| gi_disable_type == DebugGITex_DisableSGGI
+		|| gi_disable_type == DebugGITex_AOGIOnly
 	);
+
 }
 
 bool IsSGGIEnabled()
 {
-	uint gi_mode = GetGIMode();
+	// Disabled when disable type is
+	// - DebugGITex_DISABLE_SGGI
+	// - DebugGITex_DISABLE_ALL
+	// (No idea why the other "only" modes are not included)
+
+	uint gi_disable_type = GetDebugGITexDisableType();
 	return UsingSGGI() && !(
-		gi_mode == GIMode1
-		|| gi_mode == GIMode3
+		gi_disable_type == DebugGITex_DisableSGGI
+		|| gi_disable_type == DebugGITex_DisableAll
 	);
 }
 
-bool AreBakedShadowsEnabled()
+bool IsShadowGIEnabled()
 {
-	uint gi_mode = GetGIMode();
+	// Disabled when disable type is
+	// - DebugGITex_DISABLE_SGGI
+	// - DebugGITex_DISABLE_AO
+	// - DebugGITex_DISABLE_ALL
+	// - DebugGITex_AOLF_OCCRATE
+
+	uint gi_disable_type = GetDebugGITexDisableType();
 	return UsingGI() && !(
-		gi_mode == GIMode1
-		|| gi_mode == GIMode2
-		|| gi_mode == GIMode3
-		|| gi_mode == GIMode6
+		gi_disable_type == DebugGITex_DisableSGGI
+		|| gi_disable_type == DebugGITex_DisableAO
+		|| gi_disable_type == DebugGITex_DisableAll
+		|| gi_disable_type == DebugGITex_AOLF_OCCRATE
 		|| IsAOGIEnabled()
 	);
 }

@@ -67,7 +67,7 @@ struct Vertex2Pixel
 
 	#ifndef enable_deferred_rendering
 		float4 shadow_position : TEXCOORD5;
-		float depth : TEXCOORD6;
+		float shadow_depth : TEXCOORD6;
 		float3 light_scattering_factor : TEXCOORD7;
 		float3 light_scattering_base : TEXCOORD9;
 	#endif

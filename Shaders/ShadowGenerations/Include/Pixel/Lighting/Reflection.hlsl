@@ -20,38 +20,48 @@ TextureCubeArray<float4> WithSampler(s_IBLProbeArray);
 TextureCube<float4> WithSampler(s_IBL);
 Texture2D<float4> WithSampler(s_RLR);
 
-float ComputeReflectioOcclusion(LightingParameters parameters)
+float ComputeIBLDirectionalSpecularFactor(LightingParameters parameters)
 {
-	if(parameters.shading_model.type == ShadingModelType_1)
+	if(enable_ibl_plus_directional_specular)
 	{
-		return 0.0;
+		return 1.0;
 	}
 
-	int debug_view = GetDebugView();
-	if(debug_view == DebugView_AmbDiffuse
-		|| debug_view == DebugView_Ambient
-		|| debug_view == DebugView_AmbDiffuseLf
-		|| debug_view == DebugView_SggiOnly)
-	{
-		return 0.0;
-	}
+	float base = min(OcclusionType_ShadowGI, parameters.typed_occlusion.mode);
 
-	float result = parameters.cavity;
-
-	switch(GetDebug2Mode())
+	switch(GetDebugAmbientSpecularType())
 	{
-		case Debug2Mode_1:
-			result = 1.0 - min(1, parameters.occlusion_mode);
+		case DebugAmbientSpecularType_IBL:
+			return base;
+		case DebugAmbientSpecularType_Blend:
+			return base * saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
 			break;
-		case Debug2Mode_2:
+		default:
+			return 0.0;
+	}
+}
+
+float ComputeReflectionOcclusion(LightingParameters parameters, float base)
+{
+	float result;
+
+	switch(GetDebugAmbientSpecularType())
+	{
+		case DebugAmbientSpecularType_IBL:
+			result = 1.0 - min(1, parameters.typed_occlusion.mode);
+			break;
+		case DebugAmbientSpecularType_SG:
 			result = 1.0;
 			break;
-		case Debug2Mode_3:
-			result = 1.0 - min(1, parameters.occlusion_mode) * saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
+		case DebugAmbientSpecularType_Blend:
+			result = 1.0 - min(1, parameters.typed_occlusion.mode) * saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
+			break;
+		default:
+			result = base;
 			break;
 	}
 
-	if(parameters.occlusion_mode == OcclusionMode_ShadowGI)
+	if(parameters.typed_occlusion.mode == OcclusionType_ShadowGI)
 	{
 		result = lerp(result, 1.0, parameters.metallic);
 	}
@@ -191,7 +201,7 @@ float4 ComputeSkyboxReflectionColor(float3 normal, float3 view_direction, float 
     return ibl_color;
 }
 
-float4 ComputeEnvironmentReflectionColor(LightingParameters parameters, float skybox_occlusion, bool specular)
+float4 ComputeEnvironmentReflectionColor(LightingParameters parameters, bool specular)
 {
 	float4 probe_reflection = ComputeReflectionProbeColor(
 		parameters.tile_position,
@@ -201,6 +211,7 @@ float4 ComputeEnvironmentReflectionColor(LightingParameters parameters, float sk
 		parameters.roughness
 	);
 
+	float skybox_occlusion = parameters.shadow;
 	#ifdef enable_para_corr
 		skybox_occlusion *= parameters.cavity;
 	#endif
@@ -284,31 +295,21 @@ float4 ComputeScreenSpaceReflectionColor(LightingParameters parameters)
 	);
 }
 
-float4 ComputeReflectionColor(LightingParameters parameters, float shadow)
+float4 ComputeReflectionColor(LightingParameters parameters, float reflection_occlusion, bool screenspace_reflections)
 {
-	float reflection_occlusion = ComputeReflectioOcclusion(parameters);
-
-	if(reflection_occlusion <= 0.00001)
-	{
-		return float4(0, 0, 0, 1);
-	}
-
-	float4 environment_reflection = ComputeEnvironmentReflectionColor(parameters, shadow, true);
-	float4 ssr = ComputeScreenSpaceReflectionColor(parameters);
-
-	//////////////////////////////////////////////////
-
-	float4 result = environment_reflection;
-
+	float4 result = ComputeEnvironmentReflectionColor(parameters, true);
 	result.xyz *= reflection_occlusion;
 
-	result = lerp(result, float4(ssr.xyz, 1.0), ssr.w);
-	result.w *= (1.0 - ssr.w);
+	if(screenspace_reflections)
+	{
+		float4 ssr = ComputeScreenSpaceReflectionColor(parameters);
+		result = lerp(result, float4(ssr.xyz, 1.0), ssr.w);
+		result.w *= (1.0 - ssr.w);
+	}
 
 	result.xyz *= parameters.cavity;
 
 	return result;
 }
-
 
 #endif

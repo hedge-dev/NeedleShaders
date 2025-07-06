@@ -65,13 +65,13 @@ float3 ComputeFresnelColor(LightingParameters parameters, float3 light_direction
 	return FresnelSchlick(parameters.fresnel_reflectance, cos_halfway_light);
 }
 
-float3 DiffuseBDRF(LightingParameters parameters, float3 light_direction, float3 light_color, float shadow)
+float3 DiffuseBDRF(LightingParameters parameters, float3 light_direction, float3 light_color)
 {
-    float3 cos_light_normal = saturate(dot(light_direction, parameters.world_normal)) * shadow;
+    float3 cos_light_normal = saturate(dot(light_direction, parameters.world_normal)) * parameters.shadow;
 
 	if (parameters.shading_model.type == ShadingModelType_SSS)
 	{
-		SampleCDRF(parameters, light_direction, shadow, cos_light_normal);
+		SampleCDRF(parameters, light_direction, parameters.shadow, cos_light_normal);
 	}
 
     float3 fresnel = ComputeFresnelColor(parameters, light_direction);
@@ -82,7 +82,7 @@ float3 DiffuseBDRF(LightingParameters parameters, float3 light_direction, float3
         * (1.0 - parameters.metallic);
 }
 
-float3 SpecularBRDF(LightingParameters parameters, float3 light_direction, float3 light_color, float shadow, bool enable_anisotropy)
+float3 SpecularBRDF(LightingParameters parameters, float3 light_direction, float3 light_color, bool enable_anisotropy)
 {
     float3 halfway_direction = normalize(light_direction + parameters.view_direction);
 
@@ -109,7 +109,7 @@ float3 SpecularBRDF(LightingParameters parameters, float3 light_direction, float
     float visibility = VisSchlick(parameters.roughness, parameters.cos_view_normal, cos_light_normal);
     float3 fresnel = FresnelSchlick(parameters.fresnel_reflectance, cos_halfway_light);
 
-    return light_color * cos_light_normal * saturate(fresnel * distribution * visibility) * shadow;
+    return light_color * cos_light_normal * saturate(fresnel * distribution * visibility) * parameters.shadow;
 }
 
 

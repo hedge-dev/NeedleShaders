@@ -2,6 +2,7 @@
 
 #include "Include/Pixel/Lighting/Shadow.hlsl"
 #include "Include/Pixel/Lighting/SSAO.hlsl"
+#include "Include/Pixel/Lighting/SHProbe.hlsl"
 #include "Include/Pixel/Deferred.hlsl"
 
 #include "Include/IOStructs.hlsl"
@@ -15,17 +16,17 @@ float ComputeShadow(LightingParameters parameters)
 		return result;
 	}
 
-	if(parameters.occlusion_mode == OcclusionMode_AOGI && shlightfield_param.x > 0)
+	if(parameters.typed_occlusion.mode == OcclusionType_SGGI && AreSHProbesEnabled())
 	{
-		result = parameters.occlusion_value;
+		result = parameters.typed_occlusion.value;
 	}
 
-	if(parameters.occlusion_sign <= 0 || result <= 0.0)
+	if(parameters.typed_occlusion.sign || result <= 0.0)
 	{
 		return result;
 	}
 
-	float factor = ComputeShadowValue(parameters.world_position, parameters.screen_position);
+	float factor = ComputeShadowValue(parameters.shadow_position, parameters.shadow_depth, parameters.screen_position);
 	ComputeVolShadowValue(parameters.world_position.xyz, factor);
 
 	result *= factor;

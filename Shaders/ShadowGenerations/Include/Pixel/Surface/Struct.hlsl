@@ -7,6 +7,7 @@
 #include "../../Math.hlsl"
 
 #include "../ShadingModel.hlsl"
+#include "../TypedOcclusion.hlsl"
 
 //////////////////////////////////////////////////
 // Surface parameters (input)
@@ -16,6 +17,7 @@ struct SurfaceParameters
 	ShadingModel shading_model;
 
 	float3 albedo;
+	float transparency;
 	float3 emission;
 
 	float specular;
@@ -33,7 +35,12 @@ struct SurfaceParameters
 	float3 normal;
 	float3 debug_normal;
 
+	float2 velocity;
+
 	float2 gi_uv;
+	float2 unk_o5;
+
+	TypedOcclusion typed_occlusion;
 };
 
 SurfaceParameters InitSurfaceParameters()
@@ -42,6 +49,7 @@ SurfaceParameters InitSurfaceParameters()
 		{ 0, false, 0 },
 
 		{0.0, 0.0, 0.0},
+		1.0,
 		{0.0, 0.0, 0.0},
 
 		0.0, 0.0, 0.0, 0.0,
@@ -56,7 +64,12 @@ SurfaceParameters InitSurfaceParameters()
 		{0.0, 0.0, 0.0},
 		{0.0, 0.0, 0.0},
 
-		{0.0, 0.0}
+		{0.0, 0.0},
+
+		{0.0, 0.0},
+		{0.0, 0.0},
+
+		{ 0.0, 0, false }
 	};
 
 	return result;
@@ -117,6 +130,31 @@ SurfaceData InitSurfaceData()
 		{0.0, 0.0},
 		{0.0, 0.0},
 	};
+
+	return result;
+}
+
+SurfaceData SurfaceParamToData(SurfaceParameters parameters)
+{
+	SurfaceData result;
+
+    result.albedo.xyz = parameters.albedo;
+    result.prm = float4(
+        parameters.specular,
+        parameters.roughness,
+        parameters.cavity,
+        parameters.metallic
+    );
+
+    result.emission.xyz = parameters.emission;
+    result.emission.w = EncodTypedOcclusion(parameters.typed_occlusion);
+
+    result.normal = parameters.normal * 0.5 + 0.5;
+    result.velocity = parameters.velocity;
+
+    result.albedo.w = (0.5 + ShadingModelToFlags(parameters.shading_model)) / 255.0;
+
+    result.o5.xy = parameters.unk_o5;
 
 	return result;
 }

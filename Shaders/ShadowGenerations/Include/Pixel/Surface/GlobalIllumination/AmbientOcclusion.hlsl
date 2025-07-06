@@ -14,7 +14,7 @@ void ApplyAOGI(inout SurfaceParameters parameters)
 		parameters.cavity *= gi_ao;
 	}
 
-	if(GetGIMode() == GIMode5)
+	if(GetDebugGITexDisableType() == DebugGITex_AOGIOnly)
 	{
 		parameters.cavity = gi_ao;
 	}

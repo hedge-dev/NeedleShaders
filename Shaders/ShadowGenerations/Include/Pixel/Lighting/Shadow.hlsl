@@ -15,10 +15,10 @@
 #include "Struct.hlsl"
 
 Texture2DArray<float4> WithSampler(s_ShadowMap);
-SamplerComparisonState SamplerName(s_LocalShadowMap);
+TextureCubeArray<float4> WithSamplerComparison(s_LocalShadowMap);
 Texture3D<float4> WithSampler(s_VolShadow);
 
-float3 ComputeParallaxIntersection(int level, float3 shadow_view_pos)
+float3 ComputeShadowParallaxIntersection(int level, float3 shadow_view_pos)
 {
 	if (shadow_parallax_correct_param[0].w > 0)
 	{
@@ -199,39 +199,33 @@ float SampleShadow(float2 screen_position, float3 view_pos, float3 shadow_sample
 	}
 }
 
-float ComputeShadowValue(float4 position, float2 screen_position)
+float ComputeShadowValue(float3 shadow_position, float shadow_depth, float2 screen_position)
 {
 	ShadowMapData data = GetShadowMapData();
 
-	int level = GetShadowCascadeLevel(position);
+	int level = GetShadowCascadeLevel(shadow_depth);
 
 	if(level >= data.cascade_count)
 	{
 		return data.shadow_base_factor;
 	}
 
-	float3 shadow_view_position = mul(position, shadow_view_matrix).xyz;
-	float3 shadow_sample_position = ComputeParallaxIntersection(level, shadow_view_position);
-	float shadow = SampleShadow(screen_position, shadow_view_position, shadow_sample_position, level);
+	float3 sample_position = ComputeShadowParallaxIntersection(level, shadow_position);
+	float shadow = SampleShadow(screen_position, shadow_position, sample_position, level);
 
-	float level_step = 1.0 - ComputeShadowCascadeLevelStep(
-		position,
-		level,
-		data.level_step_scale
-	);
-
+	float level_step = 1.0 - ComputeShadowCascadeLevelStep(shadow_depth, level, data.level_step_scale);
 	int next_level = min(level + 1, data.cascade_count - 1);
 	float next_shadow = 1.0;
 
 	if(level != next_level && level_step <= 0.99999 && level_step > 0)
 	{
-		float3 next_shadow_position = ComputeParallaxIntersection(next_level, shadow_view_position);
-		next_shadow = SampleShadow(screen_position, shadow_view_position, shadow_sample_position, level);
+		float3 next_sample_position = ComputeShadowParallaxIntersection(next_level, shadow_position);
+		next_shadow = SampleShadow(screen_position, shadow_position, next_sample_position, level);
 	}
 
 	float result = lerp(shadow, next_shadow, level_step);
 
-	float result_factor = ComputeShadowCascadeLevelStep(position, data.cascade_count - 1, data.level_end_scale);
+	float result_factor = ComputeShadowCascadeLevelStep(shadow_depth, data.cascade_count - 1, data.level_end_scale);
 	result = lerp(
 		data.shadow_base_factor,
 		result,
@@ -247,7 +241,9 @@ float ComputeShadowValue(float4 position, float2 screen_position)
 	return result;
 }
 
-bool SampleVolShadowValue(float3 position, int level, out float value)
+//////////////////////////////////////////////////
+
+bool SampleVolShadowValue(float3 world_position, int level, out float value)
 {
 	value = 1.0;
 
@@ -256,7 +252,7 @@ bool SampleVolShadowValue(float3 position, int level, out float value)
 		return false;
 	}
 
-	float3 offset = position - u_vol_shadow_param[level].xyz;
+	float3 offset = world_position - u_vol_shadow_param[level].xyz;
 	offset *= u_vol_shadow_param[level].w;
 
 	float3 oabs = abs(offset);
@@ -275,22 +271,22 @@ bool SampleVolShadowValue(float3 position, int level, out float value)
 	return true;
 }
 
-void ComputeVolShadowValue(float3 position, inout float value)
+void ComputeVolShadowValue(float3 world_position, inout float value)
 {
 	if(!enable_vol_shadow)
 	{
 		return;
 	}
 
-	float camera_distance = length(position - u_cameraPosition.xyz);
+	float camera_distance = length(world_position - u_cameraPosition.xyz);
 	int shadow_level = CountTrue(u_vol_shadow_param[4] < camera_distance);
 
 	float result;
-	SampleVolShadowValue(position, shadow_level, result);
+	SampleVolShadowValue(world_position, shadow_level, result);
 
 	int next_shadow_level = shadow_level + 1;
 	float next_vol_shadow;
-	if(SampleVolShadowValue(position, shadow_level, next_vol_shadow))
+	if(SampleVolShadowValue(world_position, shadow_level, next_vol_shadow))
 	{
 		float limit = dot(u_vol_shadow_param[4], shadow_cascade_levels[shadow_level]);
 		result = lerp(result, next_vol_shadow, smoothstep(limit * 0.5, limit, camera_distance));

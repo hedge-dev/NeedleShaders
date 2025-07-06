@@ -55,25 +55,42 @@ DefineDebugView(42, ShadingKind);
 DefineDebugView(43, AmbDiffuseLf);
 DefineDebugView(44, SggiOnly);
 
-//////////////////////////////////////////////////
-// Second debug modes
-
-static const int Debug2Mode_1 = 1;
-static const int Debug2Mode_2 = 2;
-static const int Debug2Mode_3 = 3;
-
-//////////////////////////////////////////////////
-// Methods
-
 int GetDebugView()
 {
 	return (int)round(g_debug_option.x);
 }
 
-int GetDebug2Mode()
+//////////////////////////////////////////////////
+// Ambient specular debug types
+
+static const int DebugAmbientSpecularType_None = 0;
+static const int DebugAmbientSpecularType_IBL = 1;
+static const int DebugAmbientSpecularType_SG = 2;
+static const int DebugAmbientSpecularType_Blend = 3;
+
+int GetDebugAmbientSpecularType()
 {
 	return (int)round(g_debug_option.y);
 }
+
+//////////////////////////////////////////////////
+// GI Texture disable type
+
+static const int DebugGITex_DisableNone = 0;
+static const int DebugGITex_DisableSGGI = 1;
+static const int DebugGITex_DisableAO = 2;
+static const int DebugGITex_DisableAll = 3;
+static const int DebugGITex_SGGIOnly = 4;
+static const int DebugGITex_AOGIOnly = 5;
+static const int DebugGITex_AOLF_OCCRATE = 6;
+
+int GetDebugGITexDisableType()
+{
+	return (uint)u_sggi_param[1].z;
+}
+
+//////////////////////////////////////////////////
+// Methods
 
 float3 ComputeUIntDebugColor(float3 base_color, uint integer)
 {

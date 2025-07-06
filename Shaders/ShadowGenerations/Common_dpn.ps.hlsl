@@ -13,7 +13,7 @@ DefineFeature(enable_alpha_threshold);
 #include "Include/ColorConversion.hlsl"
 #include "Include/IOStructs.hlsl"
 
-#include "Include/Pixel/Common.hlsl"
+#include "Include/Pixel/Material.hlsl"
 #include "Include/Pixel/Instancing.hlsl"
 #include "Include/Pixel/Dithering.hlsl"
 #include "Include/Pixel/Normals.hlsl"
@@ -60,6 +60,7 @@ PixelOutput main(const PixelInput input)
 
     float4 diffuse_texture = SampleUV0(diffuse);
     parameters.albedo = diffuse_texture.rgb;
+    parameters.transparency = diffuse_texture.a;
 
     #if defined(is_compute_instancing) && defined(enable_deferred_rendering)
 
@@ -120,5 +121,8 @@ PixelOutput main(const PixelInput input)
         parameters.emission = UserModel1Stuff(parameters.world_position);
     #endif
 
-	return ProcessSurface(CreateCommonSurface(parameters));
+    //////////////////////////////////////////////////
+
+    SetupCommonSurface(parameters);
+	return ProcessSurface(input, parameters);
 }

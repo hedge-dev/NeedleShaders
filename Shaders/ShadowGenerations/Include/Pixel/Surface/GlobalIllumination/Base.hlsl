@@ -12,8 +12,7 @@
 void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 {
 	int debug_mode = GetDebugView();
-	int debug2_mode = GetDebug2Mode();
-	int gi_mode = GetGIMode();
+	uint gi_disable_type = GetDebugGITexDisableType();
 
 	float3 gi_diffuse = 0.0;
 	float3 gi_specular = 0.0;
@@ -49,12 +48,12 @@ void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 	float3 color_2 = color_1 * parameters.albedo;
 	float3 color_3 = gi_specular;
 
-	if(debug2_mode == Debug2Mode_3)
+	if(GetDebugAmbientSpecularType() == DebugAmbientSpecularType_Blend)
 	{
 		color_3 *= saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
 	}
 
-	if(gi_mode == 1 || gi_mode == 3)
+	if(gi_disable_type == DebugGITex_DisableSGGI || gi_disable_type == DebugGITex_DisableAll)
 	{
 		color_3 = gi_specular;
 	}

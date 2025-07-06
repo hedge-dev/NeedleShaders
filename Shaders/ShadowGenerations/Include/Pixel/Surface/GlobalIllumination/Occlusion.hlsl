@@ -6,10 +6,11 @@
 #include "../../../Texture.hlsl"
 
 #include "Common.hlsl"
+#include "../../TypedOcclusion.hlsl"
 
 Texture2D<float4> WithSampler(gi_shadow_texture);
 
-float SampleGIShadow(float2 gi_uv)
+float SampleGIOcclusion(float2 gi_uv)
 {
 	if(UsingDefaultGI())
 	{
@@ -26,33 +27,39 @@ float SampleGIShadow(float2 gi_uv)
 	}
 }
 
-float ComputeGIShadow(float2 gi_uv)
+TypedOcclusion ComputeGIOcclusion(float2 gi_uv)
 {
-	bool enable_shadows = AreBakedShadowsEnabled();
+	TypedOcclusion result;
+	bool enable_shadows = IsShadowGIEnabled();
+	bool shprobes_enabled = shlightfield_param.x > 0;
 
-	float result = shlightfield_param.x <= 0 || enable_shadows
-		? SampleGIShadow(gi_uv)
+	result.value = !shprobes_enabled || enable_shadows
+		? SampleGIOcclusion(gi_uv)
 		: 0.0001;
 
 	if(enable_shadows)
 	{
 		if(UsingSGGI())
 		{
-			result += 30.0;
+			result.mode = OcclusionType_SGGI;
 		}
 		else if(UsingAOGI())
 		{
-			result += 20.0;
+			result.mode = OcclusionType_AOGI;
 		}
 		else
 		{
-			result += 10.0;
+			result.mode = OcclusionType_ShadowGI;
 		}
 	}
+	else
+	{
+		result.mode = OcclusionType_AOLightField;
+	}
 
-	return enable_shadow_map
-		? result
-		: -result;
+	result.sign = !enable_shadow_map;
+
+	return result;
 }
 
 #endif

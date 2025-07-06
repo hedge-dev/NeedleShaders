@@ -18,14 +18,19 @@ static const float3 shadow_cascade_params[] = {
     { 1.5, 0.3, 5.5 },
 };
 
-float GetShadowDepth(float4 position)
+float3 ComputeShadowPosition(float4 world_position)
 {
-    return -dot(shadow_camera_view_matrix_third_row, position);
+    return mul(world_position, shadow_view_matrix).xyz;
 }
 
-int GetShadowCascadeLevel(float4 position)
+float ComputeShadowDepth(float4 world_position)
 {
-    int result = CountTrue(shadow_cascade_frustums_eye_space_depth < GetShadowDepth(position));
+    return -dot(shadow_camera_view_matrix_third_row, world_position);
+}
+
+int GetShadowCascadeLevel(float depth)
+{
+    int result = CountTrue(shadow_cascade_frustums_eye_space_depth < depth);
 
     // no idea what this is for, but definitely not for anything here so far
     if(GetShadowMapData().cascade_count <= 0)
@@ -36,7 +41,9 @@ int GetShadowCascadeLevel(float4 position)
     return result;
 }
 
-float ComputeShadowCascadeLevelStep(float4 position, int level, float scale)
+
+
+float ComputeShadowCascadeLevelStep(int level, float depth, float scale)
 {
     if(scale == 0.0)
     {
@@ -48,10 +55,10 @@ float ComputeShadowCascadeLevelStep(float4 position, int level, float scale)
         shadow_cascade_levels[level]
     );
 
-    return saturate((level_depth - GetShadowDepth(position)) * scale);
+    return saturate((level_depth - depth) * scale);
 }
 
-float3 ComputeShadowCascadeLevelColor(float4 position, int level, float level_step)
+float3 ComputeShadowCascadeLevelColor(float3 shadow_position, float shadow_depth, int level, float level_step)
 {
     ShadowMapData data = GetShadowMapData();
 
@@ -60,7 +67,7 @@ float3 ComputeShadowCascadeLevelColor(float4 position, int level, float level_st
         return 1.0;
     }
 
-    float3 shadow_view_position = mul(shadow_view_matrix, position).xyz
+    float3 shadow_view_position = shadow_position
         * shadow_cascade_scale[level].xyz
         + shadow_cascade_offset[level].xyz;
 
@@ -79,7 +86,7 @@ float3 ComputeShadowCascadeLevelColor(float4 position, int level, float level_st
     );
 
     float result_factor = ComputeShadowCascadeLevelStep(
-        position,
+        shadow_depth,
         data.cascade_count - 1,
         data.level_end_scale
     );
@@ -87,7 +94,7 @@ float3 ComputeShadowCascadeLevelColor(float4 position, int level, float level_st
     return lerp(1.0, result, result_factor);
 }
 
-float3 ComputeShadowCascadeColor(float4 position)
+float3 ComputeShadowCascadeColor(float4 world_position)
 {
     ShadowMapData data = GetShadowMapData();
 
@@ -96,15 +103,17 @@ float3 ComputeShadowCascadeColor(float4 position)
         return 1.0;
     }
 
-    int level = GetShadowCascadeLevel(position);
+    float3 position = ComputeShadowPosition(world_position);
+    float depth = ComputeShadowDepth(world_position);
+    int level = GetShadowCascadeLevel(depth);
 
     float level_step = 1.0 - ComputeShadowCascadeLevelStep(
-        position,
+        depth,
         level,
         data.level_step_scale
     );
 
-    return ComputeShadowCascadeLevelColor(position, level, level_step);
+    return ComputeShadowCascadeLevelColor(position, depth, level, level_step);
 }
 
 #endif
