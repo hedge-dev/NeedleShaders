@@ -35,13 +35,13 @@ float ComputeIBLOcclusion(LightingParameters parameters, float base)
 	switch(GetDebugAmbientSpecularType())
 	{
 		case DebugAmbientSpecularType_IBL:
-			result = 1.0 - min(1, parameters.typed_occlusion.mode);
+			result = 1.0 - min(OcclusionType_ShadowGI, parameters.typed_occlusion.mode);
 			break;
 		case DebugAmbientSpecularType_SG:
 			result = 1.0;
 			break;
 		case DebugAmbientSpecularType_Blend:
-			result = 1.0 - min(1, parameters.typed_occlusion.mode) * saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
+			result = 1.0 - min(OcclusionType_ShadowGI, parameters.typed_occlusion.mode) * saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
 			break;
 		default:
 			result = base;
