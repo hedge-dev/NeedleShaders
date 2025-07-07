@@ -12,7 +12,7 @@
 void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 {
 	int debug_mode = GetDebugView();
-	uint gi_disable_type = GetDebugGITexDisableType();
+	int gi_disable_type = GetDebugGITexDisableType();
 
 	float3 gi_diffuse = 0.0;
 	float3 gi_specular = 0.0;

@@ -1,3 +1,6 @@
+// This gets included by nature of the library and needs to be removed
+#define no_shadow_as_pcf
+
 #include "Include/IOStructs.hlsl"
 #include "Include/Pixel/Deferred.hlsl"
 #include "Include/Pixel/Lighting/Composite.hlsl"
@@ -18,8 +21,12 @@ DeferredOut main(BlitIn input)
 	uint2 pixel_position = (uint2)input.pixel_position.xy;
 	DeferredData deferred_data = LoadDeferredData(pixel_position);
 
-	LightingParameters parameters = InitLightingParameters();
-	TransferSurfaceData(deferred_data.surface, parameters);
+	LightingParameters parameters = LightingParametersFromDeferred(
+		deferred_data.surface,
+		pixel_position,
+		input.screen_position.xy,
+		deferred_data.depth
+	);
 
 	DeferredOut result;
 
@@ -34,13 +41,6 @@ DeferredOut main(BlitIn input)
 
 		return result;
 	}
-
-	TransferPixelData(
-		pixel_position,
-		input.screen_position.xy,
-		deferred_data.depth,
-		parameters
-	);
 
 	float4 ssss_color;
 	float ssss_mask;

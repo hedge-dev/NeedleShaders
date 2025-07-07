@@ -19,19 +19,16 @@ struct LightingParameters
 {
 	ShadingModel shading_model;
 
-    float3 albedo;
-    float3 emission;
+	// Geometry properties
 
-	float3 sss_param;
-	float2 anisotropy;
-
+	float2 screen_position;
 	uint2 pixel_position;
 	uint2 tile_position;
 
+	float4 world_position;
+
 	float depth;
 	float view_distance;
-	float2 screen_position;
-	float4 world_position;
 
     float3 world_normal;
 	float3 anisotropic_tangent;
@@ -40,15 +37,22 @@ struct LightingParameters
 	float3 view_direction;
 	float cos_view_normal;
 
-	// Standard PBR properties
+	float3 shadow_position;
+	float shadow_depth;
+
+	// Surface properties
+
+    float3 albedo;
+
+    float3 emission;
+	float3 sss_param;
+	float2 anisotropy;
+
 	float specular;
 	float roughness;
 	float metallic;
 	float cavity;
 	float3 fresnel_reflectance;
-
-	float3 shadow_position;
-	float shadow_depth;
 
 	float lightfield_ao;
 	float shadow;
@@ -62,31 +66,32 @@ LightingParameters InitLightingParameters()
 	LightingParameters result = {
 		{ 0, false, 0 },
 
-		{0.0, 0.0, 0.0},
-		{0.0, 0.0, 0.0},
-
-		{0.0, 0.0, 0.0},
 		{0.0, 0.0},
-
 		{0, 0},
 		{0, 0},
 
-		0.0,
-		0.0,
-		{0.0, 0.0},
 		{0.0, 0.0, 0.0, 0.0},
 
+		0.0, 0.0,
+
 		{0.0, 0.0, 0.0},
 		{0.0, 0.0, 0.0},
 		{0.0, 0.0, 0.0},
 
 		{0.0, 0.0, 0.0},
 		0.0,
+
+		{0.0, 0.0, 0.0},
+		0.0,
+
+		{0.0, 0.0, 0.0},
+
+		{0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0},
+		{0.0, 0.0},
 
 		0.0, 0.0, 0.0, 0.0,
 		{0.0, 0.0, 0.0},
-
-		{0.0, 0.0, 0.0}, 0.0,
 
 		0.0, 0.0,
 
@@ -97,100 +102,41 @@ LightingParameters InitLightingParameters()
 	return result;
 }
 
-void TransferVertexData(PixelInput input, inout LightingParameters parameters)
+void LightingParametersCommonSetup(inout LightingParameters parameters)
 {
-	parameters.screen_position = input.position.xy * u_screen_info.zw;
-	parameters.world_position = WorldPosition4(input);
-	parameters.world_normal = input.world_normal.xyz;
-	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
-	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
-
-	parameters.pixel_position = (uint2)(parameters.screen_position * u_screen_info.xy);
 	parameters.tile_position = parameters.pixel_position >> 4;
 
-	#ifdef enable_deferred_rendering
-		parameters.shadow_position = input.shadow_position;
-		parameters.shadow_depth = input.shadow_depth;
-		parameters.light_scattering_colors.factor = input.light_scattering_factor;
-		parameters.light_scattering_colors.base = input.light_scattering_base;
-	#endif
-}
-
-void TransferSurfaceParameters(SurfaceParameters in_param, inout LightingParameters out_param)
-{
-	out_param.shading_model = in_param.shading_model;
-
-	out_param.albedo = in_param.albedo;
-
-	out_param.world_normal = in_param.normal;
-	out_param.cos_view_normal = saturate(dot(out_param.view_direction, out_param.world_normal));
-
-	switch(out_param.shading_model.type)
+	if(parameters.shading_model.type == ShadingModelType_AnisotropicReflection)
 	{
-		case ShadingModelType_SSS:
-			out_param.sss_param = in_param.emission;
-			break;
-
-		case ShadingModelType_AnisotropicReflection:
-			out_param.anisotropy = float2(
-				2 * floor(abs(in_param.emission.z)),
-				10 * frac(abs(in_param.emission.z))
-			);
-
-			out_param.anisotropic_tangent = CorrectedZNormal(in_param.emission);
-			out_param.anisotropic_binormal = ComputeBinormal(out_param.anisotropic_tangent, out_param.world_normal);
-			break;
-
-		default:
-			out_param.emission = in_param.emission;
-			break;
+		parameters.anisotropic_tangent = CorrectedZNormal(parameters.emission);
+		parameters.anisotropic_binormal = ComputeBinormal(parameters.anisotropic_tangent, parameters.world_normal);
 	}
 
-	out_param.typed_occlusion = in_param.typed_occlusion;
-
-	out_param.specular = in_param.specular;
-	out_param.roughness = in_param.roughness;
-	out_param.cavity = in_param.cavity;
-	out_param.metallic = in_param.metallic;
-
-	out_param.fresnel_reflectance = lerp(
-		out_param.specular,
-		out_param.albedo,
-		out_param.metallic
-	);
-}
-
-void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
-{
-	parameters.shading_model = ShadingModelFromFlags((uint)(data.albedo.w * 255));
-
-	parameters.albedo = data.albedo.xyz;
-
-	parameters.world_normal = data.normal * 2.0 - 1.0;
+	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
 	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
 
 	switch(parameters.shading_model.type)
 	{
 		case ShadingModelType_SSS:
-			parameters.sss_param = data.emission.xyz;
+			parameters.sss_param = parameters.emission;
+			parameters.emission = 0.0;
 			break;
 
 		case ShadingModelType_AnisotropicReflection:
 			parameters.anisotropy = float2(
-				2 * floor(abs(data.emission.z)),
-				10 * frac(abs(data.emission.z))
+				2 * floor(abs(parameters.emission.z)),
+				10 * frac(abs(parameters.emission.z))
 			);
 
-			parameters.anisotropic_tangent = CorrectedZNormal(data.emission.xyz);
-			parameters.anisotropic_binormal = ComputeBinormal(parameters.anisotropic_tangent, parameters.world_normal);
-			break;
-
-		default:
-			parameters.emission = data.emission.xyz;
+			parameters.emission = 0.0;
 			break;
 	}
 
-	parameters.typed_occlusion = DecodeTypedOcclusion(data.emission.w);
+	parameters.fresnel_reflectance = lerp(
+		parameters.specular,
+		parameters.albedo,
+		parameters.metallic
+	);
 
 	parameters.lightfield_ao = 1.0;
 	parameters.shadow = 1.0;
@@ -203,37 +149,98 @@ void TransferSurfaceData(SurfaceData data, inout LightingParameters parameters)
 	{
 		parameters.shadow = parameters.typed_occlusion.value;
 	}
-
-	parameters.specular = data.prm.x;
-	parameters.roughness = data.prm.y;
-	parameters.cavity = data.prm.z;
-	parameters.metallic = data.prm.w;
-
-	parameters.fresnel_reflectance = lerp(
-		parameters.specular,
-		parameters.albedo,
-		parameters.metallic
-	);
 }
 
-void TransferPixelData(uint2 pixel_position, float2 screen_position, float depth, inout LightingParameters parameters)
+LightingParameters LightingParametersFromSurface(PixelInput input, SurfaceParameters surface)
 {
-	parameters.depth = depth;
-	parameters.view_distance = DepthToViewDistance(depth);
+	LightingParameters result = InitLightingParameters();
 
-	parameters.pixel_position = pixel_position;
-	parameters.tile_position = pixel_position.xy >> 4;
+	result.shading_model = surface.shading_model;
 
-	parameters.screen_position = screen_position;
-	parameters.world_position = ScreenDepthToWorldPosition(parameters.screen_position, depth);
+	// Geometry properties
 
-	parameters.view_direction = normalize(u_cameraPosition.xyz - parameters.world_position.xyz);
-	parameters.cos_view_normal = saturate(dot(parameters.view_direction, parameters.world_normal));
+	result.screen_position = input.position.xy * u_screen_info.zw;
+	result.pixel_position = (uint2)(result.screen_position * u_screen_info.xy);
 
-	parameters.shadow_position = ComputeShadowPosition(parameters.world_position).xyz;
-	parameters.shadow_depth = ComputeShadowDepth(parameters.world_position);
+	result.world_position = surface.world_position;
 
-	parameters.light_scattering_colors = ComputeLightScatteringColors(parameters.view_distance, parameters.view_direction);
+	// Unknown whether these 2 are correct, as they are never actually used like this
+	result.view_distance = mul(result.world_position, view_matrix).z;
+	result.depth = ViewDistanceToDepth(result.view_distance);
+
+	result.world_normal = surface.normal;
+
+	#ifdef enable_deferred_rendering
+		result.shadow_position = ComputeShadowPosition(result.world_position).xyz;
+		result.shadow_depth = ComputeShadowDepth(result.world_position);
+	#else
+		result.shadow_position = input.shadow_position.xyz;
+		result.shadow_depth = input.shadow_depth;
+	#endif
+
+	// Surface properties
+
+	result.albedo = surface.albedo;
+	result.emission = surface.emission;
+
+	result.specular = surface.specular;
+	result.roughness = surface.roughness;
+	result.cavity = surface.cavity;
+	result.metallic = surface.metallic;
+
+	result.typed_occlusion = surface.typed_occlusion;
+
+	#ifdef enable_deferred_rendering
+		result.light_scattering_colors = ComputeLightScatteringColors(result.view_distance, result.view_direction);
+	#else
+		result.light_scattering_colors.factor = input.light_scattering_factor;
+		result.light_scattering_colors.base = input.light_scattering_base;
+	#endif
+
+	LightingParametersCommonSetup(result);
+
+	return result;
 }
+
+LightingParameters LightingParametersFromDeferred(SurfaceData data, uint2 pixel_position, float2 screen_position, float depth)
+{
+	LightingParameters result = InitLightingParameters();
+
+	result.shading_model = ShadingModelFromFlags((uint)(data.albedo.w * 255));
+
+	// Geometry properties
+
+	result.screen_position = screen_position;
+	result.pixel_position = pixel_position;
+
+	result.world_position = ScreenDepthToWorldPosition(result.screen_position, depth);
+
+	result.depth = depth;
+	result.view_distance = DepthToViewDistance(depth);
+
+	result.world_normal = data.normal * 2.0 - 1.0;
+
+	result.shadow_position = ComputeShadowPosition(result.world_position).xyz;
+	result.shadow_depth = ComputeShadowDepth(result.world_position);
+
+	// Surface properties
+
+	result.albedo = data.albedo.xyz;
+	result.emission = data.emission.xyz;
+
+	result.specular = data.prm.x;
+	result.roughness = data.prm.y;
+	result.cavity = data.prm.z;
+	result.metallic = data.prm.w;
+
+	result.typed_occlusion = DecodeTypedOcclusion(data.emission.w);
+
+	result.light_scattering_colors = ComputeLightScatteringColors(result.view_distance, result.view_direction);
+
+	LightingParametersCommonSetup(result);
+
+	return result;
+}
+
 
 #endif

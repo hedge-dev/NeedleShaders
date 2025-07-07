@@ -146,6 +146,28 @@ void DebugLocalLight(LightingParameters parameters, int type, inout float3 out_d
 	#endif
 }
 
+float3 GetShadowCascadeDebugColor(int level)
+{
+	switch(level)
+	{
+		case 0:
+			return float3(1.0, 0, 0.0);
+			break;
+		case 1:
+			return float3(1.0, 1.0, 0.0);
+			break;
+		case 2:
+			return float3(0.0, 1.0, 0.0);
+			break;
+		case 3:
+			return float3(0.0, 1.0, 1.0);
+			break;
+		default:
+			return float3(0.0, 0.0, 1.0);
+			break;
+	}
+}
+
 void DebugAfterFog(
 	LightingParameters parameters,
 	float3 ssao,
@@ -169,12 +191,7 @@ void DebugAfterFog(
 
 	switch(GetDebugView())
 	{
-		case DebugView_User0:
-			// User0 is not actually used, so i repurposed it for debugging shadow cascades
-			// ~ Justin113D
-			out_direct = ComputeShadowCascadeColor(parameters.world_position);
-			break;
-
+		case DebugView_User0: break;
 		case DebugView_User1: break;
 
 		case DebugView_User2:

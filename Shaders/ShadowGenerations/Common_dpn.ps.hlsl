@@ -118,7 +118,7 @@ PixelOutput main(const PixelInput input)
     //////////////////////////////////////////////////
 
     #ifdef u_model_user_flag_0
-        parameters.emission = UserModel1Stuff(parameters.world_position);
+        parameters.emission = UserModel1Stuff(parameters.world_position.xyz);
     #endif
 
     //////////////////////////////////////////////////

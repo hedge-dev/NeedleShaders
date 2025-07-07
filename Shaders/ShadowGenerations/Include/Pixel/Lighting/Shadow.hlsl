@@ -49,10 +49,10 @@ float3 ComputeShadowParallaxIntersection(int level, float3 shadow_view_pos)
 	return shadow_view_pos * shadow_cascade_scale[level].xyz + shadow_cascade_offset[level].xyz;
 }
 
-float SampleShadowVSM(float3 view_pos, float3 shadow_sample_pos, int level, float offset)
+float SampleShadowVSM(float3 shadow_position, float3 shadow_sample_pos, int level, float offset)
 {
-	float2 pos_ddx = ddx_coarse(view_pos.xy);
-	float2 pos_ddy = ddy_coarse(view_pos.xy);
+	float2 pos_ddx = ddx_coarse(shadow_position.xy);
+	float2 pos_ddy = ddy_coarse(shadow_position.xy);
 
 	pos_ddx *= shadow_cascade_scale[level].xy;
 	pos_ddy *= shadow_cascade_scale[level].xy;
@@ -67,14 +67,14 @@ float SampleShadowVSM(float3 view_pos, float3 shadow_sample_pos, int level, floa
 
 float SampleShadowPoint(float3 shadow_sample_pos, int level, float offset)
 {
-	float transition_scale = dot(shadow_cascade_transition_scale, shadow_cascade_levels[level]);
+	float transition_scale = dot(shadow_cascade_transition_scale, ShadowCascadeLevelMasks[level]);
 	float shadow = SampleTextureLevel(s_ShadowMap, float3(shadow_sample_pos.xy, level), 0).x;
 	return saturate((shadow - shadow_sample_pos.z) * transition_scale + offset);
 }
 
 float SampleShadowPCF(float3 shadow_sample_pos, int level, float offset)
 {
-	float transition_scale = dot(shadow_cascade_transition_scale, shadow_cascade_levels[level]);
+	float transition_scale = dot(shadow_cascade_transition_scale, ShadowCascadeLevelMasks[level]);
 
 	float2 scaled = shadow_sample_pos.xy * shadow_map_size.xy - 0.5;
 	float2 fraction = frac(scaled);
@@ -168,11 +168,11 @@ float SampleShadowESM(float3 shadow_sample_pos, int level, float offset)
 	return min(1, exp((result - shadow_sample_pos.z) * offset));
 }
 
-float SampleShadow(float2 screen_position, float3 view_pos, float3 shadow_sample_pos, int level)
+float SampleShadow(float2 screen_position, float3 shadow_position, float3 sample_position, int level)
 {
-	if(shadow_sample_pos.x < 0.0 || shadow_sample_pos.x >= 1.0
-		|| shadow_sample_pos.y < 0.0 || shadow_sample_pos.y >= 1.0
-		|| shadow_sample_pos.z < 0.0 || shadow_sample_pos.z >= 1.0)
+	if(sample_position.x < 0.0 || sample_position.x >= 1.0
+		|| sample_position.y < 0.0 || sample_position.y >= 1.0
+		|| sample_position.z < 0.0 || sample_position.z >= 1.0)
 	{
 		return 1.0;
 	}
@@ -187,15 +187,15 @@ float SampleShadow(float2 screen_position, float3 view_pos, float3 shadow_sample
 	switch(filter_mode)
 	{
 		case ShadowFilterMode_Point:
-			return SampleShadowPoint(shadow_sample_pos, level, data.shadow_offset);
+			return SampleShadowPoint(sample_position, level, data.shadow_offset);
 		case ShadowFilterMode_PCF:
-			return SampleShadowPCF(shadow_sample_pos, level, data.shadow_offset);
+			return SampleShadowPCF(sample_position, level, data.shadow_offset);
 		case ShadowFilterMode_PCSS:
-			return SampleShadowPCSS(screen_position, shadow_sample_pos, level);
+			return SampleShadowPCSS(screen_position, sample_position, level);
 		case ShadowFilterMode_ESM:
-			return SampleShadowESM(shadow_sample_pos, level, data.shadow_offset);
+			return SampleShadowESM(sample_position, level, data.shadow_offset);
 		default:
-			return SampleShadowVSM(view_pos, shadow_sample_pos, level, data.shadow_offset);
+			return SampleShadowVSM(shadow_position, sample_position, level, data.shadow_offset);
 	}
 }
 
@@ -213,19 +213,19 @@ float ComputeShadowValue(float3 shadow_position, float shadow_depth, float2 scre
 	float3 sample_position = ComputeShadowParallaxIntersection(level, shadow_position);
 	float shadow = SampleShadow(screen_position, shadow_position, sample_position, level);
 
-	float level_step = 1.0 - ComputeShadowCascadeLevelStep(shadow_depth, level, data.level_step_scale);
+	float level_step = 1.0 - ComputeShadowCascadeLevelStep(level, shadow_depth, data.level_step_scale);
 	int next_level = min(level + 1, data.cascade_count - 1);
 	float next_shadow = 1.0;
 
 	if(level != next_level && level_step <= 0.99999 && level_step > 0)
 	{
 		float3 next_sample_position = ComputeShadowParallaxIntersection(next_level, shadow_position);
-		next_shadow = SampleShadow(screen_position, shadow_position, next_sample_position, level);
+		next_shadow = SampleShadow(screen_position, shadow_position, next_sample_position, next_level);
 	}
 
 	float result = lerp(shadow, next_shadow, level_step);
 
-	float result_factor = ComputeShadowCascadeLevelStep(shadow_depth, data.cascade_count - 1, data.level_end_scale);
+	float result_factor = ComputeShadowCascadeLevelStep(data.cascade_count - 1, shadow_depth, data.level_end_scale);
 	result = lerp(
 		data.shadow_base_factor,
 		result,
@@ -288,13 +288,13 @@ void ComputeVolShadowValue(float3 world_position, inout float value)
 	float next_vol_shadow;
 	if(SampleVolShadowValue(world_position, shadow_level, next_vol_shadow))
 	{
-		float limit = dot(u_vol_shadow_param[4], shadow_cascade_levels[shadow_level]);
+		float limit = dot(u_vol_shadow_param[4], ShadowCascadeLevelMasks[shadow_level]);
 		result = lerp(result, next_vol_shadow, smoothstep(limit * 0.5, limit, camera_distance));
 	}
 
 	if (next_shadow_level >= 4)
 	{
-		float limit = dot(u_vol_shadow_param[4], shadow_cascade_levels[3]);
+		float limit = dot(u_vol_shadow_param[4], ShadowCascadeLevelMasks[3]);
 		result = lerp(result, 1.0, smoothstep(limit * 0.8, limit, camera_distance));
 	}
 

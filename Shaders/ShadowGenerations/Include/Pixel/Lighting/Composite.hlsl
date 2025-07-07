@@ -148,9 +148,9 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output, 
 	);
 
 	//////////////////////////////////////////////////
-	// shadow cascade (?)
+	// shadow cascade debugging
 
-	out_direct *= ComputeShadowCascadeColor(parameters.world_position);
+	out_direct *= ComputeShadowCascadeDebugColor(parameters.world_position);
 
 	//////////////////////////////////////////////////
 	// Light scattering

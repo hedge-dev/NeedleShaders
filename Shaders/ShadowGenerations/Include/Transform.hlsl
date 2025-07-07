@@ -3,15 +3,15 @@
 
 #include "ConstantBuffer/World.hlsl"
 
-float2 ClipToScreenSpace(float3 position)
+int2 ClipToPixelSpace(float3 position)
 {
 	float2 result = position.xy / position.z;
 	result.y = -result.y;
-	result += 1.0;
-	result *= u_viewport_info.xy;
 	result *= 0.5;
+	result += 0.5;
+	result *= u_viewport_info.xy;
 
-	return result;
+	return (int2)result;
 }
 
 float4 ScreenDepthToWorldPosition(float2 screen_uv, float depth)
@@ -36,6 +36,12 @@ float2 PixelToScreen(uint2 pixel_index)
 float DepthToViewDistance(float depth)
 {
 	return -u_view_param.x / (depth * u_view_param.w - u_view_param.z);
+}
+
+float ViewDistanceToDepth(float view_distance)
+{
+	// has to be verified!
+	return (view_distance * -u_view_param.x + u_view_param.z) / u_view_param.w;
 }
 
 float3 RotateX(float3 position, float angle)

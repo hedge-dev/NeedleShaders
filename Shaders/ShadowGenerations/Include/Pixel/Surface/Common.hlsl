@@ -36,11 +36,11 @@ void SetupCommonSurface(inout SurfaceParameters parameters)
     ApplyWeatherEffects(parameters);
 
     ApplyGlobalIllumination(parameters);
-    parameters.emission *= ComputeShadowCascadeColor(parameters.world_position);
+    parameters.emission *= ComputeShadowCascadeDebugColor(parameters.world_position);
 
     parameters.typed_occlusion = ComputeGIOcclusion(parameters.gi_uv);
 
-    parameters.velocity = ComputeVelocity(parameters.screen_position, parameters.previous_position);
+    parameters.velocity = ComputeVelocity(parameters.pixel_position, parameters.previous_position);
 
     // TODO figure out what these do
     parameters.unk_o5 = u_model_user_param_3.xy;

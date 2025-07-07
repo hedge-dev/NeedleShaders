@@ -48,9 +48,7 @@
 
 	PixelOutput ProcessSurface(PixelInput input, SurfaceParameters surface)
 	{
-		LightingParameters parameters = InitLightingParameters();
-		TransferVertexData(input, parameters);
-		TransferSurfaceParameters(surface, parameters);
+		LightingParameters parameters = LightingParametersFromSurface(input, surface);
 
 		//////////////////////////////////////////////////
 		// Shadows
@@ -111,9 +109,9 @@
 		// debug switch 1
 
 		//////////////////////////////////////////////////
-		// shadow cascade (?)
+		// shadow cascade debugging
 
-		out_direct *= ComputeShadowCascadeColor(parameters.world_position);
+		out_direct *= ComputeShadowCascadeDebugColor(parameters.world_position);
 
 		//////////////////////////////////////////////////
 		// Output composition

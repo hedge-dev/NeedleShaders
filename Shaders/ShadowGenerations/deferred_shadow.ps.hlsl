@@ -38,9 +38,12 @@ float4 main(BlitIn input) : SV_Target0
     uint2 pixel_position = (uint2)input.pixel_position.xy;
     DeferredData deferred_data = LoadDeferredData(pixel_position);
 
-    LightingParameters parameters = InitLightingParameters();
-    TransferSurfaceData(deferred_data.surface, parameters);
-    TransferPixelData(pixel_position, input.screen_position.xy, deferred_data.depth, parameters);
+    LightingParameters parameters = LightingParametersFromDeferred(
+		deferred_data.surface,
+		pixel_position,
+		input.screen_position.xy,
+		deferred_data.depth
+	);
 
 	float shadow = ComputeShadow(parameters);
 	float4 result = ComputeSSAO(parameters, shadow);

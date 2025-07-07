@@ -79,9 +79,6 @@ SGLightFieldInfo ComputeSGLightFieldInfo(float4 world_position, float3 world_nor
 	float3 tile_width = float3(1.0 / 9.0, 0.0, 0.0);
 	sample_position.x *= tile_width.x;
 
-	SamplerState lf_sampler;
-	Texture3D<float4> lf_texture;
-
 	switch(result.data.index)
 	{
 		case 0:

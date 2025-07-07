@@ -4,6 +4,9 @@
 #define enable_local_light_shadow
 #define enable_para_corr
 
+// This gets included by nature of the library and needs to be removed
+#define no_shadow_as_pcf
+
 #include "Include/Pixel/Deferred.hlsl"
 #include "Include/Pixel/Lighting/Composite.hlsl"
 
@@ -31,8 +34,12 @@ void main(ThreadInfo input)
 {
 	DeferredData deferred_data = LoadDeferredData(input.dispatchThreadId.xy);
 
-	LightingParameters parameters = InitLightingParameters();
-	TransferSurfaceData(deferred_data.surface, parameters);
+	LightingParameters parameters = LightingParametersFromDeferred(
+		deferred_data.surface,
+		input.dispatchThreadId.xy,
+		PixelToScreen(input.dispatchThreadId.xy),
+		deferred_data.depth
+	);
 
 	ComputeSSSSTile(parameters.shading_model.type, input.groupIndex, input.groupId.xy);
 
@@ -44,13 +51,6 @@ void main(ThreadInfo input)
 		WriteSSSSOutput(input.dispatchThreadId.xy, 0.0);
 		return;
 	}
-
-	TransferPixelData(
-		input.dispatchThreadId.xy,
-		PixelToScreen(input.dispatchThreadId.xy),
-		deferred_data.depth,
-		parameters
-	);
 
 	float4 ssss_color;
 	float ssss_mask;
