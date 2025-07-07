@@ -6,6 +6,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
     internal class IncludeResolver : CallbackBase, Include
     {
         private readonly Dictionary<Stream, string> _streams = [];
+        private readonly Dictionary<string, Stream> _invStreams = [];
         private readonly string _sourcePath;
 
         public IncludeResolver(string sourcePath)
@@ -15,10 +16,11 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
         public void Close(Stream stream)
         {
-            if(_streams.ContainsKey(stream))
+            if(_streams.TryGetValue(stream, out string? filepath))
             {
                 stream.Close();
                 _streams.Remove(stream);
+                _invStreams.Remove(filepath);
             }
         }
 
@@ -30,6 +32,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             }
 
             _streams.Clear();
+            _invStreams.Clear();
         }
 
         public Stream Open(IncludeType type, string fileName, Stream? parentStream)
@@ -45,8 +48,13 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
             string filepath = Path.GetFullPath(fileName, Path.GetDirectoryName(relativeTo)!);
 
-            Stream stream = File.OpenRead(filepath);
-            _streams.Add(stream, filepath);
+            if(!_invStreams.TryGetValue(filepath, out Stream? stream))
+            {
+                stream = File.OpenRead(filepath);
+                _streams.Add(stream, filepath);
+                _invStreams.Add(filepath, stream);
+            }
+
             return stream;
         }
     }
