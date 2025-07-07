@@ -157,6 +157,13 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             WriteLine("===== Permutation Map =====");
             WriteLine();
 
+            if(shader.Features.Count == 0)
+            {
+                WriteLine("Shader has no features / only one permutation");
+                WriteLine();
+                return;
+            }
+
             for(int i = 0; i < shader.Features.Count; i++)
             {
                 Shader.Feature permutation = shader.Features[i];
@@ -165,6 +172,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
             WriteLine();
 
+            columns = int.Min(columns, shader.Permutations.Count);
             int rows = shader.Permutations.Count / columns;
 
             for(int r = 0; r < rows; r++)
