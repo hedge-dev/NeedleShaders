@@ -1,4 +1,5 @@
-﻿using SharpNeedle.Framework.HedgehogEngine.Needle.Shader;
+﻿using SharpGen.Runtime;
+using SharpNeedle.Framework.HedgehogEngine.Needle.Shader;
 using SharpNeedle.Resource;
 using System.Text.RegularExpressions;
 using Vortice.Direct3D;
@@ -21,7 +22,6 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             }
 
             CompileArguments compilerArgs = CompileArguments.ParseCompilerArguments(file, args);
-            IncludeResolver includeResolver = new(file);
 
             ShaderMacro[]? baseMacros = null;
             HashSet<string> baseMacroLUT = [];
@@ -40,7 +40,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             }
 
             string shaderCode = File.ReadAllText(file);
-            string preprocessedShaderCode = D3D11Extensions.Preprocess(shaderCode, file, baseMacros, includeResolver);
+            string preprocessedShaderCode = D3D11Extensions.Preprocess(shaderCode, file, baseMacros, new IncludeResolver(file));
 
             string[] features = FeatureRegex().Matches(preprocessedShaderCode).Select(x => x.Groups[1].Value).ToArray();
 
@@ -61,16 +61,13 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 Console.WriteLine();
             }
 
-            List<ReadOnlyMemory<byte>> variants = [];
-            int[] permutations = new int[(int)Math.Pow(2, features.Length)];
-
+            int permutationCount = (int)Math.Pow(2, features.Length);
+            ReadOnlyMemory<byte>[] compiledPermutations = new ReadOnlyMemory<byte>[permutationCount];
+            int compileFinishedCount = 0;
             (int left, int top) = Console.GetCursorPosition();
 
-            for(int i = 0; i < permutations.Length; i++)
+            void CompilePermutation(int index)
             {
-                Console.SetCursorPosition(left, top);
-                Console.WriteLine($"Compiling premutation {i+1}/{permutations.Length}");
-
                 List<ShaderMacro> macros = [];
                 macros.AddRange(compilerArgs.ExtraMacros);
 
@@ -78,29 +75,46 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 {
                     string feature = features[j];
 
-                    if((i & (1 << j)) == 0 || baseMacroLUT.Contains(feature))
+                    if((index & (1 << j)) == 0 || baseMacroLUT.Contains(feature))
                     {
-                        Console.WriteLine($"   " + feature);
                         continue;
                     }
 
-                    Console.WriteLine($" X " + feature);
                     macros.Add(new(features[j], j));
                 }
 
                 macros.Add(_nullMacro);
 
                 ReadOnlyMemory<byte> compiledShader = Vortice.D3DCompiler.Compiler.Compile(
-                    shaderCode, 
+                    shaderCode,
                     macros.ToArray(),
-                    includeResolver,
-                    compilerArgs.EntryPoint, 
-                    file, 
+                    new IncludeResolver(file),
+                    compilerArgs.EntryPoint,
+                    file,
                     compilerArgs.ShaderProfile,
                     compilerArgs.CompilerFlags
                 );
 
-                ReadOnlySpan<byte> span = compiledShader.Span;
+                lock(compiledPermutations)
+                {
+                    compiledPermutations[index] = compiledShader;
+                    compileFinishedCount++;
+                    Console.SetCursorPosition(left, top);
+                    Console.WriteLine($"Compiling permutations... ({compileFinishedCount}/{permutationCount})");
+                }
+            }
+
+            Parallel.For(0, permutationCount, CompilePermutation);
+
+            Console.WriteLine();
+            Console.WriteLine("Comparing permutations...");
+
+            List<ReadOnlyMemory<byte>> variants = [];
+            int[] permutations = new int[(int)Math.Pow(2, features.Length)];
+
+            for(int i = 0; i < compiledPermutations.Length; i++)
+            {
+                ReadOnlySpan<byte> span = compiledPermutations[i].Span;
 
                 int foundIndex = -1;
                 for(int j = 0; j < variants.Count; j++)
@@ -115,13 +129,12 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 if(foundIndex == -1)
                 {
                     foundIndex = variants.Count;
-                    variants.Add(compiledShader);
+                    variants.Add(compiledPermutations[i]);
                 }
 
                 permutations[i] = foundIndex;
             }
 
-            Console.WriteLine();
             Console.WriteLine($"Shader contains a total of {variants.Count} variants");
             Console.WriteLine();
 
