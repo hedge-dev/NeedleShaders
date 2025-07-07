@@ -6,9 +6,11 @@
 #include "../../Texture.hlsl"
 #include "../../Math.hlsl"
 
-Texture3D<float4> WithSampler(s_SHLightField0);
-Texture3D<float4> WithSampler(s_SHLightField1);
-Texture3D<float4> WithSampler(s_SHLightField2);
+#ifndef disable_light_fields
+	Texture3D<float4> WithSampler(s_SHLightField0);
+	Texture3D<float4> WithSampler(s_SHLightField1);
+	Texture3D<float4> WithSampler(s_SHLightField2);
+#endif
 
 static const float3 SGLightFieldAxis[6] =
 {
@@ -79,26 +81,32 @@ SGLightFieldInfo ComputeSGLightFieldInfo(float4 world_position, float3 world_nor
 	float3 tile_width = float3(1.0 / 9.0, 0.0, 0.0);
 	sample_position.x *= tile_width.x;
 
+	#ifdef disable_light_fields
+		#define SampleLightField(index) 0.0
+	#else
+		#define SampleLightField(index) SampleTextureLevel(s_SHLightField##index, sample_position, 0).xyz
+	#endif
+
 	switch(result.data.index)
 	{
 		case 0:
 			for(int i0 = 0; i0 < 6; i0++)
 			{
-				result.axis_colors[i0] = SampleTextureLevel(s_SHLightField0, sample_position, 0).xyz;
+				result.axis_colors[i0] = SampleLightField(0);
 				sample_position += tile_width;
 			}
 			break;
 		case 1:
 			for(int i1 = 0; i1 < 6; i1++)
 			{
-				result.axis_colors[i1] = SampleTextureLevel(s_SHLightField1, sample_position, 0).xyz;
+				result.axis_colors[i1] = SampleLightField(1);
 				sample_position += tile_width;
 			}
 			break;
 		default:
 			for(int i2 = 0; i2 < 6; i2++)
 			{
-				result.axis_colors[i2] = SampleTextureLevel(s_SHLightField2, sample_position, 0).xyz;
+				result.axis_colors[i2] = SampleLightField(2);
 				sample_position += tile_width;
 			}
 			break;
@@ -123,6 +131,10 @@ float ComputeSGLightFieldFactor(float3 world_normal, int index)
 
 float3 ComputeSGLightFieldColor(float3 world_normal, float3 axis_colors[6])
 {
+	#ifdef disable_light_fields
+		return 0.0;
+	#endif
+
 	float3 result = 0.0;
 
 	for(int i = 0; i < 6; i++)

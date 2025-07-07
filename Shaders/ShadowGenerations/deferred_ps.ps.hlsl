@@ -3,7 +3,7 @@
 
 #include "Include/IOStructs.hlsl"
 #include "Include/Pixel/Deferred.hlsl"
-#include "Include/Pixel/Lighting/Composite.hlsl"
+#include "Include/Pixel/Lighting/CompositeDeferred.hlsl"
 
 struct DeferredOut
 {
@@ -44,7 +44,7 @@ DeferredOut main(BlitIn input)
 
 	float4 ssss_color;
 	float ssss_mask;
-	result.color = CompositeLighting(parameters, ssss_color, ssss_mask);
+	result.color = CompositeDeferredLighting(parameters, ssss_color, ssss_mask);
 
 	#ifdef enable_ssss
 		result.ssss_color = ssss_color;

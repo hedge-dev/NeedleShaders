@@ -3,7 +3,7 @@
 
 #include "../../ConstantBuffer/World.hlsl"
 #include "../../Texture.hlsl"
-#include "Reflection.hlsl"
+#include "IBL.hlsl"
 #include "Struct.hlsl"
 
 float3 ComputeFogColor(float3 view_direction)

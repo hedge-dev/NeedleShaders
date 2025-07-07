@@ -85,10 +85,15 @@ float3 ComputeSGGISpecular(float3 colors[4], SurfaceParameters parameters)
 
 	result /= (1.0 - exp2(t3 * -2.88539004)) * (Tau / t3);
 
-	float2 env_brdf = ComputeEnvironmentBRDF(parameters.shading_model.type, parameters.roughness, cos_view_normal);
-	result *= parameters.fresnel_reflectance * env_brdf.x + env_brdf.y;
+	ComputeApplyEnvironmentBRDF(
+		parameters.shading_model.type,
+		parameters.roughness,
+		cos_view_normal,
+		parameters.fresnel_reflectance,
+		result
+	);
 
-	return max(result, 0.0);
+	return result;
 }
 
 void ComputeSGGIColors(SurfaceParameters parameters, out float3 diffuse, out float3 specular)

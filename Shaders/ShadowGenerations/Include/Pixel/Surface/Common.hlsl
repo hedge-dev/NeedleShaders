@@ -2,12 +2,9 @@
 #define COMMON_SURFACE_INCLUDED
 
 #include "../../ConstantBuffer/World.hlsl"
-#include "../../ConstantBuffer/MaterialDynamic.hlsl"
-#include "../../ConstantBuffer/SHLightfieldProbes.hlsl"
-
 #include "../../Debug.hlsl"
-
 #include "../ShadowCascade.hlsl"
+
 #include "Struct.hlsl"
 #include "Weather.hlsl"
 #include "MotionBlur.hlsl"

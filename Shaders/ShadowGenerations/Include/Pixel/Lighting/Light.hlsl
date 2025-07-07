@@ -2,11 +2,28 @@
 #define LIGHT_LIGHTING_INCLUDED
 
 #include "../../Math.hlsl"
+#include "../../Texture.hlsl"
 #include "Struct.hlsl"
-#include "SubsurfaceScattering.hlsl"
 
 //////////////////////////////////////////////////
 // Basic Light Functions
+
+Texture2DArray<float4> WithSampler(s_Common_CDRF);
+
+void SampleCDRF(LightingParameters parameters, float3 light_direction, float shadow, inout float3 result)
+{
+	#ifdef enable_ssss
+		return;
+	#endif
+
+	float cos = dot(light_direction, parameters.world_normal);
+
+	float t = saturate(cos * 0.5 + 0.5);
+	      t = cos - t * (1.0 - shadow);
+	      t = saturate(t * 0.5 + 0.5);
+
+	result = SampleTextureLevel(s_Common_CDRF, float3(t, parameters.sss_param.xy), 0).xyz;
+}
 
 float3 FresnelSchlick(float3 f0, float cos_theta)
 {

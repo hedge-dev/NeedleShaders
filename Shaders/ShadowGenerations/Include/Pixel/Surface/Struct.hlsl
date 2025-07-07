@@ -2,9 +2,7 @@
 #define STRUCT_SURFACE_INCLUDED
 
 #include "../../ConstantBuffer/World.hlsl"
-
 #include "../../IOStructs.hlsl"
-#include "../../Math.hlsl"
 
 #include "../ShadingModel.hlsl"
 #include "../TypedOcclusion.hlsl"

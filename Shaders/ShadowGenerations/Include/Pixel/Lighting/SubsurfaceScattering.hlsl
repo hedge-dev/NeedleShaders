@@ -6,33 +6,8 @@
 	DefineFeature(enable_ssss);
 #endif
 
-
-#include "../../Texture.hlsl"
 #include "../../Math.hlsl"
 #include "Struct.hlsl"
-
-//////////////////////////////////////////////////
-// CDRF subsurface scattering
-
-Texture2DArray<float4> WithSampler(s_Common_CDRF);
-
-void SampleCDRF(LightingParameters parameters, float3 light_direction, float shadow, inout float3 result)
-{
-	#ifdef enable_ssss
-		return;
-	#endif
-
-	float cos = dot(light_direction, parameters.world_normal);
-
-	float t = saturate(cos * 0.5 + 0.5);
-	      t = cos - t * (1.0 - shadow);
-	      t = saturate(t * 0.5 + 0.5);
-
-	result = SampleTextureLevel(s_Common_CDRF, float3(t, parameters.sss_param.xy), 0).xyz;
-}
-
-//////////////////////////////////////////////////
-// Screen space subsurface scattering
 
 static groupshared int shared_variable;
 RWByteAddressBuffer rw_indirectSSSSDrawArguments : register(u2);
@@ -63,7 +38,6 @@ void ComputeSSSSTile(uint shading_model, uint groupIndex, uint2 groupThreadId)
 		rw_IndirectSSSSTiles[index / 6] = (uint)(groupThreadId.y * 0x00010000 + groupThreadId.x);
 	}
 }
-
 
 float4 ssss_param;
 float4 ssss_colors[16];

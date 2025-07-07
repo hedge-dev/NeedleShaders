@@ -2,9 +2,10 @@
 #define DEBUG_LIGHTING_INCLUDED
 
 #include "../../Debug.hlsl"
+#include "../EnvironmentBRDF.hlsl"
 #include "Struct.hlsl"
-#include "Reflection.hlsl"
 #include "Ambient.hlsl"
+#include "Reflection.hlsl"
 
 void DebugBeforeFog(
 	LightingParameters parameters,
@@ -49,7 +50,7 @@ void DebugBeforeFog(
 			LightingParameters debug_param = parameters;
 			debug_param.fresnel_reflectance = 1.0;
 			debug_param.roughness = 0.0;
-			out_direct = ComputeEnvironmentReflectionColor(debug_param, true).xyz;
+			out_direct = ComputeReflectionIBLOnly(debug_param, true).xyz;
 			break;
 
 		case DebugView_Shadow:
@@ -146,28 +147,6 @@ void DebugLocalLight(LightingParameters parameters, int type, inout float3 out_d
 	#endif
 }
 
-float3 GetShadowCascadeDebugColor(int level)
-{
-	switch(level)
-	{
-		case 0:
-			return float3(1.0, 0, 0.0);
-			break;
-		case 1:
-			return float3(1.0, 1.0, 0.0);
-			break;
-		case 2:
-			return float3(0.0, 1.0, 0.0);
-			break;
-		case 3:
-			return float3(0.0, 1.0, 1.0);
-			break;
-		default:
-			return float3(0.0, 0.0, 1.0);
-			break;
-	}
-}
-
 void DebugAfterFog(
 	LightingParameters parameters,
 	float3 ssao,
@@ -260,7 +239,7 @@ void DebugAfterFog(
 			break;
 
 		case DebugView_RLR:
-			out_direct = SampleTextureLevel(s_RLR, parameters.screen_position, 0).xyz;
+			out_direct = SampleScreenSpaceReflection(parameters.screen_position, 0).xyz;
 			break;
 
 		case DebugView_IblDiffuse:
@@ -268,13 +247,13 @@ void DebugAfterFog(
 			debug_param.roughness = 1.0;
 			debug_param.cavity = 1.0;
 			debug_param.shadow = 1.0;
-			out_direct = ComputeEnvironmentReflectionColor(debug_param, false).xyz;
+			out_direct = ComputeReflectionIBLOnly(debug_param, false).xyz;
 			break;
 
 		case DebugView_IblSpecular:
 			LightingParameters debug_param_2 = parameters;
 			debug_param_2.shadow = 1.0;
-			out_direct = ComputeEnvironmentReflectionColor(debug_param_2, true).xyz;
+			out_direct = ComputeReflectionIBLOnly(debug_param_2, true).xyz;
 			break;
 
 		case DebugView_EnvBRDF:
@@ -310,7 +289,7 @@ void DebugAfterFog(
 			break;
 
 		case DebugView_ShadingKind:
-			out_direct = (parameters.shading_model.kind == int3(1,2,3)) ? 1.0 : 0.0;
+			out_direct = (parameters.shading_model.kind == uint3(1,2,3)) ? 1.0 : 0.0;
 			break;
 
 		default:

@@ -1,16 +1,13 @@
-#ifndef COMPOSITE_LIGHTING_INCLUDED
-#define COMPOSITE_LIGHTING_INCLUDED
+#ifndef COMPOSITE_DEFERRED_LIGHTING_INCLUDED
+#define COMPOSITE_DEFERRED_LIGHTING_INCLUDED
 
 #include "../../ConstantBuffer/World.hlsl"
-#include "../../ConstantBuffer/SHLightfieldProbes.hlsl"
-#include "../../ConstantBuffer/LocalLightContextData.hlsl"
 
-#include "../../Math.hlsl"
 #include "../../Debug.hlsl"
 #include "../../Texture.hlsl"
 #include "../../Transform.hlsl"
 
-#include "../Normals.hlsl"
+#include "../EnvironmentBRDF.hlsl"
 #include "../ShadowCascade.hlsl"
 
 #include "Struct.hlsl"
@@ -27,7 +24,26 @@
 #define no_enable_noisy_upsample
 #include "SSAO.hlsl"
 
-float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output, out float ssss_mask)
+float4 CompositeReflection(LightingParameters parameters)
+{
+	if(parameters.shading_model.type == ShadingModelType_1)
+	{
+		return float4(0, 0, 0, 1);
+	}
+
+	int debug_view = GetDebugView();
+	if(debug_view == DebugView_AmbDiffuse
+		|| debug_view == DebugView_Ambient
+		|| debug_view == DebugView_AmbDiffuseLf
+		|| debug_view == DebugView_SggiOnly)
+	{
+		return float4(0, 0, 0, 1);
+	}
+
+	return ComputeReflection(parameters, true);
+}
+
+float4 CompositeDeferredLighting(LightingParameters parameters, out float4 ssss_output, out float ssss_mask)
 {
 	//////////////////////////////////////////////////
 	// SSAO & Shadows
@@ -83,28 +99,9 @@ float4 CompositeLighting(LightingParameters parameters, out float4 ssss_output, 
 	//////////////////////////////////////////////////
 	// reflection stuff
 
-	float reflection_occlusion = ComputeReflectionOcclusion(parameters, parameters.cavity);
-
-	if(parameters.shading_model.type == ShadingModelType_1)
-	{
-		reflection_occlusion = 0.0;
-	}
-
-	int debug_view = GetDebugView();
-	if(debug_view == DebugView_AmbDiffuse
-		|| debug_view == DebugView_Ambient
-		|| debug_view == DebugView_AmbDiffuseLf
-		|| debug_view == DebugView_SggiOnly)
-	{
-		reflection_occlusion = 0.0;
-	}
-
-	if(reflection_occlusion > 0.00001)
-	{
-		float4 reflection_color = ComputeReflectionColor(parameters, reflection_occlusion, true);
-		indirect_color += reflection_color.xyz;
-		sunlight_specular *= reflection_color.w;
-	}
+	float4 reflections = CompositeReflection(parameters);
+	indirect_color += reflections.xyz;
+	sunlight_specular *= reflections.w;
 
 	sunlight_specular *= ComputeIBLDirectionalSpecularFactor(parameters);
 

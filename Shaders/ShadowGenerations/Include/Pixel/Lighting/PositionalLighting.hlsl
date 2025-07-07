@@ -13,7 +13,6 @@
 #include "../../Texture.hlsl"
 
 #include "Struct.hlsl"
-#include "SubsurfaceScattering.hlsl"
 #include "Light.hlsl"
 #include "LocalLights.hlsl"
 #include "Shadow.hlsl"

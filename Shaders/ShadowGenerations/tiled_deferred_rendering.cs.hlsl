@@ -8,7 +8,7 @@
 #define no_shadow_as_pcf
 
 #include "Include/Pixel/Deferred.hlsl"
-#include "Include/Pixel/Lighting/Composite.hlsl"
+#include "Include/Pixel/Lighting/CompositeDeferred.hlsl"
 
 RWTexture2D<float4> rw_Output0 : register(u0);
 RWTexture2D<float4> rw_Output1 : register(u1);
@@ -54,6 +54,6 @@ void main(ThreadInfo input)
 
 	float4 ssss_color;
 	float ssss_mask;
-	rw_Output0[input.dispatchThreadId.xy] = CompositeLighting(parameters, ssss_color, ssss_mask);
+	rw_Output0[input.dispatchThreadId.xy] = CompositeDeferredLighting(parameters, ssss_color, ssss_mask);
 	WriteSSSSOutput(input.dispatchThreadId.xy, ssss_color);
 }
