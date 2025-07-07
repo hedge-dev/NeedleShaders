@@ -44,11 +44,33 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
             string[] features = FeatureRegex().Matches(preprocessedShaderCode).Select(x => x.Groups[1].Value).ToArray();
 
+            if(features.Length == 0)
+            {
+                Console.WriteLine("No features found.");
+                Console.WriteLine();
+            }
+            else
+            {
+                Console.WriteLine($"Found {features.Length} features:");
+                
+                foreach(string feature in features)
+                {
+                    Console.WriteLine("- " + feature);
+                }
+
+                Console.WriteLine();
+            }
+
             List<ReadOnlyMemory<byte>> variants = [];
             int[] permutations = new int[(int)Math.Pow(2, features.Length)];
 
+            (int left, int top) = Console.GetCursorPosition();
+
             for(int i = 0; i < permutations.Length; i++)
             {
+                Console.SetCursorPosition(left, top);
+                Console.WriteLine($"Compiling premutation {i+1}/{permutations.Length}");
+
                 List<ShaderMacro> macros = [];
                 macros.AddRange(compilerArgs.ExtraMacros);
 
@@ -58,9 +80,11 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
                     if((i & (1 << j)) == 0 || baseMacroLUT.Contains(feature))
                     {
+                        Console.WriteLine($"   " + feature);
                         continue;
                     }
 
+                    Console.WriteLine($" X " + feature);
                     macros.Add(new(features[j], j));
                 }
 
@@ -97,6 +121,10 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 permutations[i] = foundIndex;
             }
 
+            Console.WriteLine();
+            Console.WriteLine($"Shader contains a total of {variants.Count} variants");
+            Console.WriteLine();
+
             Shader output = new();
 
             if(!compilerArgs.NoBuildPath)
@@ -104,6 +132,8 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 output.BuildPath = file;
             }
 
+            Console.WriteLine("Processing meta data");
+            Console.WriteLine();
             output.Features.AddRange(features.Select(x => new Shader.Feature() { Name = x }));
             output.Variants.AddRange(variants.Select(ShaderByteCodeProcessor.ProcessShaderByteCode));
             output.Permutations.AddRange(permutations);
@@ -116,6 +146,8 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 }
             }
 
+            Console.WriteLine("Compiling finished!");
+            Console.WriteLine();
             output.Write(Path.Combine(compilerArgs.OutputDirectory, compilerArgs.OutputFile));
         }
 
