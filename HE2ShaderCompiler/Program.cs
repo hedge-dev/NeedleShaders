@@ -52,8 +52,19 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             }
             catch(Exception exception)
             {
-                Console.WriteLine($"A(n) {exception.GetType().Name} exception occured:");
+                Console.WriteLine($" === A(n) {exception.GetType().Name} exception occured === ");
                 Console.WriteLine(exception.Message);
+
+                Exception? innerException = exception.InnerException;
+                int index = 1;
+                while(innerException != null)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($" --- Inner exception #{index}: {innerException.GetType().Name} ---");
+                    Console.WriteLine(innerException.Message);
+
+                    innerException = innerException.InnerException;
+                }
             }
         }
 

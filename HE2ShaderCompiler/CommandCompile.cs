@@ -1,4 +1,5 @@
-﻿using SharpGen.Runtime;
+﻿using HedgeDev.Shaders.HE2.Compiler;
+using SharpGen.Runtime;
 using SharpNeedle.Framework.HedgehogEngine.Needle.Shader;
 using SharpNeedle.Resource;
 using System.Text.RegularExpressions;
@@ -84,16 +85,45 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 }
 
                 macros.Add(_nullMacro);
+                ReadOnlyMemory<byte> compiledShader;
 
-                ReadOnlyMemory<byte> compiledShader = Vortice.D3DCompiler.Compiler.Compile(
-                    shaderCode,
-                    macros.ToArray(),
-                    new IncludeResolver(file),
-                    compilerArgs.EntryPoint,
-                    file,
-                    compilerArgs.ShaderProfile,
-                    compilerArgs.CompilerFlags
-                );
+                try
+                {
+
+                    compiledShader = Vortice.D3DCompiler.Compiler.Compile(
+                        shaderCode,
+                        macros.ToArray(),
+                        new IncludeResolver(file),
+                        compilerArgs.EntryPoint,
+                        file,
+                        compilerArgs.ShaderProfile,
+                        compilerArgs.CompilerFlags
+                    );
+                }
+                catch(Exception exception)
+                {
+                    string macroMessage = string.Empty;
+
+                    foreach(ShaderMacro item in macros)
+                    {
+                        if(!string.IsNullOrEmpty(item.Name))
+                        {
+                            macroMessage += $"  {item.Name}={item.Definition}\n";
+                        }
+                    }
+
+                    if(string.IsNullOrEmpty(macroMessage))
+                    {
+                        macroMessage = "No macros used";
+                    }
+                    else
+                    {
+                        macroMessage = "\nMacros used:\n" + macroMessage[..^1];
+                    }
+
+                    throw new CompilerException(index, "Compiling shader failed! " + macroMessage, exception);
+                }
+
 
                 lock(compiledPermutations)
                 {
@@ -103,8 +133,25 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                     Console.WriteLine($"Compiling permutations... ({compileFinishedCount}/{permutationCount})");
                 }
             }
+            
+            try
+            {
+                Parallel.For(0, permutationCount, CompilePermutation);
+            }
+            catch(AggregateException aggrexc)
+            {
+                CompilerException throwException = (CompilerException)aggrexc.InnerExceptions[0];
+                for(int i = 1; i < aggrexc.InnerExceptions.Count; i++)
+                {
+                    CompilerException next = (CompilerException)aggrexc.InnerExceptions[i];
+                    if(next.PermutationIndex < throwException.PermutationIndex)
+                    {
+                        throwException = next;
+                    }
+                }
 
-            Parallel.For(0, permutationCount, CompilePermutation);
+                throw throwException;
+            }
 
             Console.WriteLine();
             Console.WriteLine("Comparing permutations...");
