@@ -14,39 +14,12 @@ float ComputeIBLDirectionalSpecularFactor(LightingParameters parameters)
 		return 1.0;
 	}
 
-	float base = min(OcclusionType_ShadowGI, parameters.typed_occlusion.mode);
-
-	switch(GetDebugAmbientSpecularType())
-	{
-		case DebugAmbientSpecularType_IBL:
-			return base;
-		case DebugAmbientSpecularType_Blend:
-			return base * saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
-			break;
-		default:
-			return 0.0;
-	}
+	return 1.0 - GetDebugAmbientSpecularFactor(parameters.typed_occlusion.mode, parameters.roughness, 1.0);
 }
 
 float ComputeIBLOcclusion(LightingParameters parameters, float base)
 {
-	float result;
-
-	switch(GetDebugAmbientSpecularType())
-	{
-		case DebugAmbientSpecularType_IBL:
-			result = 1.0 - min(OcclusionType_ShadowGI, parameters.typed_occlusion.mode);
-			break;
-		case DebugAmbientSpecularType_SG:
-			result = 1.0;
-			break;
-		case DebugAmbientSpecularType_Blend:
-			result = 1.0 - min(OcclusionType_ShadowGI, parameters.typed_occlusion.mode) * saturate(u_sggi_param[0].y * (parameters.roughness - u_sggi_param[0].x));
-			break;
-		default:
-			result = base;
-			break;
-	}
+	float result = GetDebugAmbientSpecularFactor(parameters.typed_occlusion.mode, parameters.roughness, base);
 
 	if(parameters.typed_occlusion.mode == OcclusionType_ShadowGI)
 	{
@@ -73,7 +46,7 @@ float ComputeIBLLevel(float roughness)
 	return sqrt(saturate(roughness)) * ibl_probe_lod;
 }
 
-float4 ComputeSkyboxIBLColor(LightingParameters parameters)
+float4 ComputeSkyboxIBLColor(LightingParameters parameters, float ibl_occlusion)
 {
 	float3 reflection_direction = ComputeIBLDirection(parameters.world_normal, parameters.view_direction, parameters.roughness);
 	float ibl_level = ComputeIBLLevel(parameters.roughness);
@@ -87,7 +60,7 @@ float4 ComputeSkyboxIBLColor(LightingParameters parameters)
 	ibl_color.xyz = lerp(
 		max(0.0, exp2(log2(max(0.0, ibl_color.xyz + 1.0)) * u_ibl_param.x) - 1.0),
 		ibl_color.xyz,
-		parameters.shadow * parameters.cavity
+		parameters.shadow * ibl_occlusion
 	);
 
     return ibl_color;

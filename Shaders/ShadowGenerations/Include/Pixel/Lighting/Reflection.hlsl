@@ -7,13 +7,17 @@
 
 float4 ComputeReflectionIBLOnly(LightingParameters parameters, bool specular)
 {
-	float4 result = ComputeSkyboxIBLColor(parameters);
-	ComputeApplyIBLProbeColor(parameters, result);
+	float ibl_occlusion;
+	float4 ibl_probe = ComputeIBLProbeColor(parameters, ibl_occlusion);
+	float4 ibl = ComputeSkyboxIBLColor(parameters, ibl_occlusion);
+
+	float4 result = ibl * saturate(1.0 - ibl_probe.w);
+	result.xyz += ibl_probe.xyz;
 
 	if(specular)
 	{
 		ComputeApplyEnvironmentBRDF(
-			parameters.shading_model.type,
+			parameters.approximate_env_brdf,
 			parameters.cos_view_normal,
 			parameters.roughness,
 			parameters.fresnel_reflectance,

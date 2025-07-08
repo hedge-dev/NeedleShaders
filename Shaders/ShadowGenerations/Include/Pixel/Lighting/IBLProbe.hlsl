@@ -73,9 +73,10 @@ float4 SampleIBLProbe(EnvProbeData probe, LightingParameters parameters)
 	#endif
 }
 
-float4 ComputeIBLProbeColor(LightingParameters parameters)
+float4 ComputeIBLProbeColor(LightingParameters parameters, out float ibl_occlusion)
 {
 	#ifndef enable_para_corr
+		ibl_occlusion = 1.0;
 		return 0.0;
 	#else
 		float3 color = 0.0;
@@ -106,19 +107,9 @@ float4 ComputeIBLProbeColor(LightingParameters parameters)
 			influence += ibl_factor * ibl.w;
 		}
 
+		ibl_occlusion = parameters.cavity;
 		return float4(color, influence);
 	#endif
-}
-
-void ComputeApplyIBLProbeColor(LightingParameters parameters, inout float4 result)
-{
-	#ifdef enable_para_corr
-		return;
-	#endif
-
-	float4 probe_reflection = ComputeIBLProbeColor(parameters);
-	result *= saturate(1.0 - probe_reflection.w);
-	result.xyz += probe_reflection.xyz;
 }
 
 #endif

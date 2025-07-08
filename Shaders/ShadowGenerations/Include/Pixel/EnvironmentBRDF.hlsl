@@ -1,7 +1,6 @@
 #ifndef ENV_BRDF_PIXEL_INCLUDED
 #define ENV_BRDF_PIXEL_INCLUDED
 
-#include "ShadingModel.hlsl"
 #include "../Texture.hlsl"
 Texture2D<float4> WithSampler(s_EnvBRDF);
 
@@ -22,19 +21,21 @@ float2 ApproximateEnvironmentBRDF(float cos_view_normal, float roughness)
 	return value * float2(-1.04, 1.04) + remap.zw;
 }
 
-float2 ComputeEnvironmentBRDF(uint shading_model, float cos_view_normal, float roughness)
+float2 ComputeEnvironmentBRDF(bool approximate, float cos_view_normal, float roughness)
 {
-	if(shading_model != ShadingModelType_2)
+	if(approximate)
+	{
+		return ApproximateEnvironmentBRDF(cos_view_normal, roughness);
+	}
+	else
 	{
 		return SampleTextureLevel(s_EnvBRDF, float2(cos_view_normal, roughness), 0).xy;
 	}
-
-	return ApproximateEnvironmentBRDF(cos_view_normal, roughness);
 }
 
-void ComputeApplyEnvironmentBRDF(uint shading_model, float cos_view_normal, float roughness, float3 reflectance, inout float3 result)
+void ComputeApplyEnvironmentBRDF(bool approximate, float cos_view_normal, float roughness, float3 reflectance, inout float3 result)
 {
-	float2 env_bdrf = ComputeEnvironmentBRDF(shading_model, cos_view_normal, roughness);
+	float2 env_bdrf = ComputeEnvironmentBRDF(approximate, cos_view_normal, roughness);
     float3 fresnel_color = reflectance * env_bdrf.x + env_bdrf.y;
 	result = max(0.0, result * fresnel_color);
 }

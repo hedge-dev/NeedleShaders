@@ -8,13 +8,13 @@
 // 2 = Approximate Environment BRDF
 
 static const uint ShadingModelType_Clear = 0;
-static const uint ShadingModelType_1 = 1;
-static const uint ShadingModelType_2 = 2;
+static const uint ShadingModelType_Hair = 1;
+static const uint ShadingModelType_Default = 2;
 static const uint ShadingModelType_SSS = 3;
 static const uint ShadingModelType_AnisotropicReflection = 4;
 static const uint ShadingModelType_5 = 5;
 static const uint ShadingModelType_6 = 6;
-static const uint ShadingModelType_7 = 7;
+static const uint ShadingModelType_ClearCoat = 7;
 
 static const uint ShadingModelKind_0 = 0;
 static const uint ShadingModelKind_Character = 1;

@@ -86,7 +86,7 @@ float3 ComputeSGGISpecular(float3 colors[4], SurfaceParameters parameters)
 	result /= (1.0 - exp2(t3 * -2.88539004)) * (Tau / t3);
 
 	ComputeApplyEnvironmentBRDF(
-		parameters.shading_model.type,
+		parameters.shading_model.type == ShadingModelType_Default,
 		parameters.roughness,
 		cos_view_normal,
 		parameters.fresnel_reflectance,

@@ -81,7 +81,7 @@ float4 ComputeScreenSpaceReflectionColor(LightingParameters parameters)
 		);
 
 		ComputeApplyEnvironmentBRDF(
-			parameters.shading_model.type,
+			parameters.approximate_env_brdf,
 			parameters.cos_view_normal,
 			parameters.roughness,
 			parameters.fresnel_reflectance,

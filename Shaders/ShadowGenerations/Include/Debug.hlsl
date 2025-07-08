@@ -73,6 +73,24 @@ int GetDebugAmbientSpecularType()
 	return (int)round(g_debug_option.y);
 }
 
+float GetDebugAmbientSpecularFactor(uint typed_occlusion_mode, float blendfac, float base)
+{
+	float not_light_field = min(1, typed_occlusion_mode);
+
+	switch(GetDebugAmbientSpecularType())
+	{
+		case DebugAmbientSpecularType_IBL:
+			return 1.0 - not_light_field;
+		case DebugAmbientSpecularType_SG:
+			return 1.0;
+		case DebugAmbientSpecularType_Blend:
+			float f = saturate(u_sggi_param[0].y * (blendfac - u_sggi_param[0].x));
+			return 1.0 - not_light_field * f;
+		default:
+			return base;
+	}
+}
+
 //////////////////////////////////////////////////
 // GI Texture disable type
 

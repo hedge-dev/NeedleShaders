@@ -14,6 +14,7 @@
 	PixelOutput ProcessSurface(PixelInput input, SurfaceParameters surface)
 	{
 		LightingParameters parameters = LightingParametersFromSurface(input, surface);
+		parameters.approximate_env_brdf = false;
 
 		PixelOutput result;
 		result.Color = CompositeMaterialLighting(parameters, surface.transparency);

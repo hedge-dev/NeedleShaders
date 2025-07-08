@@ -230,6 +230,7 @@ void DebugAfterFog(
 		case DebugView_OcclusionCapsule:
 			DebugLocalLight(parameters, 1, out_direct);
 			break;
+
 		case DebugView_Probe:
 			DebugLocalLight(parameters, 2, out_direct);
 			break;

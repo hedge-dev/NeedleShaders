@@ -53,6 +53,7 @@ struct LightingParameters
 	float metallic;
 	float cavity;
 	float3 fresnel_reflectance;
+	bool approximate_env_brdf;
 
 	float lightfield_ao;
 	float shadow;
@@ -92,6 +93,7 @@ LightingParameters InitLightingParameters()
 
 		0.0, 0.0, 0.0, 0.0,
 		{0.0, 0.0, 0.0},
+		false,
 
 		0.0, 0.0,
 
@@ -137,6 +139,8 @@ void LightingParametersCommonSetup(inout LightingParameters parameters)
 		parameters.albedo,
 		parameters.metallic
 	);
+
+	parameters.approximate_env_brdf = parameters.shading_model.type == ShadingModelType_Default;
 
 	parameters.lightfield_ao = 1.0;
 	parameters.shadow = 1.0;
