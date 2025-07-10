@@ -95,7 +95,7 @@ float4 ComputeScreenSpaceReflectionColor(LightingParameters parameters)
 	#endif
 }
 
-void ComputeApplyScreenSpaceReflectionColor(LightingParameters parameters, float4 result)
+void ComputeApplyScreenSpaceReflectionColor(LightingParameters parameters, inout float4 result)
 {
 	#ifdef disable_ssr
 		return;
@@ -106,8 +106,9 @@ void ComputeApplyScreenSpaceReflectionColor(LightingParameters parameters, float
 		}
 
 		float4 ssr = ComputeScreenSpaceReflectionColor(parameters);
-		result = lerp(result, float4(ssr.xyz, 1.0), ssr.w);
-		result.w *= (1.0 - ssr.w);
+		result.xyz = lerp(result.xyz, ssr.xyz, ssr.w) * parameters.cavity;
+		result.w = lerp(result.w, 1.0, ssr.w) * (1.0 - ssr.w);
+		// Note: the alpha lerp is basically useless...
 	#endif
 }
 

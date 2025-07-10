@@ -30,14 +30,9 @@ float SampleGIOcclusion(float2 gi_uv)
 TypedOcclusion ComputeGIOcclusion(float2 gi_uv)
 {
 	TypedOcclusion result;
-	bool enable_shadows = IsShadowGIEnabled();
-	bool shprobes_enabled = shlightfield_param.x > 0;
+	result.value = SampleGIOcclusion(gi_uv);
 
-	result.value = !shprobes_enabled || enable_shadows
-		? SampleGIOcclusion(gi_uv)
-		: 0.0001;
-
-	if(enable_shadows)
+	if(IsShadowGIEnabled())
 	{
 		if(UsingSGGI())
 		{
@@ -54,7 +49,12 @@ TypedOcclusion ComputeGIOcclusion(float2 gi_uv)
 	}
 	else
 	{
-		result.mode = OcclusionType_AOLightField;
+		result.mode = OcclusionType_AOLightField; // just 0
+
+		if(AreSHProbesEnabled())
+		{
+			result.value = 0.0001;
+		}
 	}
 
 	result.sign = !enable_shadow_map;

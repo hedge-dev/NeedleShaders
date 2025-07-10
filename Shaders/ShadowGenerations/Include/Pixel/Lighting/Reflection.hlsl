@@ -30,7 +30,7 @@ float4 ComputeReflectionIBLOnly(LightingParameters parameters, bool specular)
 
 float4 ComputeReflection(LightingParameters parameters, bool specular)
 {
-	float ibl_occlusion = ComputeIBLOcclusion(parameters, parameters.cavity);
+	float ibl_occlusion = ComputeIBLOcclusion(parameters);
 	if(ibl_occlusion <= 0.00001)
 	{
 		return float4(0, 0, 0, 1);
@@ -40,7 +40,6 @@ float4 ComputeReflection(LightingParameters parameters, bool specular)
 
 	result.xyz *= ibl_occlusion;
 	ComputeApplyScreenSpaceReflectionColor(parameters, result);
-	result.xyz *= parameters.cavity;
 
 	return result;
 }

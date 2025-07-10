@@ -30,12 +30,10 @@ float2 ComputeAnimatedUV(float2 uv, float4 matrix1, float4 matrix2)
 	return translated.xy + translated.zw + matrix2.xy;
 }
 
-#ifdef MATERIAL_IMMUTABLE_CONSTANTBUFFER_INCLUDED
-	#define IndexedUV(uv01, uv23, name) ComputeIndexedUV(uv01, uv23, TexcoordIndex_##name)
-	#define AnimatedUV(uv, name) ComputeAnimatedUV(uv, TexcoordMtx_##name[0], TexcoordMtx_##name[1])
-#endif
+#define IndexedUV(uv01, uv23, name) ComputeIndexedUV(uv01, uv23, TexcoordIndex_##name)
+#define AnimatedUV(uv, name) ComputeAnimatedUV(uv, TexcoordMtx_##name[0], TexcoordMtx_##name[1])
 
-#if defined(MATERIAL_IMMUTABLE_CONSTANTBUFFER_INCLUDED) && defined(is_use_tex_srt_anim)
+#if defined(is_use_tex_srt_anim)
 	#define TexUV(uv, name) AnimatedUV(uv, name)
 #else
 	#define TexUV(uv, name) uv

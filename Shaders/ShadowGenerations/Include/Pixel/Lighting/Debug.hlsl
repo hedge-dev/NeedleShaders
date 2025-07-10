@@ -283,7 +283,7 @@ void DebugAfterFog(
 
 		case DebugView_ShadingModel:
 			out_direct = (parameters.shading_model.type & uint3(1, 2, 4)) ? 0.5 : 0.0;
-			if(parameters.shading_model.unknown)
+			if(parameters.shading_model.is_vegetation)
 			{
 				out_direct *= 3;
 			}

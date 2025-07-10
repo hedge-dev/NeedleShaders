@@ -24,7 +24,7 @@ static const uint ShadingModelKind_3 = 3;
 struct ShadingModel
 {
 	uint type;
-	bool unknown;
+	bool is_vegetation;
 	uint kind;
 };
 
@@ -33,22 +33,22 @@ ShadingModel ShadingModelFromFlags(uint flags)
 	ShadingModel result;
 
 	result.type = flags & 0x7;
-	result.unknown = (flags & 0x8) != 0;
+	result.is_vegetation = (flags & 0x8) != 0;
 	result.kind = (flags >> 4) & 0x3;
 
 	return result;
 }
 
-ShadingModel ShadingModelFromCB(uint type)
+ShadingModel ShadingModelFromCB(uint type, bool is_vegetation)
 {
-	return ShadingModelFromFlags(asuint(u_shading_model_flag.x) | type);
+	return ShadingModelFromFlags(asuint(u_shading_model_flag.x) | type | (is_vegetation ? 0x8 : 0));
 }
 
 uint ShadingModelToFlags(ShadingModel model)
 {
 	return
 		model.type
-		| (model.unknown ? 0x8 : 0)
+		| (model.is_vegetation ? 0x8 : 0)
 		| (model.kind << 4);
 }
 

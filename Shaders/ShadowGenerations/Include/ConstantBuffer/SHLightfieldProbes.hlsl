@@ -42,4 +42,19 @@ SGLightFieldData GetSGLightFieldData(int index)
 	return result;
 }
 
+bool UsingSHProbes()
+{
+	#if defined(disable_sh_probes)
+		return false;
+	#else
+		return true;
+	#endif
+}
+
+bool AreSHProbesEnabled()
+{
+	return UsingSHProbes() && shlightfield_param.x > 0;
+}
+
+
 #endif

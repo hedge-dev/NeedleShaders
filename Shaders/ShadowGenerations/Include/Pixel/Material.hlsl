@@ -1,6 +1,8 @@
 #ifndef MATERIAL_PIXEL_INCLUDED
 #define MATERIAL_PIXEL_INCLUDED
 
+// Note: When including this, always put it at the very top of your includes, below your shader features
+
 #include "../IOStructs.hlsl"
 #include "Surface/Struct.hlsl"
 

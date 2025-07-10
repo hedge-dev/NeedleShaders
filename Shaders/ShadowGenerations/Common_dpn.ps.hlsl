@@ -5,6 +5,8 @@ DefineFeature(is_use_tex_srt_anim);
 DefineFeature(enable_deferred_rendering);
 DefineFeature(enable_alpha_threshold);
 
+#include "Include/Pixel/Material.hlsl"
+
 #include "Include/ConstantBuffer/World.hlsl"
 #include "Include/ConstantBuffer/MaterialDynamic.hlsl"
 #include "Include/ConstantBuffer/MaterialImmutable.hlsl"
@@ -13,7 +15,6 @@ DefineFeature(enable_alpha_threshold);
 #include "Include/ColorConversion.hlsl"
 #include "Include/IOStructs.hlsl"
 
-#include "Include/Pixel/Material.hlsl"
 #include "Include/Pixel/Instancing.hlsl"
 #include "Include/Pixel/Dithering.hlsl"
 #include "Include/Pixel/Normals.hlsl"
@@ -39,7 +40,7 @@ PixelOutput main(const PixelInput input)
 
     SurfaceParameters parameters = InitSurfaceParameters();
     SetupSurfaceParamFromInput(input, parameters);
-    parameters.shading_model = ShadingModelFromCB(ShadingModelType_Default);
+    parameters.shading_model = ShadingModelFromCB(ShadingModelType_Default, false);
 
     //////////////////////////////////////////////////
 
@@ -60,7 +61,7 @@ PixelOutput main(const PixelInput input)
 
     float4 diffuse_texture = SampleUV0(diffuse);
     parameters.albedo = diffuse_texture.rgb;
-    parameters.transparency = diffuse_texture.a;
+    parameters.transparency = diffuse_texture.a * input.color.a;
 
     #if defined(is_compute_instancing) && defined(enable_deferred_rendering)
 
@@ -84,12 +85,9 @@ PixelOutput main(const PixelInput input)
         //////////////////////////////////////////////////
         // Transparency
 
-        float transparency =
-            diffuse_texture.a
-            * input.color.a
-            * GetInstanceOpacity(input.binormal_orientation.y);
+        parameters.transparency *= GetInstanceOpacity(input.binormal_orientation.y);
 
-        if(transparency < g_alphathreshold.x)
+        if(parameters.transparency < g_alphathreshold.x)
         {
             discard;
         }

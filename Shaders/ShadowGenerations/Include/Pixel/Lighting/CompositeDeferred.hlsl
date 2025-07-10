@@ -56,7 +56,7 @@ float4 CompositeDeferredLighting(LightingParameters parameters, out float4 ssss_
 	// Emission
 
 	float3 emission_color = parameters.emission;
-	if(parameters.shading_model.unknown)
+	if(parameters.shading_model.is_vegetation)
 	{
 		emission_color *= parameters.shadow * u_lightColor.xyz * parameters.albedo;
 	}

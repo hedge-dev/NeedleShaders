@@ -8,20 +8,6 @@
 #include "LocalLights.hlsl"
 #include "EnvironmentalProbe.hlsl"
 
-bool UsingSHProbes()
-{
-	#ifdef disable_sh_probes
-		return false;
-	#else
-		return true;
-	#endif
-}
-
-bool AreSHProbesEnabled()
-{
-	return UsingSHProbes() && shlightfield_param.x > 0;
-}
-
 float3 ComputeSHColor(float3 world_normal, SHColors sh_colors)
 {
 	float sh_factors[9] = {

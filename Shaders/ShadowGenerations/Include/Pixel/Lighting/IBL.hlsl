@@ -17,9 +17,9 @@ float ComputeIBLDirectionalSpecularFactor(LightingParameters parameters)
 	return 1.0 - GetDebugAmbientSpecularFactor(parameters.typed_occlusion.mode, parameters.roughness, 1.0);
 }
 
-float ComputeIBLOcclusion(LightingParameters parameters, float base)
+float ComputeIBLOcclusion(LightingParameters parameters)
 {
-	float result = GetDebugAmbientSpecularFactor(parameters.typed_occlusion.mode, parameters.roughness, base);
+	float result = GetDebugAmbientSpecularFactor(parameters.typed_occlusion.mode, parameters.roughness, parameters.cavity);
 
 	if(parameters.typed_occlusion.mode == OcclusionType_ShadowGI)
 	{

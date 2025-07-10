@@ -53,12 +53,16 @@ float4 CompositeMaterialLighting(LightingParameters parameters, float transparen
 	//////////////////////////////////////////////////
 	// Shadows
 
+	float shadow = 1.0;
+
 	if(enable_shadow_map)
 	{
-		parameters.shadow *= ComputeShadowValue(parameters.shadow_position, parameters.shadow_depth, parameters.screen_position);
+		shadow = ComputeShadowValue(parameters.shadow_position, parameters.shadow_depth, parameters.screen_position);
 	}
 
-	ComputeVolShadowValue(parameters.world_position.xyz, parameters.shadow);
+	ComputeVolShadowValue(parameters.world_position.xyz, shadow);
+
+	parameters.shadow *= shadow;
 
 	//////////////////////////////////////////////////
 	// Lighting
@@ -69,6 +73,8 @@ float4 CompositeMaterialLighting(LightingParameters parameters, float transparen
 	float3 positional_light_diffuse;
 	float3 positional_light_specular;
 	ComputePositionalLighting(parameters, positional_light_diffuse, positional_light_specular);
+
+	float3 indirect_color = parameters.emission;
 
 	//////////////////////////////////////////////////
 	// Ambient Lighting
@@ -87,6 +93,9 @@ float4 CompositeMaterialLighting(LightingParameters parameters, float transparen
 	// Reflections
 
 	float4 reflection = ComputeReflection(parameters, true);
+	indirect_color += reflection.xyz;
+	sunlight_specular *= reflection.w;
+
 	sunlight_specular *= ComputeIBLDirectionalSpecularFactor(parameters);
 
 	//////////////////////////////////////////////////
@@ -101,7 +110,7 @@ float4 CompositeMaterialLighting(LightingParameters parameters, float transparen
 	out_direct *= parameters.albedo;
 
 	float3 out_indirect = max(0.0, out_specular);
-	out_indirect += reflection.xyz;
+	out_indirect += indirect_color;
 
 	//////////////////////////////////////////////////
 	// debug switch 1
@@ -114,7 +123,7 @@ float4 CompositeMaterialLighting(LightingParameters parameters, float transparen
 	//////////////////////////////////////////////////
 	// Output composition
 
-	float3 out_color = (out_direct + out_indirect + parameters.emission) * u_modulate_color.xyz;
+	float3 out_color = (out_direct + out_indirect) * u_modulate_color.xyz;
 	float out_alpha = u_modulate_color.w * transparency;
 
 	//////////////////////////////////////////////////
@@ -143,7 +152,7 @@ float4 CompositeMaterialLighting(LightingParameters parameters, float transparen
 	FogValues fog_values = ComputeFogValues(parameters);
 	out_color = lerp(out_color, fog_values.fog_color, fog_values.fog_factor);
 
-	return float4(parameters.shadow.xxx, out_alpha);
+	return float4(out_color, out_alpha);
 }
 
 #endif
