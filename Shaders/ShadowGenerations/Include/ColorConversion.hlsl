@@ -6,7 +6,7 @@
 // Color conversion functions below sourced from https://www.chilliant.com/rgb2hsv.html
 // They are 1:1 what Sonic team used
 
-float Epsilon = 1e-10;
+static const float Epsilon = 1e-10;
 
 float3 RGBtoHVC(in float3 rgb)
 {

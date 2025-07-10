@@ -1,125 +1,126 @@
-static const uint FEATURE_is_compute_instancing;
-static const uint FEATURE_is_use_tex_srt_anim;
-static const uint FEATURE_enable_deferred_rendering;
-static const uint FEATURE_enable_alpha_threshold;
-static const uint FEATURE_is_use_gi_prt;
-static const uint FEATURE_is_use_gi_sg;
-static const uint FEATURE_is_use_gi;
-static const uint FEATURE_u_model_user_flag_0;
+
+#include "Include/Common.hlsl"
+DefineFeature(is_compute_instancing);
+DefineFeature(is_use_tex_srt_anim);
+DefineFeature(enable_deferred_rendering);
+DefineFeature(enable_alpha_threshold);
+
+#include "Include/Pixel/Material.hlsl"
 
 #include "Include/ConstantBuffer/World.hlsl"
 #include "Include/ConstantBuffer/MaterialDynamic.hlsl"
-#include "Include/ConstantBuffer/SHLightfieldProbes.hlsl"
+#include "Include/ConstantBuffer/MaterialImmutable.hlsl"
 
-#include "Include/Common.hlsl"
+#include "Include/Texture.hlsl"
 #include "Include/ColorConversion.hlsl"
 #include "Include/IOStructs.hlsl"
 
-#include "Include/Pixel/Common.hlsl"
 #include "Include/Pixel/Instancing.hlsl"
 #include "Include/Pixel/Dithering.hlsl"
 #include "Include/Pixel/Normals.hlsl"
-
+#include "Include/Pixel/PBRUtils.hlsl"
 #include "Include/Pixel/Surface/Common.hlsl"
+#include "Include/Pixel/UserModel.hlsl"
 
-TextureInput(diffuse)
-TextureInput(normal)
-TextureInput(specular)
+MaterialImmutables
+{
+    UVInput(diffuse)
+    UVInput(normal)
+    UVInput(specular)
+}
 
-TextureInput(gi_texture)
-TextureInput(gi_shadow_texture)
-
-const float4 icb[] = {
-    { 1.0, 0.0, 0.0, 0.0 },
-    { 0.0, 1.0, 0.0, 0.0 },
-    { 0.0, 0.0, 1.0, 0.0 },
-    { 0.0, 0.0, 0.0, 1.0 },
-
-    { 1.5, 0.3, 0.3, 1.0 },
-    { 0.3, 1.5, 0.3, 1.0 },
-    { 0.3, 0.3, 5.5, 1.0 },
-    { 1.5, 0.3, 5.5, 1.0 },
-};
+Texture2D<float4> WithSampler(diffuse);
+Texture2D<float4> WithSampler(normal);
+Texture2D<float4> WithSampler(specular);
 
 PixelOutput main(const PixelInput input)
 {
-    #define Sample(name) SampleTextureBiasedGl(name, TexUV(input.UV01.xy, name))
+    //////////////////////////////////////////////////
+    // Initialization
+
+    SurfaceParameters parameters = InitSurfaceParameters();
+    SetupSurfaceParamFromInput(input, parameters);
+    parameters.shading_model = ShadingModelFromCB(ShadingModelType_Default, false);
+
+    //////////////////////////////////////////////////
+
+    #define SampleUV0(name) SampleTextureBiasedGl(name, TexUV(input.uv01.xy, name))
+    #define SampleUV2(name) SampleTextureBiasedGl(name, TexUV(input.uv23.xy, name))
 
     #if defined(is_compute_instancing) && defined(enable_deferred_rendering)
 
         //////////////////////////////////////////////////
         // Compute Instance opacity dithering
 
-        DiscardDithering(input.Position.xy, input.ComputeInstanceParameters.w);
+        DiscardDithering(input.position.xy, input.compute_instance_parameters.w);
 
     #endif
 
     //////////////////////////////////////////////////
     // Albedo Color
 
-    float4 diffuse_texture = Sample(diffuse);
-    float3 albedo = diffuse_texture.rgb;
+    float4 diffuse_texture = SampleUV0(diffuse);
+    parameters.albedo = diffuse_texture.rgb;
+    parameters.transparency = diffuse_texture.a * input.color.a;
 
     #if defined(is_compute_instancing) && defined(enable_deferred_rendering)
 
         //////////////////////////////////////////////////
         // Compute Instance HSV modification
 
-        albedo = HSVtoRGB(RGBtoHSV(albedo) + input.ComputeInstanceParameters.xyz);
+        parameters.albedo = HSVtoRGB(RGBtoHSV(parameters.albedo) + input.compute_instance_parameters.xyz);
 
     #endif
 
-    albedo = LinearToSrgb(albedo);
+    parameters.albedo = LinearToSrgb(parameters.albedo);
 
     // Color will be applied if it's not used for a vertex animation (?)
     if(u_vat_type.x <= 0)
     {
-        albedo *= input.Color.rgb;
+        parameters.albedo *= input.color.rgb;
     }
 
-    #ifdef enable_alpha_threshold
+    #if defined(enable_alpha_threshold) && defined(enable_deferred_rendering)
 
         //////////////////////////////////////////////////
         // Transparency
 
-        float transparency =
-            diffuse_texture.a
-            * input.Color.a
-            * GetInstanceOpacity(input.BinormalOrientation.y);
+        parameters.transparency *= GetInstanceOpacity(input.binormal_orientation.y);
 
-        if(transparency < g_alphathreshold.x)
+        if(parameters.transparency < g_alphathreshold.x)
         {
             discard;
         }
 
-        ViewportTransparencyDiscardDithering(input.Position.xy);
+        ViewportTransparencyDiscardDithering(input.position.xy);
 
     #endif
 
     //////////////////////////////////////////////////
     // Normals
 
-    float3 normal = normalize(input.WorldNormal.xyz);
-    float3 tangent = normalize(input.WorldTangent.xyz);
-    float3 binormal = normalize(cross(normal, tangent) * input.BinormalOrientation.x);
+    float3 world_normal = normalize(input.world_normal.xyz);
+    float3 world_tangent = normalize(input.world_tangent.xyz);
+    float3 world_binormal = normalize(cross(world_normal, world_tangent) * input.binormal_orientation.x);
 
-    float4 normal_texture = Sample(normal);
-    float3 normal_map = UnpackNormalMapToWorldSpaceSafe(normal_texture.xy, normal, tangent, binormal);
+    float4 normal_texture = SampleUV2(normal);
+    parameters.normal = UnpackNormalMapToWorldSpaceSafe(normal_texture.xy, world_normal, world_tangent, world_binormal);
+    parameters.debug_normal = world_normal;
 
     //////////////////////////////////////////////////
     // PBR Parameters
 
-    float4 prm = Sample(specular);
+    float4 prm = SampleUV0(specular);
+    ProcessPRMTexture(parameters, prm);
 
-    SurfaceData surface = CreateCommonSurface(
-        input.Position.xyz,
-        input.PrevPosition.xyz,
-        albedo.xyz,
-        normal_map,
-        normal,
-        0.0,
-        prm
-    );
+    //////////////////////////////////////////////////
 
-	return ProcessSurface(surface);
+    #ifdef u_model_user_flag_0
+        parameters.emission = UserModel1Stuff(parameters.world_position.xyz);
+    #endif
+
+    //////////////////////////////////////////////////
+
+    SetupCommonSurface(parameters);
+	return ProcessSurface(input, parameters);
 }
