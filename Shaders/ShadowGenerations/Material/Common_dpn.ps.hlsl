@@ -1,26 +1,18 @@
+#include "../Include/Pixel/Material.hlsl"
+#include "../Include/Pixel/Surface/Common.hlsl"
 
-#include "Include/Common.hlsl"
-DefineFeature(is_compute_instancing);
-DefineFeature(is_use_tex_srt_anim);
-DefineFeature(enable_deferred_rendering);
-DefineFeature(enable_alpha_threshold);
+#include "../Include/ConstantBuffer/World.hlsl"
+#include "../Include/ConstantBuffer/MaterialDynamic.hlsl"
+#include "../Include/ConstantBuffer/MaterialImmutable.hlsl"
 
-#include "Include/Pixel/Material.hlsl"
+#include "../Include/Texture.hlsl"
+#include "../Include/ColorConversion.hlsl"
 
-#include "Include/ConstantBuffer/World.hlsl"
-#include "Include/ConstantBuffer/MaterialDynamic.hlsl"
-#include "Include/ConstantBuffer/MaterialImmutable.hlsl"
-
-#include "Include/Texture.hlsl"
-#include "Include/ColorConversion.hlsl"
-#include "Include/IOStructs.hlsl"
-
-#include "Include/Pixel/Instancing.hlsl"
-#include "Include/Pixel/Dithering.hlsl"
-#include "Include/Pixel/Normals.hlsl"
-#include "Include/Pixel/PBRUtils.hlsl"
-#include "Include/Pixel/Surface/Common.hlsl"
-#include "Include/Pixel/UserModel.hlsl"
+#include "../Include/Pixel/Instancing.hlsl"
+#include "../Include/Pixel/Dithering.hlsl"
+#include "../Include/Pixel/Normals.hlsl"
+#include "../Include/Pixel/PBRUtils.hlsl"
+#include "../Include/Pixel/UserModel.hlsl"
 
 MaterialImmutables
 {

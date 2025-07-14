@@ -1,11 +1,11 @@
-#include "Include/ConstantBuffer/SHLightFieldProbes.hlsl"
+#include "../Include/ConstantBuffer/SHLightFieldProbes.hlsl"
 
-#include "Include/Pixel/Lighting/Shadow.hlsl"
-#include "Include/Pixel/Lighting/SSAO.hlsl"
-#include "Include/Pixel/Lighting/SHProbe.hlsl"
-#include "Include/Pixel/Deferred.hlsl"
+#include "../Include/Pixel/Lighting/Shadow.hlsl"
+#include "../Include/Pixel/Lighting/SSAO.hlsl"
+#include "../Include/Pixel/Lighting/SHProbe.hlsl"
+#include "../Include/Pixel/Deferred.hlsl"
 
-#include "Include/IOStructs.hlsl"
+#include "../Include/IOStructs.hlsl"
 
 float ComputeShadow(LightingParameters parameters)
 {
