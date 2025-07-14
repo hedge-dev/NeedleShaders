@@ -14,5 +14,7 @@ There are also options for printing the...
 
 options:
     -pm                 Show permutation map with 8 columns
-	-pmc <columns>		Show permutation map with a specific column count
-	-gv <index>         Show global variables of a specific shader variant
+    -pmc <columns>      Show permutation map with a specific column count
+    -pmo <order>        Change the order in which the permutation map features should be displayed (e.g. 3,0,2,1)
+    -pmov <order>       Same as -pmo, but remap the permutation indices to be as if it the shader were compiled in the specified order
+    -gv <index>         Show global variables of a specific shader variant

@@ -13,4 +13,4 @@ Must specify an output directory
 
 options:
     -nodump             Only print the location of shader objects within the executable
-	-fullname			Print the full build path of the file, and not just the shader name
+    -fullname           Print the full build path of the file, and not just the shader name
