@@ -13,10 +13,12 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
         private static readonly ShaderMacro _nullMacro = new(null, null);
 #pragma warning restore CS8625
 
+        private static readonly Regex _shaderFeatureRegex = FeatureRegex();
+
         public static void Run(string[] args)
         {
             string file = args[1];
-            
+
             if(!File.Exists(file))
             {
                 throw new ArgumentException($"The file \"{file}\" does not exist!");
@@ -26,7 +28,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
             ShaderMacro[]? baseMacros = null;
             HashSet<string> baseMacroLUT = [];
-            
+
             if(compilerArgs.ExtraMacros.Count > 0)
             {
                 baseMacros = new ShaderMacro[compilerArgs.ExtraMacros.Count + 1];
@@ -43,7 +45,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             string shaderCode = File.ReadAllText(file);
             string preprocessedShaderCode = D3D11Extensions.Preprocess(shaderCode, file, baseMacros, new IncludeResolver(file));
 
-            string[] features = FeatureRegex().Matches(preprocessedShaderCode).Select(x => x.Groups[1].Value).ToArray();
+            string[] features = _shaderFeatureRegex.Matches(preprocessedShaderCode).Select(x => x.Groups[1].Value).ToArray();
 
             if(features.Length == 0)
             {
@@ -53,7 +55,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             else
             {
                 Console.WriteLine($"Found {features.Length} features:");
-                
+
                 foreach(string feature in features)
                 {
                     Console.WriteLine("- " + feature);
@@ -89,11 +91,17 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
                 try
                 {
+                    string preprocessedShaderCode = D3D11Extensions.Preprocess(
+                        shaderCode,
+                        file,
+                        macros.ToArray(),
+                        new IncludeResolver(file)
+                    );
+
+                    preprocessedShaderCode = _shaderFeatureRegex.Replace(preprocessedShaderCode, string.Empty);
 
                     compiledShader = Vortice.D3DCompiler.Compiler.Compile(
-                        shaderCode,
-                        macros.ToArray(),
-                        new IncludeResolver(file),
+                        preprocessedShaderCode,
                         compilerArgs.EntryPoint,
                         file,
                         compilerArgs.ShaderProfile,
@@ -133,7 +141,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                     Console.WriteLine($"Compiling permutations... ({compileFinishedCount}/{permutationCount})");
                 }
             }
-            
+
             try
             {
                 Parallel.For(0, permutationCount, CompilePermutation);
@@ -211,7 +219,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             output.Write(Path.Combine(compilerArgs.OutputDirectory, compilerArgs.OutputFile));
         }
 
-        [GeneratedRegex("static const uint FEATURE_([A-Za-z0-9_]*) ;")]
+        [GeneratedRegex(@"^ *static const uint FEATURE_([A-Za-z0-9_]*) *; *$", RegexOptions.Multiline)]
         private static partial Regex FeatureRegex();
     }
 }
