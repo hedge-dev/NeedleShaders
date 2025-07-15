@@ -10,7 +10,7 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<ApplicationIcon>Icon.ico</ApplicationIcon>
 		<Title>HE2 Shader Compiler</Title>
-		<Version>1.0.8</Version>
+		<Version>1.0.10</Version>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Release'">

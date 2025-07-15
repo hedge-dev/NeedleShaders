@@ -4,6 +4,7 @@ using SharpNeedle.Resource;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -52,6 +53,8 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
             int columns = 0;
             int variantGlobals = -1;
+            int[] permutMapOrder = [];
+            bool remapVariants = false;
 
             for(int i = 2; i < args.Length; i++)
             {
@@ -67,6 +70,35 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 {
                     case "pm":
                         columns = 8;
+                        break;
+                    case "pmo":
+                    case "pmov":
+                        if(arg.Length == 4)
+                        {
+                            remapVariants = true;
+                        }
+
+                        i++;
+
+                        if(i >= args.Length)
+                        {
+                            throw new ArgumentException("Missing order parameter for argument -pmo");
+                        }
+
+                        string pmoArg = args[i];
+                        string[] pmoArgs = pmoArg.Split(',');
+                        permutMapOrder = new int[pmoArgs.Length];
+
+                        for(int o = 0; o < pmoArgs.Length; o++)
+                        {
+                            if(!int.TryParse(pmoArgs[o], out int orderIndex))
+                            {
+                                throw new ArgumentException($"-pmo value no. {o+1} is not a number!");
+                            }
+
+                            permutMapOrder[o] = orderIndex;
+                        }
+
                         break;
                     case "pmc":
                         i++;
@@ -106,7 +138,16 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
             if(columns > 0)
             {
-                PrintPermutations(shader, columns);
+
+
+                if(permutMapOrder.Length == 0)
+                {
+                    PrintPermutations(shader.Features.ToArray(), shader.Permutations.ToArray(), columns);
+                }
+                else
+                {
+                    PrintPermutations(shader, columns, permutMapOrder, remapVariants);
+                }
             }
 
             if(variantGlobals >= 0)
@@ -152,28 +193,117 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
         }
 
-        private static void PrintPermutations(Shader shader, int columns)
+        private static void PrintPermutations(Shader shader, int columns, int[] permutMapOrder, bool remapVariants)
         {
+            bool[] alreadyUsed = new bool[shader.Features.Count];
+            int[] fixedPermutMapOrder = new int[shader.Features.Count];
+            for(int i = 0; i < permutMapOrder.Length; i++)
+            {
+                if(i >= shader.Features.Count)
+                {
+                    throw new ArgumentException("Permutation map order has more items than shader has features!");
+                }
+
+                int orderIndex = permutMapOrder[i];
+                if(alreadyUsed[orderIndex])
+                {
+                    throw new ArgumentException($"Permutation map order uses {orderIndex} more than once!");
+                }
+
+                alreadyUsed[orderIndex] = true;
+                fixedPermutMapOrder[i] = orderIndex;
+            }
+
+            int featureOffset = permutMapOrder.Length;
+            for(int j = 0; j < alreadyUsed.Length; j++)
+            {
+                if(!alreadyUsed[j])
+                {
+                    fixedPermutMapOrder[featureOffset] = j;
+                    featureOffset++;
+                }
+            }
+
+            Shader.Feature[] features = new Shader.Feature[shader.Features.Count];
+            for(int i = 0; i < shader.Features.Count; i++)
+            {
+                features[i] = shader.Features[fixedPermutMapOrder[i]];
+            }
+
+            int[] pmoPermutations = new int[shader.Permutations.Count];
+            if(remapVariants)
+            {
+                int[] pmoMap = new int[shader.Variants.Count];
+                int pmoMapCount = 0;
+                Array.Fill(pmoMap, -1);
+
+                for(int i = 0; i < pmoPermutations.Length; i++)
+                {
+                    int mappedIndex = 0;
+                    for(int j = 0; j < shader.Features.Count; j++)
+                    {
+                        if((i & (1 << j)) != 0)
+                        {
+                            mappedIndex |= 1 << fixedPermutMapOrder[j];
+                        }
+                    }
+
+                    int variantIndex = shader.Permutations[mappedIndex];
+                    int mappedVariantIndex = pmoMap[variantIndex];
+                    if(mappedVariantIndex == -1)
+                    {
+                        mappedVariantIndex = pmoMapCount;
+                        pmoMap[variantIndex] = mappedVariantIndex;
+                        pmoMapCount++;
+                    }
+
+                    pmoPermutations[i] = mappedVariantIndex;
+                }
+
+            }
+            else
+            {
+                for(int i = 0; i < pmoPermutations.Length; i++)
+                {
+                    int mappedIndex = 0;
+                    for(int j = 0; j < shader.Features.Count; j++)
+                    {
+                        if((i & (1 << j)) != 0)
+                        {
+                            mappedIndex |= 1 << fixedPermutMapOrder[j];
+                        }
+                    }
+
+                    pmoPermutations[i] = shader.Permutations[mappedIndex];
+                }
+            }
+
+            PrintPermutations(features, pmoPermutations, columns);
+        }
+
+        private static void PrintPermutations(Shader.Feature[] features, int[] permutations, int columns)
+        {
+
             WriteLine("===== Permutation Map =====");
             WriteLine();
 
-            if(shader.Features.Count == 0)
+            if(features.Length == 0)
             {
                 WriteLine("Shader has no features / only one permutation");
                 WriteLine();
                 return;
             }
 
-            for(int i = 0; i < shader.Features.Count; i++)
+            for(int i = 0; i < features.Length; i++)
             {
-                Shader.Feature permutation = shader.Features[i];
-                WriteLine($"{NumberToBitDisplay(1 << i, shader.Features.Count)} = {permutation.Name}");
+                Shader.Feature permutation = features[i];
+                WriteLine($"{NumberToBitDisplay(1 << i, features.Length)} = {permutation.Name}");
             }
 
             WriteLine();
 
-            columns = int.Min(columns, shader.Permutations.Count);
-            int rows = shader.Permutations.Count / columns;
+            columns = int.Min(columns, permutations.Length);
+            int rows = permutations.Length / columns;
 
             for(int r = 0; r < rows; r++)
             {
@@ -182,7 +312,8 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 for(int c = 0; c < columns; c++)
                 {
                     int index = (c * rows) + r;
-                    Console.Write($"{NumberToBitDisplay(index, shader.Features.Count)} {shader.Permutations[index],3}");
+
+                    Console.Write($"{NumberToBitDisplay(index, features.Length)} {permutations[index],3}");
 
                     if(c < columns - 1)
                     {

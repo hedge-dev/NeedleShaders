@@ -1,4 +1,4 @@
-﻿Dump command usage: 
+﻿Dump command usage:
 
 he2shadercompiler dump <file> <options>
 
@@ -19,10 +19,10 @@ Files are dumped next to the input file when no output directory is specified wi
 -------------------------------------------------
 
 options:
-	-odir <directory>   Output directory
+    -odir <directory>   Output directory
 
-	-i <index>		    Dump a specific shader variant
-	-all				Dump all shader variants
+    -i <index>          Dump a specific shader variant
+    -all                Dump all shader variants
 
     -bin                Dump binary data
-	-noasm              Don't dump hlsl bytecode
+    -noasm              Don't dump hlsl bytecode

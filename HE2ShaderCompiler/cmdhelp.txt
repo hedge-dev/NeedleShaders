@@ -1,4 +1,4 @@
-﻿Usage: 
+﻿Usage:
 
 he2shadercompiler <command> <file> <options>
 
@@ -6,8 +6,8 @@ commands:
     compile             Compiles an HLSL file
     info                Prints info about a compiled HE2 shader file
     dump                Dumps the contents of a compiled HE2 shader into several files
-	extract				Dumps shader object files embedded within an executable into files
-	help				Shows this
+    extract             Dumps shader object files embedded within an executable into files
+    help                Shows this
 
 options:
     -h --help            Print help and options specific to a command
