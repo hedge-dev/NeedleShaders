@@ -34,6 +34,9 @@ struct SurfaceParameters
 
 	float2 velocity;
 
+	int instance_index;
+	float4 compute_instance_parameters;
+
 	float2 gi_uv;
 	float2 unk_o5;
 
@@ -62,6 +65,9 @@ SurfaceParameters InitSurfaceParameters()
 
 		{0.0, 0.0},
 
+		0,
+		{0.0, 0.0, 0.0, 0.0},
+
 		{0.0, 0.0},
 		{0.0, 0.0},
 
@@ -74,11 +80,16 @@ SurfaceParameters InitSurfaceParameters()
 void SetupSurfaceParamFromInput(PixelInput input, inout SurfaceParameters parameters)
 {
     parameters.pixel_position = (int2)input.position.xy;
+	parameters.instance_index = (int)round(input.binormal_orientation.y);
 
     parameters.world_position = WorldPosition4(input);
     parameters.previous_position = input.previous_position.xyz;
 
     parameters.gi_uv = input.uv01.zw;
+
+	#if defined(is_compute_instancing) && defined(enable_deferred_rendering)
+		parameters.compute_instance_parameters = input.compute_instance_parameters;
+	#endif
 }
 
 //////////////////////////////////////////////////

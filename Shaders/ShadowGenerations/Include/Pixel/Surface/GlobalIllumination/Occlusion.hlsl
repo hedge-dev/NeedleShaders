@@ -12,7 +12,7 @@ Texture2D<float4> WithSampler(gi_shadow_texture);
 
 float SampleGIOcclusion(float2 gi_uv)
 {
-	if(UsingDefaultGI())
+	if(UsingDefaultGI)
 	{
 		return SampleTexture(gi_shadow_texture, gi_uv).x
 			* SampleGITexture(gi_uv, 0.0).w;
@@ -34,11 +34,11 @@ TypedOcclusion ComputeGIOcclusion(float2 gi_uv)
 
 	if(IsShadowGIEnabled())
 	{
-		if(UsingSGGI())
+		if(UsingSGGI)
 		{
 			result.mode = OcclusionType_SGGI;
 		}
-		else if(UsingAOGI())
+		else if(UsingAOGI)
 		{
 			result.mode = OcclusionType_AOGI;
 		}

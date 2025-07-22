@@ -6,11 +6,13 @@ MaterialImmutables
     UVInput(diffuse)
     UVInput(normal)
     UVInput(specular)
+    UVInput(transparency)
 }
 
 Texture2D<float4> WithSampler(diffuse);
 Texture2D<float4> WithSampler(normal);
 Texture2D<float4> WithSampler(specular);
+Texture2D<float4> WithSampler(transparency);
 
 PixelOutput main(const PixelInput input)
 {
@@ -26,6 +28,9 @@ PixelOutput main(const PixelInput input)
     float4 diffuse_texture = SampleUV0(diffuse);
     parameters.albedo = diffuse_texture.rgb;
     parameters.transparency = diffuse_texture.a * input.color.a;
+
+    float transparency_texture = SampleUV3(transparency);
+    parameters.transparency *= transparency_texture.x;
 
     ComputeInstanceAlbedoHSVShift(parameters);
     parameters.albedo = LinearToSrgb(parameters.albedo);

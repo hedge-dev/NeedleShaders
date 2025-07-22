@@ -7,18 +7,19 @@
 #include "Ambient.hlsl"
 #include "Reflection.hlsl"
 
-void DebugBeforeFog(
+static uint DebugBeforeFogResult_None = 0;
+static uint DebugBeforeFogResult_Clear = 1;
+static uint DebugBeforeFogResult_Leave = 2;
+
+uint DebugBeforeFog(
 	LightingParameters parameters,
 	float3 out_diffuse,
 	float3 out_specular,
 	float3 indirect_color,
 	float3 ambient_color,
 	inout float3 out_direct,
-	inout float3 out_indirect,
 	inout float out_alpha)
 {
-	bool only_direct = true;
-
 	switch(GetDebugView())
 	{
 		case DebugView_DirDiffuse:
@@ -58,7 +59,6 @@ void DebugBeforeFog(
 			break;
 
 		case DebugView_IblCapture:
-			only_direct = false;
 			out_alpha = 1.0;
 
 			EnvProbeData debug_probe = GetEnvProbeData(0);
@@ -78,7 +78,7 @@ void DebugBeforeFog(
 			{
 				out_alpha = 0.0;
 			}
-			break;
+			return DebugBeforeFogResult_Leave;
 
 		case DebugView_WriteDepthToAlpha:
 			// the way its implemented here is different from the original...
@@ -91,25 +91,17 @@ void DebugBeforeFog(
 			// ~ Justin113D
 
 			out_alpha = parameters.depth;
-			break;
+			return DebugBeforeFogResult_Leave;
+
 		default:
-			only_direct = false;
-			break;
+			return DebugBeforeFogResult_None;
 	}
 
-	if(only_direct)
-	{
-		out_indirect = 0.0;
-		out_alpha = 0.0;
-	}
+	return DebugBeforeFogResult_Clear;
 }
 
 void DebugLocalLight(LightingParameters parameters, int type, inout float3 out_direct)
 {
-	#ifdef IS_COMPUTE_SHADER
-		return;
-	#endif
-
 	LocalLightHeader pos_header = GetLocalLightHeader(parameters.tile_position);
 
 	uint2 count;
@@ -147,34 +139,20 @@ void DebugLocalLight(LightingParameters parameters, int type, inout float3 out_d
 	#endif
 }
 
-void DebugAfterFog(
+bool DebugAfterFog(
 	LightingParameters parameters,
-	float3 ssao,
+	float3 ssao_raw,
 	float3 ambient_color,
-	float3 emission_color,
-	inout float3 out_direct,
-	inout float3 out_indirect,
-	inout float3 out_fog,
-	inout float out_alpha)
+	float3 indirect_color,
+	inout float3 out_direct)
 {
-
-	uint debug_mode = GetDebugView();
-	if(debug_mode == 0)
-	{
-		return;
-	}
-
-	float3 debug_ambient = ComputeAmbientColor(parameters) * ssao.x;
-
-	bool only_direct = true;
-
 	switch(GetDebugView())
 	{
 		case DebugView_User0: break;
 		case DebugView_User1: break;
 
 		case DebugView_User2:
-			out_direct = debug_ambient;
+			out_direct = ambient_color;
 			break;
 
 		case DebugView_User3: break;
@@ -208,7 +186,7 @@ void DebugAfterFog(
 			break;
 
 		case DebugView_Ambient:
-			out_direct = debug_ambient + emission_color * ambient_color;
+			out_direct = indirect_color + ambient_color;
 			break;
 
 		case DebugView_Cavity:
@@ -236,7 +214,7 @@ void DebugAfterFog(
 			break;
 
 		case DebugView_SSAO:
-			out_direct = ssao.x;
+			out_direct = ssao_raw.x;
 			break;
 
 		case DebugView_RLR:
@@ -294,16 +272,10 @@ void DebugAfterFog(
 			break;
 
 		default:
-			only_direct = false;
-			break;
+			return false;
 	}
 
-	if(only_direct)
-	{
-		out_indirect = 0.0;
-		out_fog = 0.0;
-		out_alpha = 1.0;
-	}
+	return true;
 }
 
 #endif

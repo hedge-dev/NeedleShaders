@@ -8,6 +8,8 @@
 #include "../../ShadingModel.hlsl"
 #include "../../EnvironmentBRDF.hlsl"
 
+#include "../Struct.hlsl"
+
 #include "Common.hlsl"
 
 static const float3 SGGIAxis[4] =

@@ -5,24 +5,41 @@
 
 #include "../Common.hlsl"
 
-#if !defined(is_compute_instancing) && !defined(no_is_compute_instancing)
-	DefineFeature(is_compute_instancing);
+#if !defined(enable_deferred_rendering) && !defined(no_enable_deferred_rendering)
+	DefineFeature(enable_deferred_rendering);
 #endif
 
 #if !defined(is_use_tex_srt_anim) && !defined(no_is_use_tex_srt_anim)
 	DefineFeature(is_use_tex_srt_anim);
 #endif
 
-#if !defined(enable_deferred_rendering) && !defined(no_enable_deferred_rendering)
-	DefineFeature(enable_deferred_rendering);
+#ifndef enable_deferred_rendering
+	// Including here to get all the macros set
+	#include "Lighting/CompositeMaterial.hlsl"
 #endif
 
-#if !defined(enable_alpha_threshold) && !defined(no_enable_alpha_threshold)
-	DefineFeature(enable_alpha_threshold);
-#endif
+// Some more common includes so that we have to do those less
+
+#include "../ConstantBuffer/World.hlsl"
+#include "../ConstantBuffer/MaterialImmutable.hlsl"
+
+#include "../Texture.hlsl"
+#include "../VAT.hlsl"
+
+#include "Normals.hlsl"
+
+#include "Surface/PBRUtils.hlsl"
+#include "Surface/AlphaThreshold.hlsl"
+#include "Surface/ComputeInstancing.hlsl"
+#include "Surface/Common.hlsl"
 
 #include "../IOStructs.hlsl"
 #include "Surface/Struct.hlsl"
+
+#define SampleUV0(name) SampleTextureBiasedGl(name, TexUV(input.uv01.xy, name))
+#define SampleUV1(name) SampleTextureBiasedGl(name, TexUV(input.uv01.zw, name))
+#define SampleUV2(name) SampleTextureBiasedGl(name, TexUV(input.uv23.xy, name))
+#define SampleUV3(name) SampleTextureBiasedGl(name, TexUV(input.uv23.zw, name))
 
 #ifdef enable_deferred_rendering
 
@@ -30,7 +47,6 @@
 
 #else
 
-	#include "Lighting/CompositeMaterial.hlsl"
 	PixelOutput ProcessSurface(PixelInput input, SurfaceParameters surface)
 	{
 		LightingParameters parameters = LightingParametersFromSurface(input, surface);

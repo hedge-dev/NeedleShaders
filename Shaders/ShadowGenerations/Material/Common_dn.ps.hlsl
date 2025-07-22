@@ -1,16 +1,14 @@
 #include "../Include/Pixel/Material.hlsl"
-#include "../Include/Pixel/UserModel.hlsl"
 
 MaterialImmutables
 {
     UVInput(diffuse)
     UVInput(normal)
-    UVInput(specular)
+    float4 PBRFactor;
 }
 
 Texture2D<float4> WithSampler(diffuse);
 Texture2D<float4> WithSampler(normal);
-Texture2D<float4> WithSampler(specular);
 
 PixelOutput main(const PixelInput input)
 {
@@ -51,14 +49,7 @@ PixelOutput main(const PixelInput input)
     //////////////////////////////////////////////////
     // PBR Parameters
 
-    float4 prm = SampleUV0(specular);
-    ApplyPRMTexture(parameters, prm);
-
-    //////////////////////////////////////////////////
-
-    #ifdef u_model_user_flag_0
-        parameters.emission = UserModel1Stuff(parameters.world_position.xyz);
-    #endif
+    ApplyPBRFactor(parameters, PBRFactor);
 
     //////////////////////////////////////////////////
 
