@@ -2,7 +2,6 @@
 #define BASE_GI_SURFACE_INCLUDED
 
 #include "../../../Debug.hlsl"
-#include "../../PBRUtils.hlsl"
 
 #include "../Struct.hlsl"
 
@@ -17,11 +16,11 @@ void ApplyGlobalIllumination(inout SurfaceParameters parameters)
 	float3 gi_diffuse = 0.0;
 	float3 gi_specular = 0.0;
 
-	if(UsingDefaultGI())
+	if(UsingDefaultGI)
 	{
 		gi_diffuse = SampleGITexture(parameters.gi_uv, 0.0).xyz;
 	}
-	else if(UsingSGGI())
+	else if(UsingSGGI)
 	{
 		ComputeSGGIColors(
 			parameters,

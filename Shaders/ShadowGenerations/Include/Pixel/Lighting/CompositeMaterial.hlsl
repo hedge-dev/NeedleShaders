@@ -14,12 +14,14 @@
 #endif
 
 #include "../EnvironmentBRDF.hlsl"
+#include "../Luminance.hlsl"
 
 #include "Shadow.hlsl"
 #include "Light.hlsl"
 #include "PositionalLighting.hlsl"
 #include "Ambient.hlsl"
 #include "Reflection.hlsl"
+#include "Debug.hlsl"
 #include "Fog.hlsl"
 
 float3 Something(float2 pixel_position, float3 out_color)
@@ -113,7 +115,33 @@ float4 CompositeMaterialLighting(LightingParameters parameters, float transparen
 	out_indirect += indirect_color;
 
 	//////////////////////////////////////////////////
-	// debug switch 1
+	// debug switch
+
+	uint debug_result_1 = DebugBeforeFog(
+		parameters,
+		out_diffuse,
+		out_specular,
+		indirect_color,
+		ambient_color,
+		out_direct,
+		transparency);
+
+	if(debug_result_1 == DebugBeforeFogResult_Clear)
+	{
+		out_indirect = 0.0;
+	}
+	else if(debug_result_1 == DebugBeforeFogResult_None)
+	{
+		if(DebugAfterFog(
+			parameters,
+			1.0,
+			ambient_color,
+			indirect_color,
+			out_direct))
+		{
+			out_direct *= GetLuminance();
+		}
+	}
 
 	//////////////////////////////////////////////////
 	// shadow cascade debugging

@@ -23,10 +23,10 @@ void DiscardDithering(float2 position, float opacity)
     }
 }
 
-void ViewportTransparencyDiscardDithering(float2 position)
+void ViewportTransparencyDiscardDithering(float2 pixel_position)
 {
 	float force_viewport_transparency = dot(u_current_viewport_mask, u_forcetrans_param);
-    float dither = SampleDither(position) * 0.98 + 0.01;
+    float dither = SampleDither(pixel_position) * 0.98 + 0.01;
 
     if(force_viewport_transparency - dither < 0)
     {

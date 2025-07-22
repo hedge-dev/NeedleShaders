@@ -51,7 +51,7 @@ float3 ComputeAmbientColor(LightingParameters parameters)
 				sglf_ao = saturate(dot(combined_buffer, parameters.world_normal * parameters.world_normal));
 			}
 
-			if(UsingSHProbes())
+			if(UsingSHProbes)
 			{
 				sglf_ao = min(lf_ambient_occlusion, sglf_ao);
 			}

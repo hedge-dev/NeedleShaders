@@ -1,9 +1,9 @@
 // This gets included by nature of the library and needs to be removed
 #define no_shadow_as_pcf
 
-#include "Include/IOStructs.hlsl"
-#include "Include/Pixel/Deferred.hlsl"
-#include "Include/Pixel/Lighting/CompositeDeferred.hlsl"
+#include "../Include/IOStructs.hlsl"
+#include "../Include/Pixel/Deferred.hlsl"
+#include "../Include/Pixel/Lighting/CompositeDeferred.hlsl"
 
 struct DeferredOut
 {

@@ -1,8 +1,8 @@
-#include "Include/ConstantBuffer/World.hlsl"
-#include "Include/ConstantBuffer/LightFieldClipmap.hlsl"
+#include "../Include/ConstantBuffer/World.hlsl"
+#include "../Include/ConstantBuffer/LightFieldClipmap.hlsl"
 
-#include "Include/Texture.hlsl"
-#include "Include/Transform.hlsl"
+#include "../Include/Texture.hlsl"
+#include "../Include/Transform.hlsl"
 
 Texture2D<float4> WithSampler(s_DepthBuffer);
 Texture2D<float4> WithSampler(s_CopyGBuffer1);

@@ -48,9 +48,9 @@ float4 CompositeDeferredLighting(LightingParameters parameters, out float4 ssss_
 	//////////////////////////////////////////////////
 	// SSAO & Shadows
 
-	float4 ssao = SampleTextureLevel(s_SSAO, parameters.screen_position, 0);
-	ssao.xyz = saturate(ssao.xyz + u_ssao_param.x);
-	parameters.shadow = min(parameters.shadow, ssao.w);
+	float4 ssao_raw = SampleTextureLevel(s_SSAO, parameters.screen_position, 0);
+	float3 ssao = saturate(ssao_raw.xyz + u_ssao_param.x);
+	parameters.shadow = min(parameters.shadow, ssao_raw.w);
 
 	//////////////////////////////////////////////////
 	// Emission
@@ -133,16 +133,18 @@ float4 CompositeDeferredLighting(LightingParameters parameters, out float4 ssss_
 	// Debug switch #1
 
 	float out_alpha = 1.0;
-	DebugBeforeFog(
+	if(DebugBeforeFog(
 		parameters,
 		out_diffuse,
 		out_specular,
 		indirect_color,
 		ambient_color,
 		out_direct,
-		out_indirect,
-		out_alpha
-	);
+		out_alpha) == DebugBeforeFogResult_Clear)
+	{
+		out_alpha = 0.0;
+		out_indirect = 0.0;
+	}
 
 	//////////////////////////////////////////////////
 	// shadow cascade debugging
@@ -177,16 +179,24 @@ float4 CompositeDeferredLighting(LightingParameters parameters, out float4 ssss_
 	//////////////////////////////////////////////////
 	// Debug switch #2
 
-	DebugAfterFog(
-		parameters,
-		ssao.xyz,
-		ambient_color,
-		emission_color,
-		out_direct,
-		out_indirect,
-		out_fog,
-		out_alpha
-	);
+	if(GetDebugView())
+	{
+		float3 debug_ambient = ComputeAmbientColor(parameters) * ssao.x;
+
+		if(DebugAfterFog(
+			parameters,
+			ssao_raw.xyz,
+			debug_ambient,
+			indirect_color,
+			out_direct))
+		{
+			out_indirect = 0.0;
+			out_fog = 0.0;
+			out_alpha = 1.0;
+		}
+	}
+
+
 
 	//////////////////////////////////////////////////
 	// Subsurface scattering

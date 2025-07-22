@@ -6,15 +6,14 @@
 
 #include "../../../Common.hlsl"
 #if !defined(is_use_gi) && !defined(no_is_use_gi)
+	DefineFeature(is_use_gi);
 	DefineFeature(is_use_gi_prt);
 	DefineFeature(is_use_gi_sg);
-	DefineFeature(is_use_gi);
 #endif
 
 #include "../../../ConstantBuffer/World.hlsl"
 #include "../../../Texture.hlsl"
 #include "../../../Debug.hlsl"
-#include "../../PBRUtils.hlsl"
 
 //////////////////////////////////////////////////
 // Textures
@@ -32,45 +31,36 @@
 //////////////////////////////////////////////////
 // Methods
 
-bool UsingGI()
-{
-	#if defined(is_use_gi)
-		return true;
-	#else
-		return false;
-	#endif
-}
+#if defined(is_use_gi)
+	#define UsingGI true
+#else
+	#define UsingGI false
+#endif
 
-bool UsingSGGI()
-{
-	#if defined(is_use_gi_sg)
-		return UsingGI();
-	#else
-		return false;
-	#endif
-}
 
-bool UsingAOGI()
-{
-	// Sonic team seemed to disallow combining
-	// SG with AO when using forward rendering,
-	// but not when using deferred rendering
+#if defined(is_use_gi_sg)
+	#define UsingSGGI UsingGI
+#else
+	#define UsingSGGI false
+#endif
 
-	#if defined(is_use_gi_prt) && (defined(enable_deferred_rendering) || !defined(is_use_gi_sg))
-		return UsingGI();
-	#else
-		return false;
-	#endif
-}
 
-bool UsingDefaultGI()
-{
-	#if !defined(is_use_gi_prt) && !defined(is_use_gi_sg)
-		return UsingGI();
-	#else
-		return false;
-	#endif
-}
+// Sonic team seemed to disallow combining
+// SG with AO when using forward rendering,
+// but not when using deferred rendering
+
+#if defined(is_use_gi_prt) && (defined(enable_deferred_rendering) || !defined(is_use_gi_sg))
+	#define UsingAOGI UsingGI
+#else
+	#define UsingAOGI false
+#endif
+
+
+#if !defined(is_use_gi_prt) && !defined(is_use_gi_sg)
+	#define UsingDefaultGI UsingGI
+#else
+	#define UsingDefaultGI false
+#endif
 
 
 bool IsAOGIEnabled()
@@ -82,7 +72,7 @@ bool IsAOGIEnabled()
 	// - DebugGITex_AOLF_OCCRATE
 
 	uint gi_disable_type = GetDebugGITexDisableType();
-	return UsingAOGI() && (
+	return UsingAOGI && (
 		gi_disable_type == DebugGITex_DisableNone
 		|| gi_disable_type == DebugGITex_DisableSGGI
 		|| gi_disable_type == DebugGITex_AOGIOnly
@@ -98,7 +88,7 @@ bool IsSGGIEnabled()
 	// (No idea why the other "only" modes are not included)
 
 	uint gi_disable_type = GetDebugGITexDisableType();
-	return UsingSGGI() && !(
+	return UsingSGGI && !(
 		gi_disable_type == DebugGITex_DisableSGGI
 		|| gi_disable_type == DebugGITex_DisableAll
 	);
@@ -113,7 +103,7 @@ bool IsShadowGIEnabled()
 	// - DebugGITex_AOLF_OCCRATE
 
 	uint gi_disable_type = GetDebugGITexDisableType();
-	return UsingGI() && !(
+	return UsingGI && !(
 		gi_disable_type == DebugGITex_DisableSGGI
 		|| gi_disable_type == DebugGITex_DisableAO
 		|| gi_disable_type == DebugGITex_DisableAll
