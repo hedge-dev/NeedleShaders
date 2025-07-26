@@ -52,6 +52,11 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
             foreach(ID3D11ShaderReflectionConstantBuffer constantBuffer in reflection!.ConstantBuffers)
             {
+                if(constantBuffer.Description.Type != ConstantBufferType.ConstantBuffer)
+                {
+                    continue;
+                }
+
                 InputBindingDescription? bindingDescription = reflection.BoundResources.FirstOrDefault(
                     x => x.Name == constantBuffer.Description.Name 
                         && x.Type == ShaderInputType.ConstantBuffer);
