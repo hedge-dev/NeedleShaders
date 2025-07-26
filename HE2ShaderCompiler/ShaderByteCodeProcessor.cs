@@ -7,8 +7,6 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 {
     internal static class ShaderByteCodeProcessor
     {
-        private static readonly byte[] _isgnSignature = [(byte)'I', (byte)'S', (byte)'G', (byte)'N'];
-
         public static ShaderVariant ProcessShaderByteCode(ReadOnlyMemory<byte> shader)
         {
             ReadOnlySpan<byte> span = shader.Span;
@@ -16,32 +14,9 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             return new()
             {
                 ShaderByteCode = span.ToArray(),
-                InputSignatureByteCode = GetSignatureChunk(span),
+                InputSignatureByteCode = Vortice.D3DCompiler.Compiler.GetInputSignatureBlob(span).AsBytes(),
                 GlobalVariables = GetVariables(span)
             };
-        }
-
-        private static byte[] GetSignatureChunk(ReadOnlySpan<byte> shader)
-        {
-            int signatureChunkOffset = 0;
-            bool found = false;
-            for(int i = 0; i < shader.Length; i += 4)
-            {
-                if(shader.Slice(i, 4).SequenceEqual(_isgnSignature))
-                {
-                    signatureChunkOffset = i;
-                    found = true;
-                    break;
-                }
-            }
-
-            if(!found)
-            {
-                throw new InvalidOperationException("No signature chunk found in compiled shader!");
-            }
-
-            int size = BitConverter.ToInt32(shader.Slice(signatureChunkOffset + 4, 4));
-            return shader.Slice(signatureChunkOffset, size + 8).ToArray();
         }
 
         private static ShaderGlobalVariables GetVariables(ReadOnlySpan<byte> shader)
