@@ -76,10 +76,10 @@ float3 TransformDirection3x3(float3 direction, float3x3 rotation_matrix)
     return mul(direction, rotation_matrix);
 }
 
-float3x3 AxisTrigToRotationMatrix(float3 axis, float sine, float cosine)
+float3x3 AxisAngleToRotationMatrix(float3 axis, float angle)
 {
-    float s = sine;
-    float c = cosine;
+    float s = sin(angle);
+    float c = cos(angle);
     float t  = 1.0 - c;
     float x = axis.x;
     float y = axis.y;
@@ -100,11 +100,29 @@ float3x3 AxisTrigToRotationMatrix(float3 axis, float sine, float cosine)
     );
 }
 
-float3x3 AxisAngleToRotationMatrix(float3 axis, float angle)
+float3x3 AxisAngle2ToRotationMatrix(float3 axis, float angle)
 {
-    float sin, cos;
-    sincos(angle, sin, cos);
-    return AxisTrigToRotationMatrix(axis, sin, cos);
+    float xx = axis.x * axis.x * 2.0;
+    float yy = axis.y * axis.y * 2.0;
+    float zz = axis.z * axis.z * 2.0;
+    float xy = axis.x * axis.y * 2.0;
+    float xz = axis.x * axis.z * 2.0;
+    float yz = axis.y * axis.z * 2.0;
+    float3 aa = axis * angle * 2.0;
+
+    return float3x3(
+        (1.0 - yy - zz),
+        xy + aa.z,
+        xz - aa.y,
+
+        xy - aa.z,
+        (1.0 - xx - zz),
+        yz + aa.x,
+
+        xz + aa.y,
+        yz - aa.x,
+        (1.0 - xx - yy)
+    );
 }
 
 float3x3 CreateShortestRotationMatrix(float3 from, float3 to)
@@ -120,13 +138,13 @@ float3x3 CreateShortestRotationMatrix(float3 from, float3 to)
     float3 axis = normalize(cross(from, to));
 
     // below is equal to
-    // return AxisTrigToRotationMatrix(axis, sin(acos(cos)), cos);
-    // but no idea how
+    // return AxisTrigToRotationMatrix(axis, acos(cos));
+    // but no idea AxisAngle2 actually works
 
     float a = sqrt(0.5 - cos * 0.5);
     float b = sqrt(0.5 + cos * 0.5);
 
-    return AxisTrigToRotationMatrix(axis * a * 2, b, 0);
+    return AxisAngle2ToRotationMatrix(axis * a, b);
 }
 
 float3x3 CreateLookAtMatrix(float3 position, float3 forward_dir, float3 up_dir, float3 look_at_position)
