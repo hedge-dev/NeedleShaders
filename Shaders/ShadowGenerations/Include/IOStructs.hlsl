@@ -6,15 +6,34 @@
 
 struct VertexInput
 {
-	float4 Position : POSITION;
-	float3 Normal : NORMAL0;
-	float3 Tangent : TANGENT0;
-	float3 Binormal : BINORMAL0;
-	float4 Color : COLOR0;
-	float2 UV0 : TEXCOORD0;
-	float2 UV1 : TEXCOORD1;
-	float2 UV2 : TEXCOORD2;
-	float2 UV3 : TEXCOORD3;
+	float4 position : POSITION0;
+	float3 normal : NORMAL0;
+	float3 tangent : TANGENT0;
+	float3 binormal : BINORMAL0;
+	float4 color : COLOR0;
+	float2 uv0 : TEXCOORD0;
+	float2 uv1 : TEXCOORD1;
+	float2 uv2 : TEXCOORD2;
+	float2 uv3 : TEXCOORD3;
+
+	#ifdef is_has_bone
+		float4 bone_weights : BLENDWEIGHT0;
+		uint4 bone_indices : BLENDINDICES0;
+
+		#ifdef enable_max_bone_influences_8
+			float4 bone_weights_2 : BLENDWEIGHT1;
+			uint4 bone_indices_2 : BLENDINDICES1;
+		#endif
+	#endif
+
+	#ifdef enable_multi_tangent_space
+		float3 tangent_2 : TANGENT1;
+		float3 binormal_2 : BINORMAL1;
+	#endif
+
+	#if defined(is_compute_instancing) || defined(is_instancing)
+		uint instance_id : SV_InstanceID0;
+	#endif
 };
 
 //////////////////////////////////////////////////
@@ -32,7 +51,7 @@ struct Vertex2Pixel
 
 	// --- Color ---
 	// XYZW: RGBA color
-	float4 color : COLOR;
+	float4 color : COLOR0;
 
 	// --- UV set #1 ---
 	// XY: Third UV map
@@ -55,7 +74,8 @@ struct Vertex2Pixel
 	float4 world_tangent : TEXCOORD3;
 
 	// --- Preview view position ---
-	// XYZ: Clip space position (?)
+	// XY: Projection space XY position
+	// Z: Projection space W position
 	// W: World space Z position
 	float4 previous_position : TEXCOORD4;
 
@@ -65,6 +85,13 @@ struct Vertex2Pixel
 	// Y: Instancing index
 	float2 binormal_orientation : TEXCOORD11;
 
+	#ifdef enable_multi_tangent_space
+		// --- Second World Tangent ---
+		// XYZ: Second World space tangent direection
+		// W: Second Binormal direction (see binormal_orientation)
+		float4 world_tangent_2 : TEXCOORD10;
+	#endif
+
 	#ifndef enable_deferred_rendering
 		float4 shadow_position : TEXCOORD5;
 		float shadow_depth : TEXCOORD6;
@@ -72,10 +99,10 @@ struct Vertex2Pixel
 		float3 light_scattering_base : TEXCOORD9;
 	#endif
 
-	#if defined(is_compute_instancing) && defined(enable_deferred_rendering)
+	#if defined(is_compute_instancing)
 		// --- Compute Instance Parameters ---
 		// XYZ: HSV modifier values (range -0.5 to 0.5)
-		// W: ?
+		// W: Instance transparency
 		float4 compute_instance_parameters : TEXCOORD12;
 	#endif
 };
