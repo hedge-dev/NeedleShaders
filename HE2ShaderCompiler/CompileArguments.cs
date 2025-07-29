@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using HedgeDev.Shaders.HE2.Compiler;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Vortice.D3DCompiler;
-using Vortice.Direct3D;
 
 namespace HedgeDev.NeedleShaders.HE2.Compiler
 {
@@ -36,27 +31,16 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
         });
 
 
-        public string ShaderProfile { get; private set; } = string.Empty;
-
-        public ShaderFlags CompilerFlags { get; private set; }
-
-        public bool NoBuildPath { get; private set; }
-
-        public bool BuildV1 { get; private set; }
-
         public string OutputDirectory { get; private set; } = string.Empty;
 
         public string OutputFile { get; private set; } = string.Empty;
 
-        public string EntryPoint { get; private set; } = "main";
+        public ShaderCompilerArguments ShaderCompilerArguments { get; private set; }
 
-        public bool NoShaderTypeMacros { get; private set; }
-
-        public List<ShaderMacro> ExtraMacros { get; private set; } = [];
-
-        public bool NoWarnings { get; private set; }
-
-        private CompileArguments() { }
+        private CompileArguments() 
+        {
+            ShaderCompilerArguments = new();
+        }
 
 
         public static CompileArguments ParseCompilerArguments(string inputFile, string[] arguments)
@@ -70,7 +54,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             string profileExtension = Path.GetExtension(Path.GetFileNameWithoutExtension(inputFile)).ToLower();
             if(profileExtension is ".vs" or ".ps" or ".cs")
             {
-                result.ShaderProfile = profileExtension[1..] + "_5_0";
+                result.ShaderCompilerArguments.ShaderProfile = profileExtension[1..] + "_5_0";
                 result.OutputFile = Path.GetFileNameWithoutExtension(result.OutputFile);
             }
 
@@ -89,7 +73,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
                 if(_shaderFlagArgumentMap.TryGetValue(arg, out ShaderFlags flag))
                 {
-                    result.CompilerFlags |= flag;
+                    result.ShaderCompilerArguments.CompilerFlags |= flag;
                     continue;
                 }
 
@@ -122,11 +106,11 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                         break;
 
                     case "nobp":
-                        result.NoBuildPath = true;
+                        result.ShaderCompilerArguments.NoBuildPath = true;
                         break;
 
                     case "v1":
-                        result.BuildV1 = true;
+                        result.ShaderCompilerArguments.BuildV1 = true;
                         break;
 
                     case "t":
@@ -137,11 +121,11 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                             throw new ArgumentException("Missing profile parameter for argument -t");
                         }
 
-                        result.ShaderProfile = arguments[i].ToLower();
+                        result.ShaderCompilerArguments.ShaderProfile = arguments[i].ToLower();
 
-                        if(result.ShaderProfile is "vs" or "ps" or "cs")
+                        if(result.ShaderCompilerArguments.ShaderProfile is "vs" or "ps" or "cs")
                         {
-                            result.ShaderProfile += "_5_0";
+                            result.ShaderCompilerArguments.ShaderProfile += "_5_0";
                         }
 
                         break;
@@ -154,11 +138,11 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                             throw new ArgumentException("Missing entry parameter for argument -e");
                         }
 
-                        result.EntryPoint = arguments[i];
+                        result.ShaderCompilerArguments.EntryPoint = arguments[i];
                         break;
 
                     case "nostd":
-                        result.NoShaderTypeMacros = true;
+                        result.ShaderCompilerArguments.NoShaderTypeMacros = true;
                         break;
 
                     case "d":
@@ -186,12 +170,12 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                             macroValue = macro[(macroAssign + 1)..];
                         }
 
-                        result.ExtraMacros.Add(new(macroName, macroValue));
+                        result.ShaderCompilerArguments.ExtraMacros.Add(new(macroName, macroValue));
 
                         break;
 
                     case "nowarn":
-                        result.NoWarnings = true;
+                        result.ShaderCompilerArguments.NoWarnings = true;
                         break;
 
                     default:
@@ -200,22 +184,23 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 }
             }
 
-            if(string.IsNullOrWhiteSpace(result.ShaderProfile))
+            if(string.IsNullOrWhiteSpace(result.ShaderCompilerArguments.ShaderProfile))
             {
                 throw new ArgumentException("File has no profile extension, please specify a profile using -T");
             }
 
-            if(!result.ShaderProfile.StartsWith("vs") && !result.ShaderProfile.StartsWith("ps") && !result.ShaderProfile.StartsWith("cs"))
+            if(!result.ShaderCompilerArguments.ShaderProfile.StartsWith("vs") && !result.ShaderCompilerArguments.ShaderProfile.StartsWith("ps") && !result.ShaderCompilerArguments.ShaderProfile.StartsWith("cs"))
             {
                 throw new ArgumentException("Invalid profile! Must be a \"vs\", \"ps\" or \"cs\" profile!");
             }
 
             if(!hasFileExtension)
             {
-                result.OutputFile += "." + result.ShaderProfile[..2] + 'o';
+                result.OutputFile += "." + result.ShaderCompilerArguments.ShaderProfile[..2] + 'o';
             }
 
             return result;
         }
+    
     }
 }
