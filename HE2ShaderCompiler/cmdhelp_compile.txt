@@ -34,6 +34,7 @@ options:
                         If losely specified, will use the 5.0 shader model ("vs" turns into "vs_5_0")
     -E <entrypoint>     Specify a custom entrypoint. Default is "main"
     -D <macro>=<text>   Define macro
+	-D <macro>			Define macro (no value)
     -nostd              Disable automatic shader type macros "IS_<TYPE>_SHADER" and "SHADER_TYPE"
 
     -Od                 disable optimizations

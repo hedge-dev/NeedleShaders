@@ -171,12 +171,21 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                         string macro = arguments[i];
                         int macroAssign = macro.IndexOf('=');
 
+                        string macroName;
+                        string macroValue;
+
                         if(macroAssign == -1)
                         {
-                            throw new ArgumentException("Invalid macro! Must be like <macro>=<text>");
+                            macroName = macro;
+                            macroValue = string.Empty;
+                        }
+                        else
+                        {
+                            macroName = macro[..macroAssign];
+                            macroValue = macro[(macroAssign + 1)..];
                         }
 
-                        result.ExtraMacros.Add(new(macro[..macroAssign], macro[(macroAssign + 1)..]));
+                        result.ExtraMacros.Add(new(macroName, macroValue));
 
                         break;
 
