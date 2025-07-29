@@ -26,6 +26,11 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
             CompileArguments compilerArgs = CompileArguments.ParseCompilerArguments(file, args);
 
+            PrintHeader($"Compiling {compilerArgs.OutputFile}", '=');
+            Console.WriteLine();
+
+            PrintHeader("1. Collecting features");
+
             List<ShaderMacro> baseMacros = [];
 
             if(!compilerArgs.NoShaderTypeMacros)
@@ -72,10 +77,14 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 Console.WriteLine();
             }
 
+            PrintHeader("2. Compiling permutations");
+
             int permutationCount = (int)Math.Pow(2, features.Length);
             ReadOnlyMemory<byte>[] compiledPermutations = new ReadOnlyMemory<byte>[permutationCount];
             int compileFinishedCount = 0;
-            (int left, int top) = Console.GetCursorPosition();
+
+            (_, int top) = Console.GetCursorPosition();
+            Console.WriteLine($"0 of {permutationCount} permutations compiled");
 
             HashSet<string> baseMacroLUT = baseMacros.Select(x => x.Name).ToHashSet();
 
@@ -142,8 +151,8 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 {
                     compiledPermutations[index] = compiledShader;
                     compileFinishedCount++;
-                    Console.SetCursorPosition(left, top);
-                    Console.WriteLine($"Compiling permutations... ({compileFinishedCount}/{permutationCount})");
+                    Console.SetCursorPosition(0, top);
+                    Console.WriteLine($"{compileFinishedCount} of {permutationCount} permutations compiled");
                 }
             }
 
@@ -166,9 +175,12 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 throw throwException;
             }
 
+            Console.WriteLine();
+
             if(outWarnings != null)
             {
-                Console.WriteLine($"Warnings appeared during HLSL compilation. {MacroMessage(warningMacros!)}");
+                PrintHeader("2.1. HLSL Warnings");
+                Console.WriteLine(MacroMessage(warningMacros!));
                 Console.WriteLine(outWarnings);
             }
             else
@@ -176,7 +188,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 Console.WriteLine();
             }
 
-            Console.WriteLine("Comparing permutations...");
+            PrintHeader("3. Comparing permutations");
 
             List<ReadOnlyMemory<byte>> variants = [];
             int[] permutations = new int[(int)Math.Pow(2, features.Length)];
@@ -215,8 +227,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 output.BuildPath = file;
             }
 
-            Console.WriteLine("Processing meta data");
-            Console.WriteLine();
+            PrintHeader("4. Processing meta data");
             output.Features.AddRange(features.Select(x => new Shader.Feature() { Name = x }));
             output.Variants.AddRange(variants.Select(ShaderByteCodeProcessor.ProcessShaderByteCode));
             output.Permutations.AddRange(permutations);
@@ -229,10 +240,20 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 }
             }
 
+            Console.WriteLine();
 
             Console.WriteLine("Compiling finished!");
 
             output.Write(Path.Combine(compilerArgs.OutputDirectory, compilerArgs.OutputFile));
+        }
+
+        private static void PrintHeader(string text, char line = '-')
+        {
+            string print = " " + text.Trim() + " ";
+            int remaining = 50 - print.Length;
+            int half = remaining / 2;
+            print = new string(line, half) + print + new string(line, remaining - half);
+            Console.WriteLine(print);
         }
 
         private static string MacroMessage(IEnumerable<ShaderMacro> macros)
