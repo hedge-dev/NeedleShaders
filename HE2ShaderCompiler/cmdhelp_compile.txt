@@ -14,6 +14,13 @@ can be specified via the file extension, which will get used as a "loose" profil
     - .ps.hlsl -> pixel shader (.pso)
     - .cs.hlsl -> compute shader (.cso)
 
+Additionally, 2 automatic shader macros will be added before compilation:
+- SHADER_TYPE=<Type>
+- IS_<TYPE>_SHADER 
+
+<TYPE> and <Type> will be set to the shader type being compiled to (Vertex, Pixel or Compute).
+These can be disabled using -nostd.
+
 -------------------------------------------------
 
 options:
@@ -27,6 +34,7 @@ options:
                         If losely specified, will use the 5.0 shader model ("vs" turns into "vs_5_0")
     -E <entrypoint>     Specify a custom entrypoint. Default is "main"
     -D <macro>=<text>   Define macro
+    -nostd              Disable automatic shader type macros "IS_<TYPE>_SHADER" and "SHADER_TYPE"
 
     -Od                 disable optimizations
     -Op                 disable preshaders

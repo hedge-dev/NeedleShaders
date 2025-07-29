@@ -50,6 +50,8 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
         public string EntryPoint { get; private set; } = "main";
 
+        public bool NoShaderTypeMacros { get; private set; }
+
         public List<ShaderMacro> ExtraMacros { get; private set; } = [];
 
 
@@ -152,6 +154,10 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                         }
 
                         result.EntryPoint = arguments[i];
+                        break;
+
+                    case "nostd":
+                        result.NoShaderTypeMacros = true;
                         break;
 
                     case "d":

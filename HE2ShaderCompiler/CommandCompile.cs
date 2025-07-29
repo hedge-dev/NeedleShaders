@@ -26,24 +26,32 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
             CompileArguments compilerArgs = CompileArguments.ParseCompilerArguments(file, args);
 
-            ShaderMacro[]? baseMacros = null;
-            HashSet<string> baseMacroLUT = [];
+            List<ShaderMacro> baseMacros = [];
 
-            if(compilerArgs.ExtraMacros.Count > 0)
+            if(!compilerArgs.NoShaderTypeMacros)
             {
-                baseMacros = new ShaderMacro[compilerArgs.ExtraMacros.Count + 1];
-
-                for(int i = 0; i < compilerArgs.ExtraMacros.Count; i++)
+                if(compilerArgs.ShaderProfile.StartsWith("vs_"))
                 {
-                    baseMacros[i] = compilerArgs.ExtraMacros[i];
-                    baseMacroLUT.Add(baseMacros[i].Name);
+                    baseMacros.Add(new("IS_VERTEX_SHADER", string.Empty));
+                    baseMacros.Add(new("SHADER_TYPE", "Vertex"));
                 }
-
-                baseMacros[^1] = _nullMacro;
+                else if(compilerArgs.ShaderProfile.StartsWith("ps_"))
+                {
+                    baseMacros.Add(new("IS_PIXEL_SHADER", string.Empty));
+                    baseMacros.Add(new("SHADER_TYPE", "Pixel"));
+                }
+                else if(compilerArgs.ShaderProfile.StartsWith("cs_"))
+                {
+                    baseMacros.Add(new("IS_COMPUTE_SHADER", string.Empty));
+                    baseMacros.Add(new("SHADER_TYPE", "Compute"));
+                }
             }
 
+            baseMacros.AddRange(compilerArgs.ExtraMacros);
+            baseMacros.Add(_nullMacro);
+
             string shaderCode = File.ReadAllText(file);
-            string preprocessedShaderCode = D3D11Extensions.Preprocess(shaderCode, file, baseMacros, new IncludeResolver(file));
+            string preprocessedShaderCode = D3D11Extensions.Preprocess(shaderCode, file, baseMacros.ToArray(), new IncludeResolver(file));
 
             string[] features = _shaderFeatureRegex.Matches(preprocessedShaderCode).Select(x => x.Groups[1].Value).ToArray();
 
@@ -69,10 +77,11 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             int compileFinishedCount = 0;
             (int left, int top) = Console.GetCursorPosition();
 
+            HashSet<string> baseMacroLUT = baseMacros.Select(x => x.Name).ToHashSet();
+
             void CompilePermutation(int index)
             {
-                List<ShaderMacro> macros = [];
-                macros.AddRange(compilerArgs.ExtraMacros);
+                List<ShaderMacro> macros = new(baseMacros);
 
                 for(int j = 0; j < features.Length; j++)
                 {
@@ -83,10 +92,9 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                         continue;
                     }
 
-                    macros.Add(new(features[j], j));
+                    macros.Insert(macros.Count - 1, new(features[j], j));
                 }
 
-                macros.Add(_nullMacro);
                 ReadOnlyMemory<byte> compiledShader;
 
                 try
