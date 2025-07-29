@@ -1,11 +1,50 @@
 ﻿using SharpGen.Runtime;
 using System.Runtime.InteropServices;
+using Vortice.D3DCompiler;
 using Vortice.Direct3D;
 
 namespace HedgeDev.NeedleShaders.HE2.Compiler
 {
-    internal static class D3D11Extensions
+    internal static class D3DUtils
     {
+        public unsafe static ReadOnlyMemory<byte> Compile(string shaderSource, string entryPoint, string sourceName, string profile, out string? errors, ShaderFlags shaderFlags = ShaderFlags.OptimizationLevel1, EffectFlags effectFlags = EffectFlags.None)
+        {
+            if(string.IsNullOrEmpty(shaderSource))
+            {
+                throw new ArgumentNullException("shaderSource");
+            }
+
+            nint num = Marshal.StringToHGlobalAnsi(shaderSource);
+            try
+            {
+                Result result = Vortice.D3DCompiler.Compiler.Compile(num.ToPointer(), (nuint)shaderSource.Length, sourceName, null, null, entryPoint, profile, shaderFlags, effectFlags, out Blob code, out Blob errorMsgs);
+                if(result.Failure)
+                {
+                    if(errorMsgs != null)
+                    {
+                        throw new SharpGenException(result, errorMsgs.AsString());
+                    }
+
+                    throw new SharpGenException(result);
+                }
+
+                errors = errorMsgs?.AsString();
+                errorMsgs?.Dispose();
+
+                ReadOnlyMemory<byte> result2 = code.AsMemory();
+                code.Dispose();
+
+                return result2;
+            }
+            finally
+            {
+                if(num != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(num);
+                }
+            }
+        }
+
         public static string Preprocess(string shaderSource, string sourceName, ShaderMacro[]? defines, Include? include)
         {
             if(string.IsNullOrEmpty(shaderSource))

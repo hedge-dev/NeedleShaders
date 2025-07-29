@@ -90,7 +90,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
                 if(dumpAsm)
                 {
-                    string asm = D3D11Extensions.Disassemble(byteCode);
+                    string asm = D3DUtils.Disassemble(byteCode);
                     File.WriteAllText(path + ".txt", asm);
                 }
             }

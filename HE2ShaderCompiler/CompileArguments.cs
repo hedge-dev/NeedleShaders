@@ -54,6 +54,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
         public List<ShaderMacro> ExtraMacros { get; private set; } = [];
 
+        public bool NoWarnings { get; private set; }
 
         private CompileArguments() { }
 
@@ -187,6 +188,10 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
                         result.ExtraMacros.Add(new(macroName, macroValue));
 
+                        break;
+
+                    case "nowarn":
+                        result.NoWarnings = true;
                         break;
 
                     default:

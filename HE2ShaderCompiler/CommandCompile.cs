@@ -51,7 +51,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             baseMacros.Add(_nullMacro);
 
             string shaderCode = File.ReadAllText(file);
-            string preprocessedShaderCode = D3D11Extensions.Preprocess(shaderCode, file, baseMacros.ToArray(), new IncludeResolver(file));
+            string preprocessedShaderCode = D3DUtils.Preprocess(shaderCode, file, baseMacros.ToArray(), new IncludeResolver(file));
 
             string[] features = _shaderFeatureRegex.Matches(preprocessedShaderCode).Select(x => x.Groups[1].Value).ToArray();
 
@@ -79,6 +79,10 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
 
             HashSet<string> baseMacroLUT = baseMacros.Select(x => x.Name).ToHashSet();
 
+            int warningIndex = -1;
+            ShaderMacro[]? warningMacros = null;
+            string? outWarnings = null;
+
             void CompilePermutation(int index)
             {
                 List<ShaderMacro> macros = new(baseMacros);
@@ -96,48 +100,41 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 }
 
                 ReadOnlyMemory<byte> compiledShader;
+                ShaderMacro[] compilerMacros = macros.ToArray();
 
                 try
                 {
-                    string preprocessedShaderCode = D3D11Extensions.Preprocess(
+                    string preprocessedShaderCode = D3DUtils.Preprocess(
                         shaderCode,
                         file,
-                        macros.ToArray(),
+                        compilerMacros,
                         new IncludeResolver(file)
                     );
 
                     preprocessedShaderCode = _shaderFeatureRegex.Replace(preprocessedShaderCode, string.Empty);
 
-                    compiledShader = Vortice.D3DCompiler.Compiler.Compile(
+                    compiledShader = D3DUtils.Compile(
                         preprocessedShaderCode,
                         compilerArgs.EntryPoint,
                         file,
                         compilerArgs.ShaderProfile,
+                        out string? warnings,
                         compilerArgs.CompilerFlags
                     );
+
+                    if(!compilerArgs.NoWarnings && warnings != null && (warningIndex == -1 || warningIndex > index))
+                    {
+                        lock(baseMacroLUT) // just using it to lock
+                        {
+                            warningIndex = index;
+                            warningMacros = compilerMacros;
+                            outWarnings = warnings;
+                        }
+                    }
                 }
                 catch(Exception exception)
                 {
-                    string macroMessage = string.Empty;
-
-                    foreach(ShaderMacro item in macros)
-                    {
-                        if(!string.IsNullOrEmpty(item.Name))
-                        {
-                            macroMessage += $"  {item.Name}={item.Definition}\n";
-                        }
-                    }
-
-                    if(string.IsNullOrEmpty(macroMessage))
-                    {
-                        macroMessage = "No macros used";
-                    }
-                    else
-                    {
-                        macroMessage = "\nMacros used:\n" + macroMessage[..^1];
-                    }
-
-                    throw new CompilerException(index, "Compiling shader failed! " + macroMessage, exception);
+                    throw new CompilerException(index, "Compiling shader failed! " + MacroMessage(compilerMacros), exception);
                 }
 
 
@@ -169,7 +166,16 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 throw throwException;
             }
 
-            Console.WriteLine();
+            if(outWarnings != null)
+            {
+                Console.WriteLine($"Warnings appeared during HLSL compilation. {MacroMessage(warningMacros!)}");
+                Console.WriteLine(outWarnings);
+            }
+            else
+            {
+                Console.WriteLine();
+            }
+
             Console.WriteLine("Comparing permutations...");
 
             List<ReadOnlyMemory<byte>> variants = [];
@@ -198,6 +204,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 permutations[i] = foundIndex;
             }
 
+            
             Console.WriteLine($"Shader contains a total of {variants.Count} variants");
             Console.WriteLine();
 
@@ -222,9 +229,41 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                 }
             }
 
+
             Console.WriteLine("Compiling finished!");
-            Console.WriteLine();
+
             output.Write(Path.Combine(compilerArgs.OutputDirectory, compilerArgs.OutputFile));
+        }
+
+        private static string MacroMessage(IEnumerable<ShaderMacro> macros)
+        {
+            string result = string.Empty;
+
+            foreach(ShaderMacro item in macros)
+            {
+                if(!string.IsNullOrEmpty(item.Name))
+                {
+                    if(string.IsNullOrEmpty(item.Definition))
+                    {
+                        result += $"  {item.Name}\n";
+                    }
+                    else
+                    {
+                        result += $"  {item.Name}={item.Definition}\n";
+                    }
+                }
+            }
+
+            if(string.IsNullOrEmpty(result))
+            {
+                result = "No macros used";
+            }
+            else
+            {
+                result = "\nMacros used:\n" + result[..^1] + "\n";
+            }
+
+            return result;
         }
 
         [GeneratedRegex(@"^ *static const uint FEATURE_([A-Za-z0-9_]*) *; *$", RegexOptions.Multiline)]

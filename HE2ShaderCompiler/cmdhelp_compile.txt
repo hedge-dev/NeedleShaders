@@ -21,6 +21,9 @@ Additionally, 2 automatic shader macros will be added before compilation:
 <TYPE> and <Type> will be set to the shader type being compiled to (Vertex, Pixel or Compute).
 These can be disabled using -nostd.
 
+Once compilation is finished the warnings of the earliest compiled permutation with warnings will 
+be printed to the console. Those can be disabled using -nowarn.
+
 -------------------------------------------------
 
 options:
@@ -36,6 +39,7 @@ options:
     -D <macro>=<text>   Define macro
 	-D <macro>			Define macro (no value)
     -nostd              Disable automatic shader type macros "IS_<TYPE>_SHADER" and "SHADER_TYPE"
+	-nowarn				Don't display warnings
 
     -Od                 disable optimizations
     -Op                 disable preshaders
