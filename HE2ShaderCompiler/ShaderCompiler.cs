@@ -151,10 +151,10 @@ namespace HedgeDev.Shaders.HE2.Compiler
             int compileFinishedCount = 0;
 
             int consoleTop = 0;
-
             if(_consoleOutput)
             {
-                (_, consoleTop) = Console.GetCursorPosition();
+                consoleTop = Console.GetCursorPosition().Top;
+                Console.SetCursorPosition(0, consoleTop);
                 Console.WriteLine($"0 of {permutationCount} permutations compiled");
             }
 
@@ -164,8 +164,40 @@ namespace HedgeDev.Shaders.HE2.Compiler
             ShaderMacro[]? warningMacros = null;
             string? outWarnings = null;
 
+            int statusWidth = 0, statusRows = 0;
+
+            if(_consoleOutput && features.Length > 0)
+            {
+                Console.WriteLine();
+
+                statusWidth = int.Min(32, (int)Math.Pow(2, MathF.Ceiling((features.Length + 1) / 2f)));
+                statusRows = permutationCount / statusWidth;
+
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                for(int i = 0; i < statusRows; i++)
+                {
+                    Console.WriteLine(new string('.', statusWidth));
+                }
+
+                Console.ResetColor();
+            }
+
+
             void CompilePermutation(int index)
             {
+                if(_consoleOutput)
+                {
+                    lock(baseMacroLUT) // just for locking
+                    {
+                        int row = index / statusWidth;
+                        int column = index % statusWidth;
+                        Console.SetCursorPosition(column, row + consoleTop + 2);
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.Write('▬');
+                        Console.ResetColor();
+                    }
+                }
+
                 List<ShaderMacro> macros = new(_baseMacros);
 
                 for(int j = 0; j < features.Length; j++)
@@ -226,8 +258,18 @@ namespace HedgeDev.Shaders.HE2.Compiler
 
                     if(_consoleOutput)
                     {
-                        Console.SetCursorPosition(0, consoleTop);
-                        Console.WriteLine($"{compileFinishedCount} of {permutationCount} permutations compiled");
+                        lock(baseMacroLUT) // just for locking
+                        {
+                            Console.SetCursorPosition(0, consoleTop);
+                            Console.WriteLine($"{compileFinishedCount} of {permutationCount} permutations compiled");
+
+                            int row = index / statusWidth;
+                            int column = index % statusWidth;
+                            Console.SetCursorPosition(column, consoleTop + 2 + row);
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.Write('■');
+                            Console.ResetColor();
+                        }
                     }
 
                     _log?.Invoke($"Compiled permutation no. {index + 1}");
@@ -252,7 +294,8 @@ namespace HedgeDev.Shaders.HE2.Compiler
 
                 throw throwException;
             }
-
+            
+            Console.SetCursorPosition(0, consoleTop + 2 + statusRows);
             Log();
 
             if(outWarnings != null)
