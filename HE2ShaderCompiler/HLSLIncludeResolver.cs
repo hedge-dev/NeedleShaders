@@ -12,6 +12,18 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             _sourcePath = Path.GetFullPath(sourcePath);
         }
 
+        public static IncludeResolver? CreateForSource(string sourceName)
+        {
+            try
+            {
+                return new(sourceName);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public Stream Open(IncludeType type, string fileName, Stream? parentStream)
         {
             if(type == IncludeType.System)
