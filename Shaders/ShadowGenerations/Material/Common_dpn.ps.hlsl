@@ -30,12 +30,12 @@ PixelOutput main(const PixelInput input)
     ComputeInstanceAlbedoHSVShift(parameters);
     parameters.albedo = LinearToSrgb(parameters.albedo);
 
-    if(!IsVATEnabled())
+    if(!VertexColorIsVATDirection())
     {
         parameters.albedo *= input.color.rgb;
     }
 
-    AlphaThresholdDiscard(parameters);
+    AlphaThresholdDiscard(parameters, false);
 
     //////////////////////////////////////////////////
     // Normals

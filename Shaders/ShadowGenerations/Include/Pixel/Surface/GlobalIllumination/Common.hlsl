@@ -18,14 +18,19 @@
 //////////////////////////////////////////////////
 // Textures
 
-#ifdef is_use_gi_sg
-	Texture2DArray<float4> WithSampler(gi_texture);
-	#define SampleGITexture(xy, z) SampleTexture(gi_texture, float3(xy, z))
-	#define SampleGITextureLevel(xy, z, level) SampleTextureLevel(gi_texture, float3(xy, z), level)
+#ifdef is_use_gi
+	#ifdef is_use_gi_sg
+		Texture2DArray<float4> WithSampler(gi_texture);
+		#define SampleGITexture(xy, z) SampleTexture(gi_texture, float3(xy, z))
+		#define SampleGITextureLevel(xy, z, level) SampleTextureLevel(gi_texture, float3(xy, z), level)
+	#else
+		Texture2D<float4> WithSampler(gi_texture);
+		#define SampleGITexture(xy, z) SampleTexture(gi_texture, xy)
+		#define SampleGITextureLevel(xy, z, level) SampleTextureLevel(gi_texture, xy, level)
+	#endif
 #else
-	Texture2D<float4> WithSampler(gi_texture);
-	#define SampleGITexture(xy, z) SampleTexture(gi_texture, xy)
-	#define SampleGITextureLevel(xy, z, level) SampleTextureLevel(gi_texture, xy, level)
+	#define SampleGITexture(xy, z) float4(1.0, 1.0, 1.0, 1.0)
+	#define SampleGITextureLevel(xy, z, level) float4(1.0, 1.0, 1.0, 1.0)
 #endif
 
 //////////////////////////////////////////////////
@@ -71,7 +76,7 @@ bool IsAOGIEnabled()
 	// - DebugGITex_SGGI_ONLY
 	// - DebugGITex_AOLF_OCCRATE
 
-	uint gi_disable_type = GetDebugGITexDisableType();
+	int gi_disable_type = GetDebugGITexDisableType();
 	return UsingAOGI && (
 		gi_disable_type == DebugGITex_DisableNone
 		|| gi_disable_type == DebugGITex_DisableSGGI
@@ -87,7 +92,7 @@ bool IsSGGIEnabled()
 	// - DebugGITex_DISABLE_ALL
 	// (No idea why the other "only" modes are not included)
 
-	uint gi_disable_type = GetDebugGITexDisableType();
+	int gi_disable_type = GetDebugGITexDisableType();
 	return UsingSGGI && !(
 		gi_disable_type == DebugGITex_DisableSGGI
 		|| gi_disable_type == DebugGITex_DisableAll
@@ -102,7 +107,7 @@ bool IsShadowGIEnabled()
 	// - DebugGITex_DISABLE_ALL
 	// - DebugGITex_AOLF_OCCRATE
 
-	uint gi_disable_type = GetDebugGITexDisableType();
+	int gi_disable_type = GetDebugGITexDisableType();
 	return UsingGI && !(
 		gi_disable_type == DebugGITex_DisableSGGI
 		|| gi_disable_type == DebugGITex_DisableAO

@@ -99,7 +99,7 @@ struct Vertex2Pixel
 		float3 light_scattering_base : TEXCOORD9;
 	#endif
 
-	#if defined(is_compute_instancing)
+	#if defined(is_compute_instancing) && (defined(enable_deferred_rendering) || defined(IS_VERTEX_SHADER))
 		// --- Compute Instance Parameters ---
 		// XYZ: HSV modifier values (range -0.5 to 0.5)
 		// W: Instance transparency

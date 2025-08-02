@@ -1,5 +1,3 @@
-#define IS_COMPUTE_SHADER
-
 // Statically enabled features
 #define enable_local_light_shadow
 #define enable_para_corr

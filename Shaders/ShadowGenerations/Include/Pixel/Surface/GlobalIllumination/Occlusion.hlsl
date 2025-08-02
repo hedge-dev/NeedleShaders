@@ -8,18 +8,23 @@
 #include "Common.hlsl"
 #include "../../TypedOcclusion.hlsl"
 
-Texture2D<float4> WithSampler(gi_shadow_texture);
+#ifdef is_use_gi
+	Texture2D<float4> WithSampler(gi_shadow_texture);
+	#define SampleGIShadowTexture(uv) SampleTexture(gi_shadow_texture, gi_uv)
+#else
+	#define SampleGIShadowTexture(uv) float4(1.0, 1.0, 1.0, 1.0)
+#endif
 
 float SampleGIOcclusion(float2 gi_uv)
 {
 	if(UsingDefaultGI)
 	{
-		return SampleTexture(gi_shadow_texture, gi_uv).x
+		return SampleGIShadowTexture(gi_uv).x
 			* SampleGITexture(gi_uv, 0.0).w;
 	}
 	else if(IsSGGIEnabled())
 	{
-		return SampleTexture(gi_shadow_texture, gi_uv).x;
+		return SampleGIShadowTexture(gi_uv).x;
 	}
 	else
 	{

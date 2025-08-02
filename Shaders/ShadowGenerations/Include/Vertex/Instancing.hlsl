@@ -73,30 +73,7 @@
 	}
 
 #elif defined(is_instancing)
-
 	#include "../ConstantBuffer/Instancing.hlsl"
-
-	struct InstanceParameters
-	{
-		float4x4 instance_matrix;
-	};
-
-	InstanceParameters GetInstanceParameters(uint instance_index)
-	{
-		InstanceParameters result;
-
-		int offset = instance_index * 5;
-
-		result.instance_matrix = float4x4(
-			instancing_data_packed[offset].xyz, 0,
-			instancing_data_packed[offset + 1].xyz, 0,
-			instancing_data_packed[offset + 2].xyz, 0,
-			instancing_data_packed[offset + 3].xyz, 1
-		);
-
-		return result;
-	}
-
 #endif
 
 #endif

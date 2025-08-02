@@ -62,7 +62,7 @@
 
 		float3 prev_normal_discard;
 
-		if(u_vat_type.x > 0)
+		if(VertexColorIsVATDirection())
 		{
 			ComputeVAT2Values(vat_uv.xy, color, position, normal);
 			ComputeVAT2Values(vat_uv.zw, color, previous_position, prev_normal_discard);

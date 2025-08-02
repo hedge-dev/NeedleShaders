@@ -22,9 +22,10 @@
 
 #include "../ConstantBuffer/World.hlsl"
 #include "../ConstantBuffer/MaterialImmutable.hlsl"
+#include "../ConstantBuffer/MaterialAnimation.hlsl"
 
 #include "../Texture.hlsl"
-#include "../VAT.hlsl"
+#include "../ColorConversion.hlsl"
 
 #include "Normals.hlsl"
 

@@ -90,21 +90,21 @@ SGLightFieldInfo ComputeSGLightFieldInfo(float4 world_position, float3 world_nor
 	switch(result.data.index)
 	{
 		case 0:
-			for(int i0 = 0; i0 < 6; i0++)
+			[unroll] for(int i0 = 0; i0 < 6; i0++)
 			{
 				result.axis_colors[i0] = SampleLightField(0);
 				sample_position += tile_width;
 			}
 			break;
 		case 1:
-			for(int i1 = 0; i1 < 6; i1++)
+			[unroll] for(int i1 = 0; i1 < 6; i1++)
 			{
 				result.axis_colors[i1] = SampleLightField(1);
 				sample_position += tile_width;
 			}
 			break;
 		default:
-			for(int i2 = 0; i2 < 6; i2++)
+			[unroll] for(int i2 = 0; i2 < 6; i2++)
 			{
 				result.axis_colors[i2] = SampleLightField(2);
 				sample_position += tile_width;

@@ -102,6 +102,8 @@ void ComputeSGGIColors(SurfaceParameters parameters, out float3 diffuse, out flo
 {
 	if(!IsSGGIEnabled())
 	{
+		diffuse = 0.0;
+		specular = 0.0;
 		return;
 	}
 
