@@ -185,7 +185,7 @@ namespace HedgeDev.Shaders.HE2.Compiler
 
             void CompilePermutation(int index)
             {
-                if(_consoleOutput)
+                if(_consoleOutput && features.Length > 0)
                 {
                     lock(baseMacroLUT) // just for locking
                     {
@@ -263,12 +263,15 @@ namespace HedgeDev.Shaders.HE2.Compiler
                             Console.SetCursorPosition(0, consoleTop);
                             Console.WriteLine($"{compileFinishedCount} of {permutationCount} permutations compiled");
 
-                            int row = index / statusWidth;
-                            int column = index % statusWidth;
-                            Console.SetCursorPosition(column, consoleTop + 2 + row);
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.Write('■');
-                            Console.ResetColor();
+                            if(features.Length > 0)
+                            {
+                                int row = index / statusWidth;
+                                int column = index % statusWidth;
+                                Console.SetCursorPosition(column, consoleTop + 2 + row);
+                                Console.ForegroundColor = ConsoleColor.Green;
+                                Console.Write('■');
+                                Console.ResetColor();
+                            }
                         }
                     }
 
@@ -294,8 +297,11 @@ namespace HedgeDev.Shaders.HE2.Compiler
 
                 throw throwException;
             }
-            
-            Console.SetCursorPosition(0, consoleTop + 2 + statusRows);
+
+            if(_consoleOutput)
+            {
+                Console.SetCursorPosition(0, consoleTop + (features.Length > 0 ? 2 : 1) + statusRows);
+            }
             Log();
 
             if(outWarnings != null)
