@@ -29,4 +29,9 @@ cbuffer cbMaterialDynamic : register(b2)
     bool u_disable_max_bone_influences_8;
 }
 
+bool VertexColorIsVATDirection()
+{
+	return u_vat_type.x > 0;
+}
+
 #endif

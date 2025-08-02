@@ -79,7 +79,8 @@ float ComputeProbeInfluence(EnvProbeData probe, float4 position)
 			result = length(position.xyz - probe.position) / probe.radius;
 			break;
 		default:
-			return 1.0;
+			result = 1.0;
+            break;
 	}
 
 	if(result >= 0.99)

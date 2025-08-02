@@ -20,6 +20,9 @@ uint DebugBeforeFog(
 	inout float3 out_direct,
 	inout float out_alpha)
 {
+
+	uint result = DebugBeforeFogResult_Clear;
+
 	switch(GetDebugView())
 	{
 		case DebugView_DirDiffuse:
@@ -78,7 +81,8 @@ uint DebugBeforeFog(
 			{
 				out_alpha = 0.0;
 			}
-			return DebugBeforeFogResult_Leave;
+			result = DebugBeforeFogResult_Leave;
+			break;
 
 		case DebugView_WriteDepthToAlpha:
 			// the way its implemented here is different from the original...
@@ -91,13 +95,15 @@ uint DebugBeforeFog(
 			// ~ Justin113D
 
 			out_alpha = parameters.depth;
-			return DebugBeforeFogResult_Leave;
+			result = DebugBeforeFogResult_Leave;
+			break;
 
 		default:
-			return DebugBeforeFogResult_None;
+			result = DebugBeforeFogResult_None;
+			break;
 	}
 
-	return DebugBeforeFogResult_Clear;
+	return result;
 }
 
 void DebugLocalLight(LightingParameters parameters, int type, inout float3 out_direct)
@@ -146,6 +152,8 @@ bool DebugAfterFog(
 	float3 indirect_color,
 	inout float3 out_direct)
 {
+	bool result = true;
+
 	switch(GetDebugView())
 	{
 		case DebugView_User0: break;
@@ -272,10 +280,11 @@ bool DebugAfterFog(
 			break;
 
 		default:
-			return false;
+			result = false;
+			break;
 	}
 
-	return true;
+	return result;
 }
 
 #endif

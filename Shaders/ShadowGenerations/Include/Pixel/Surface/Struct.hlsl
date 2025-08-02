@@ -25,7 +25,7 @@ struct SurfaceParameters
 
 	float3 fresnel_reflectance;
 
-	int2 pixel_position;
+	uint2 pixel_position;
 	float3 previous_position;
 	float4 world_position;
 
@@ -79,7 +79,7 @@ SurfaceParameters InitSurfaceParameters()
 
 void SetupSurfaceParamFromInput(PixelInput input, inout SurfaceParameters parameters)
 {
-    parameters.pixel_position = (int2)input.position.xy;
+    parameters.pixel_position = (uint2)input.position.xy;
 	parameters.instance_index = (int)round(input.binormal_orientation.y);
 
     parameters.world_position = WorldPosition4(input);

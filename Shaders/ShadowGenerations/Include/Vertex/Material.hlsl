@@ -122,7 +122,7 @@ VertexOutput SetupVertexOutput(const VertexInput input)
 
 	#elif defined(is_instancing)
 		result.binormal_orientation.y = input.instance_id;
-		InstanceParameters ip = GetInstanceParameters(input.instance_id);
+		InstanceData ip = GetInstanceData(input.instance_id);
 
 		local_world_matrix = mul(ip.instance_matrix, local_world_matrix);
 		previous_local_input.position.xyz = TransformPosition3(previous_local_input.position.xyz, ip.instance_matrix);

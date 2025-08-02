@@ -9,6 +9,8 @@
 #include "../../Math.hlsl"
 #include "Struct.hlsl"
 
+#ifdef IS_COMPUTE_SHADER
+
 static groupshared int shared_variable;
 RWByteAddressBuffer rw_indirectSSSSDrawArguments : register(u2);
 RWStructuredBuffer<int> rw_IndirectSSSSTiles : register(u3);
@@ -38,6 +40,8 @@ void ComputeSSSSTile(uint shading_model, uint groupIndex, uint2 groupThreadId)
 		rw_IndirectSSSSTiles[index / 6] = (uint)(groupThreadId.y * 0x00010000 + groupThreadId.x);
 	}
 }
+
+#endif
 
 float4 ssss_param;
 float4 ssss_colors[16];

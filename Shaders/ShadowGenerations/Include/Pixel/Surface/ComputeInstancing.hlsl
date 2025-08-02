@@ -7,31 +7,28 @@
 	DefineFeature(is_compute_instancing);
 #endif
 
-#include "../../ColorConversion.hlsl"
-#include "../Dithering.hlsl"
 #include "Struct.hlsl"
 
 #if defined(is_compute_instancing) && defined(enable_deferred_rendering)
-	#define IsComputeInstancingEnabled true
-#else
-	#define IsComputeInstancingEnabled false
-#endif
 
+	#include "../../ColorConversion.hlsl"
+	#include "../Dithering.hlsl"
 
-void ComputeInstanceDithering(SurfaceParameters parameters)
-{
-	if(IsComputeInstancingEnabled)
+	void ComputeInstanceDithering(SurfaceParameters parameters)
 	{
-        DiscardDithering(parameters.pixel_position, parameters.compute_instance_parameters.w);
+		DiscardDithering(parameters.pixel_position, parameters.compute_instance_parameters.w);
 	}
-}
 
-void ComputeInstanceAlbedoHSVShift(inout SurfaceParameters parameters)
-{
-	if(IsComputeInstancingEnabled)
+	void ComputeInstanceAlbedoHSVShift(inout SurfaceParameters parameters)
 	{
 		parameters.albedo = HSVtoRGB(RGBtoHSV(parameters.albedo) + parameters.compute_instance_parameters.xyz);
 	}
-}
+
+#else
+	void ComputeInstanceDithering(SurfaceParameters parameters) { };
+	void ComputeInstanceAlbedoHSVShift(inout SurfaceParameters parameters) { };
+#endif
+
+
 
 #endif

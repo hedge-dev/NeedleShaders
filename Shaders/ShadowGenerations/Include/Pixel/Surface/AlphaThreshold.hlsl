@@ -7,43 +7,49 @@
 	DefineFeature(enable_alpha_threshold);
 #endif
 
-#include "../../ConstantBuffer/Instancing.hlsl"
-#include "../Dithering.hlsl"
 #include "Struct.hlsl"
 
+
 #if defined(enable_alpha_threshold) && defined(enable_deferred_rendering)
-    #define IsAlphaThresholdEnabled true
+
+    #include "../../ConstantBuffer/Instancing.hlsl"
+    #include "../Dithering.hlsl"
+
+    void AlphaThresholdDiscard(SurfaceParameters parameters, bool blue_noise)
+    {
+        float transparency = parameters.transparency * GetInstanceData(parameters.instance_index).transparency;
+
+        if(transparency < g_alphathreshold.x)
+        {
+            transparency = 0.0;
+        }
+
+        // apply viewport transparency
+        transparency *= dot(u_current_viewport_mask, u_forcetrans_param);
+
+        float dither;
+        if(blue_noise)
+        {
+            dither = ComputeBlueNoise(parameters.pixel_position);
+        }
+        else
+        {
+            dither = SampleDither(parameters.pixel_position);
+        }
+
+        transparency -= dither * 0.98 + 0.01;
+
+        if(transparency < 0.0)
+        {
+            discard;
+        }
+    }
+
 #else
-    #define IsAlphaThresholdEnabled false
+    void AlphaThresholdDiscard(SurfaceParameters parameters, bool blue_noise) { };
 #endif
 
 
-float GetInstanceOpacity(int instance_index)
-{
-    if(instance_index <= 0)
-    {
-		return 1.0f;
-    }
 
-	int packed_instance_index = instance_index * 5 + 4;
-	return instancing_data_packed[packed_instance_index].w;
-}
-
-void AlphaThresholdDiscard(SurfaceParameters parameters)
-{
-    if(!IsAlphaThresholdEnabled)
-    {
-        return;
-    }
-
-    float transparency = parameters.transparency * GetInstanceOpacity(parameters.instance_index);
-
-    if(transparency < g_alphathreshold.x)
-    {
-        discard;
-    }
-
-    ViewportTransparencyDiscardDithering(parameters.pixel_position);
-}
 
 #endif
