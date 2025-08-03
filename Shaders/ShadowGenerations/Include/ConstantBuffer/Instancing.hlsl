@@ -17,18 +17,13 @@ InstanceData GetInstanceData(int instance_index)
 {
     InstanceData result;
 
-    if(instance_index <= 0)
-    {
-        result.instance_matrix = float4x4(
-            1,0,0,0,
-            0,1,0,0,
-            0,0,1,0,
-            0,0,0,1
-        );
+    bool instancing_check = instance_index >= 0;
 
-        result.transparency = 1.0;
-    }
-    else
+    #ifdef is_instancing
+        instancing_check = true;
+    #endif
+
+    if(instancing_check)
     {
         int offset = instance_index * 5;
         result.instance_matrix = float4x4(
@@ -39,6 +34,17 @@ InstanceData GetInstanceData(int instance_index)
 		);
 
         result.transparency = instancing_data_packed[offset + 4].w;
+    }
+    else
+    {
+        result.instance_matrix = float4x4(
+            1,0,0,0,
+            0,1,0,0,
+            0,0,1,0,
+            0,0,0,1
+        );
+
+        result.transparency = 1.0;
     }
 
     return result;
