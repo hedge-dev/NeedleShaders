@@ -36,7 +36,7 @@ PixelOutput main(const PixelInput input)
         parameters.albedo *= input.color.rgb;
     }
 
-    AlphaThresholdDiscard(parameters, false);
+    TransparencyDitherDiscardW(parameters);
 
     //////////////////////////////////////////////////
     // Normals
@@ -45,7 +45,7 @@ PixelOutput main(const PixelInput input)
     float3 world_tangent = normalize(input.world_tangent.xyz);
     float3 world_binormal = normalize(cross(world_normal, world_tangent) * input.binormal_orientation.x);
 
-    float4 normal_texture = SampleUV2(normal);
+    float4 normal_texture = SampleUV0(normal);
     parameters.normal = UnpackNormalMapToWorldSpaceSafe(normal_texture.xy, world_normal, world_tangent, world_binormal);
     parameters.debug_normal = world_normal;
 
@@ -59,7 +59,7 @@ PixelOutput main(const PixelInput input)
 	// Mask
 
 	float mask = SampleUV0(diffuse1).x;
-	parameters.albedo = lerp(parameters.albedo, diffuse_color.xyz, mask);
+	parameters.albedo = lerp(parameters.albedo, parameters.albedo * diffuse_color.xyz, mask);
 
     //////////////////////////////////////////////////
 
