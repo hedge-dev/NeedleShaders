@@ -35,7 +35,7 @@ PixelOutput main(const PixelInput input)
         parameters.albedo *= input.color.rgb;
     }
 
-    AlphaThresholdDiscard(parameters, true);
+    NoiseDitherDiscardZ(parameters);
 
     //////////////////////////////////////////////////
     // Normals

@@ -33,7 +33,7 @@ PixelOutput main(const PixelInput input)
         parameters.albedo *= input.color.rgb;
     }
 
-    AlphaThresholdDiscard(parameters, false);
+    TransparencyDitherDiscardW(parameters);
 
     //////////////////////////////////////////////////
     // Normals

@@ -15,28 +15,17 @@
     #include "../../ConstantBuffer/Instancing.hlsl"
     #include "../Dithering.hlsl"
 
-    void AlphaThresholdDiscard(SurfaceParameters parameters, bool blue_noise)
+    void AlphaThresholdDiscard(SurfaceParameters parameters, float threshold, float dither)
     {
         float transparency = parameters.transparency * GetInstanceData(parameters.instance_index).transparency;
 
-        if(transparency < g_alphathreshold.x)
+        if(transparency < threshold)
         {
             transparency = 0.0;
         }
 
         // apply viewport transparency
         transparency *= dot(u_current_viewport_mask, u_forcetrans_param);
-
-        float dither;
-        if(blue_noise)
-        {
-            dither = ComputeBlueNoise(parameters.pixel_position);
-        }
-        else
-        {
-            dither = SampleDither(parameters.pixel_position);
-        }
-
         transparency -= dither * 0.98 + 0.01;
 
         if(transparency < 0.0)
@@ -45,8 +34,24 @@
         }
     }
 
+    // W = Uses the world buffers g_alphathreshold.x
+    void TransparencyDitherDiscardW(SurfaceParameters parameters)
+    {
+        float dither = SampleDither(parameters.pixel_position);
+        AlphaThresholdDiscard(parameters, g_alphathreshold.x, dither);
+    }
+
+    // Z = Uses zero for the threshold
+    void NoiseDitherDiscardZ(SurfaceParameters parameters)
+    {
+        float noise = ComputeBlueNoise(parameters.pixel_position);
+        AlphaThresholdDiscard(parameters, 0, noise);
+    }
+
 #else
-    void AlphaThresholdDiscard(SurfaceParameters parameters, bool blue_noise) { };
+    void AlphaThresholdDiscard(SurfaceParameters parameters, float threshold, float dither) { }
+    void TransparencyDitherDiscardW(SurfaceParameters parameters) { }
+    void NoiseDitherDiscardZ(SurfaceParameters parameters) { }
 #endif
 
 
