@@ -25,17 +25,8 @@
 #include "../ConstantBuffer/MaterialAnimation.hlsl"
 
 #include "../Texture.hlsl"
-#include "../ColorConversion.hlsl"
-
-#include "Normals.hlsl"
-
-#include "Surface/PBRUtils.hlsl"
 #include "Surface/AlphaThreshold.hlsl"
-#include "Surface/ComputeInstancing.hlsl"
 #include "Surface/Common.hlsl"
-
-#include "../IOStructs.hlsl"
-#include "Surface/Struct.hlsl"
 
 #define SampleUV0(name) SampleTextureBiasedGl(name, TexUV(input.uv01.xy, name))
 #define SampleUV1(name) SampleTextureBiasedGl(name, TexUV(input.uv01.zw, name))

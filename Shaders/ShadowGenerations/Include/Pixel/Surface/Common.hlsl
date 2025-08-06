@@ -2,19 +2,106 @@
 #define COMMON_SURFACE_INCLUDED
 
 #include "../../ConstantBuffer/World.hlsl"
+#include "../../ColorConversion.hlsl"
 #include "../../Debug.hlsl"
 #include "../ShadowCascade.hlsl"
+#include "../Normals.hlsl"
 
 #include "Struct.hlsl"
-#include "Weather.hlsl"
-#include "MotionBlur.hlsl"
 
+#include "ComputeInstancing.hlsl"
 #include "GlobalIllumination/Base.hlsl"
 #include "GlobalIllumination/AmbientOcclusion.hlsl"
 #include "GlobalIllumination/Occlusion.hlsl"
+#include "LuminanceNoise.hlsl"
+
+#include "Weather.hlsl"
+#include "MotionBlur.hlsl"
+
+SurfaceParameters CreateCommonSurface(PixelInput input, uint shading_model_type, bool is_vegetation)
+{
+    SurfaceParameters parameters = InitSurfaceParameters();
+    SetupSurfaceParamFromInput(input, parameters);
+    parameters.shading_model = ShadingModelFromCB(shading_model_type, false);
+
+    ComputeInstanceDithering(parameters);
+
+    return parameters;
+}
+
+void SetupCommonAlbedoTransparency(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency, float transparency)
+{
+    parameters.albedo = albedo_transparency.rgb;
+    parameters.transparency = albedo_transparency.a * transparency;
+
+    ComputeInstanceAlbedoHSVShift(parameters);
+    parameters.albedo = LinearToSrgb(parameters.albedo);
+
+    if(!VertexColorIsVATDirection())
+    {
+        parameters.albedo *= input.color.rgb;
+    }
+}
+
+void SetupCommonAlbedoTransparency(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency)
+{
+    SetupCommonAlbedoTransparency(parameters, input, albedo_transparency, 1.0);
+}
+
+/// ICA = input.color.a (use vertex color alpha for transparency)
+void SetupCommonAlbedoTransparencyICA(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency, float transparency)
+{
+    SetupCommonAlbedoTransparency(parameters, input, albedo_transparency, transparency * input.color.a);
+}
+
+void SetupCommonAlbedoTransparencyICA(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency)
+{
+    SetupCommonAlbedoTransparencyICA(parameters, input, albedo_transparency, 1.0);
+}
+
+void SetupCommonNormal(inout SurfaceParameters parameters, PixelInput input)
+{
+    NormalDirections world_dirs = ComputeWorldNormalDirs(input);
+    parameters.normal = world_dirs.normal;
+    parameters.debug_normal = world_dirs.normal;
+}
+
+void SetupCommonNormalMap(inout SurfaceParameters parameters, PixelInput input, float2 normal_map)
+{
+    NormalDirections world_dirs = ComputeWorldNormalDirs(input);
+    parameters.normal = UnpackNormalMapSafe(normal_map, world_dirs);
+    parameters.debug_normal = world_dirs.normal;
+}
+
+void SetupCommonPRM(inout SurfaceParameters parameters, float4 prm)
+{
+	parameters.specular = prm.x;
+	parameters.roughness = max(0.01, 1.0 - prm.y);
+	parameters.metallic = prm.z;
+	parameters.cavity = prm.w;
+
+	parameters.fresnel_reflectance = lerp(
+		parameters.specular,
+		parameters.albedo,
+		parameters.metallic
+	);
+}
+
+void SetupCommonPRMTexture(inout SurfaceParameters parameters, float4 prm)
+{
+    prm.x *= 0.25;
+    SetupCommonPRM(parameters, prm);
+}
+
+void SetupCommonPBRFactor(inout SurfaceParameters parameters, float4 pbr_factor)
+{
+    SetupCommonPRM(parameters, float4(pbr_factor.xyz, 1.0));
+}
 
 void SetupCommonSurface(inout SurfaceParameters parameters)
 {
+    parameters.emission += ComputeLuminanceNoise(parameters.world_position.xyz);
+
     switch(GetDebugView())
     {
         case DebugView_OnlyIblSurfNormal:

@@ -1,3 +1,8 @@
+/////////////////////////////////////////////////
+// Excluded Default features
+#define u_model_user_flag_0
+/////////////////////////////////////////////////
+
 #include "../Include/Pixel/Material.hlsl"
 
 MaterialImmutables
@@ -11,44 +16,25 @@ Texture2D<float4> WithSampler(specular);
 
 PixelOutput main(const PixelInput input)
 {
-    SurfaceParameters parameters = InitSurfaceParameters();
-    SetupSurfaceParamFromInput(input, parameters);
-    parameters.shading_model = ShadingModelFromCB(ShadingModelType_Default, false);
+    //////////////////////////////////////////////////
+    // Surface setup
 
-    ComputeInstanceDithering(parameters);
+    SurfaceParameters parameters = CreateCommonSurface(
+        input, ShadingModelType_Default, false);
 
     //////////////////////////////////////////////////
-    // Albedo Color
+    // Surface parameters
 
     float4 diffuse_texture = SampleUV0(diffuse);
-    parameters.albedo = diffuse_texture.rgb;
-    parameters.transparency = diffuse_texture.a * input.color.a;
+    float4 specular_texture = SampleUV0(specular);
 
-    ComputeInstanceAlbedoHSVShift(parameters);
-    parameters.albedo = LinearToSrgb(parameters.albedo);
-
-    if(!VertexColorIsVATDirection())
-    {
-        parameters.albedo *= input.color.rgb;
-    }
-
+    SetupCommonAlbedoTransparencyICA(parameters, input, diffuse_texture);
     TransparencyDitherDiscardW(parameters);
+    SetupCommonNormal(parameters, input);
+    SetupCommonPRMTexture(parameters, specular_texture);
 
     //////////////////////////////////////////////////
-    // Normals
-
-    float3 world_normal = normalize(input.world_normal.xyz);
-
-    parameters.normal = world_normal;
-    parameters.debug_normal = world_normal;
-
-    //////////////////////////////////////////////////
-    // PBR Parameters
-
-    float4 prm = SampleUV0(specular);
-    ApplyPRMTexture(parameters, prm);
-
-    //////////////////////////////////////////////////
+    // Output
 
     SetupCommonSurface(parameters);
 	return ProcessSurface(input, parameters);

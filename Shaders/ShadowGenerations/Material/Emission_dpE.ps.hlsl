@@ -1,5 +1,6 @@
 /////////////////////////////////////////////////
 // Excluded Default features
+#define no_is_compute_instancing
 #define u_model_user_flag_0
 /////////////////////////////////////////////////
 
@@ -8,15 +9,14 @@
 MaterialImmutables
 {
     UVInput(diffuse)
-	UVInput(diffuse1)
     UVInput(specular)
-    UVInput(normal)
+    UVInput(emission)
+    float4 Luminance;
 }
 
 Texture2D<float4> WithSampler(diffuse);
-Texture2D<float4> WithSampler(diffuse1);
 Texture2D<float4> WithSampler(specular);
-Texture2D<float4> WithSampler(normal);
+Texture2D<float4> WithSampler(emission);
 
 PixelOutput main(const PixelInput input)
 {
@@ -30,22 +30,21 @@ PixelOutput main(const PixelInput input)
     // Surface parameters
 
     float4 diffuse_texture = SampleUV0(diffuse);
-    float4 diffuse1_texture = SampleUV0(diffuse1);
     float4 specular_texture = SampleUV0(specular);
-    float4 normal_texture = SampleUV0(normal);
+    float4 emission_texture = SampleUV2(emission);
 
     SetupCommonAlbedoTransparencyICA(parameters, input, diffuse_texture);
     TransparencyDitherDiscardW(parameters);
-    SetupCommonNormalMap(parameters, input, normal_texture.xy);
+    SetupCommonNormal(parameters, input);
     SetupCommonPRMTexture(parameters, specular_texture);
 
-	parameters.albedo = lerp(
-        parameters.albedo,
-        parameters.albedo * diffuse_color.xyz,
-        diffuse1_texture.x
-    );
+    parameters.emission =
+        emission_texture.xyz
+        * ambient_color.xyz
+        * Luminance.x;
 
     //////////////////////////////////////////////////
+    // Output
 
     SetupCommonSurface(parameters);
 	return ProcessSurface(input, parameters);
