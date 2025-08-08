@@ -33,7 +33,7 @@ PixelOutput main(const PixelInput input)
     float4 emission_texture = SampleUV2(emission);
     float4 transparency_texture = SampleUV3(transparency);
 
-    SetupCommonAlbedoTransparency(parameters, input, diffuse_texture);
+    SetupCommonAlbedoTransparencyVC(parameters, input, diffuse_texture);
     TransparencyDitherDiscardW(parameters);
     SetupCommonNormalMap(parameters, input, normal_texture.xy);
     SetupCommonPRMTexture(parameters, specular_texture);

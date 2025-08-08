@@ -29,7 +29,7 @@ PixelOutput main(const PixelInput input)
     float4 normal_texture = SampleUV2(normal);
     float4 transparency_texture = SampleUV3(transparency);
 
-    SetupCommonAlbedoTransparencyICA(parameters, input, diffuse_texture, transparency_texture.x);
+    SetupCommonAlbedoTransparencyVCA(parameters, input, diffuse_texture, transparency_texture.x);
     TransparencyDitherDiscardW(parameters);
     SetupCommonNormalMap(parameters, input, normal_texture.xy);
     SetupCommonPRMTexture(parameters, specular_texture);

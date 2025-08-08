@@ -29,6 +29,8 @@ SurfaceParameters CreateCommonSurface(PixelInput input, uint shading_model_type,
     return parameters;
 }
 
+//////////////////////////////////////////////////
+
 void SetupCommonAlbedoTransparency(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency, float transparency)
 {
     parameters.albedo = albedo_transparency.rgb;
@@ -36,11 +38,6 @@ void SetupCommonAlbedoTransparency(inout SurfaceParameters parameters, PixelInpu
 
     ComputeInstanceAlbedoHSVShift(parameters);
     parameters.albedo = LinearToSrgb(parameters.albedo);
-
-    if(!VertexColorIsVATDirection())
-    {
-        parameters.albedo *= input.color.rgb;
-    }
 }
 
 void SetupCommonAlbedoTransparency(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency)
@@ -48,16 +45,42 @@ void SetupCommonAlbedoTransparency(inout SurfaceParameters parameters, PixelInpu
     SetupCommonAlbedoTransparency(parameters, input, albedo_transparency, 1.0);
 }
 
-/// ICA = input.color.a (use vertex color alpha for transparency)
-void SetupCommonAlbedoTransparencyICA(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency, float transparency)
+void SetupCommonAlbedoTransparencyVC(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency, float transparency)
+{
+    SetupCommonAlbedoTransparency(parameters, input, albedo_transparency, transparency);
+
+    if(!VertexColorIsVATDirection())
+    {
+        parameters.albedo *= input.color.rgb;
+    }
+}
+
+void SetupCommonAlbedoTransparencyVC(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency)
+{
+    SetupCommonAlbedoTransparencyVC(parameters, input, albedo_transparency, 1.0);
+}
+
+void SetupCommonAlbedoTransparencyVCA(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency, float transparency)
+{
+    SetupCommonAlbedoTransparencyVC(parameters, input, albedo_transparency, transparency * input.color.a);
+}
+
+void SetupCommonAlbedoTransparencyVCA(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency)
+{
+    SetupCommonAlbedoTransparencyVCA(parameters, input, albedo_transparency, 1.0);
+}
+
+void SetupCommonAlbedoTransparencyVA(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency, float transparency)
 {
     SetupCommonAlbedoTransparency(parameters, input, albedo_transparency, transparency * input.color.a);
 }
 
-void SetupCommonAlbedoTransparencyICA(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency)
+void SetupCommonAlbedoTransparencyVA(inout SurfaceParameters parameters, PixelInput input, float4 albedo_transparency)
 {
-    SetupCommonAlbedoTransparencyICA(parameters, input, albedo_transparency, 1.0);
+    SetupCommonAlbedoTransparencyVA(parameters, input, albedo_transparency, 1.0);
 }
+
+//////////////////////////////////////////////////
 
 void SetupCommonNormal(inout SurfaceParameters parameters, PixelInput input)
 {
@@ -72,6 +95,8 @@ void SetupCommonNormalMap(inout SurfaceParameters parameters, PixelInput input, 
     parameters.normal = UnpackNormalMapSafe(normal_map, world_dirs);
     parameters.debug_normal = world_dirs.normal;
 }
+
+//////////////////////////////////////////////////
 
 void SetupCommonPRM(inout SurfaceParameters parameters, float4 prm)
 {
@@ -97,6 +122,8 @@ void SetupCommonPBRFactor(inout SurfaceParameters parameters, float4 pbr_factor)
 {
     SetupCommonPRM(parameters, float4(pbr_factor.xyz, 1.0));
 }
+
+//////////////////////////////////////////////////
 
 void SetupCommonSurface(inout SurfaceParameters parameters)
 {

@@ -28,7 +28,7 @@ PixelOutput main(const PixelInput input)
     float4 diffuse_texture = SampleUV0(diffuse);
     float4 specular_texture = SampleUV0(specular);
 
-    SetupCommonAlbedoTransparencyICA(parameters, input, diffuse_texture);
+    SetupCommonAlbedoTransparencyVCA(parameters, input, diffuse_texture);
     TransparencyDitherDiscardW(parameters);
     SetupCommonNormal(parameters, input);
     SetupCommonPRMTexture(parameters, specular_texture);

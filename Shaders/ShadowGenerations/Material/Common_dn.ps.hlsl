@@ -29,7 +29,7 @@ PixelOutput main(const PixelInput input)
     float4 diffuse_texture = SampleUV0(diffuse);
     float4 normal_texture = SampleUV2(normal);
 
-    SetupCommonAlbedoTransparencyICA(parameters, input, diffuse_texture);
+    SetupCommonAlbedoTransparencyVCA(parameters, input, diffuse_texture);
     TransparencyDitherDiscardW(parameters);
     SetupCommonNormalMap(parameters, input, normal_texture.xy);
     SetupCommonPBRFactor(parameters, PBRFactor);
