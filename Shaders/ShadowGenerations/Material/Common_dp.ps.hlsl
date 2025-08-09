@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////
 // Excluded Default features
-#define u_model_user_flag_0
+#define no_u_model_user_flag_0
 /////////////////////////////////////////////////
 
 #include "../Include/Pixel/Material.hlsl"
