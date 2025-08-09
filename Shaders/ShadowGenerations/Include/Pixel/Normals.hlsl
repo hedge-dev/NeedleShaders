@@ -28,35 +28,46 @@ float3 DenormalizeNormalMap(float2 normal_map)
     );
 }
 
-float3 LocalToWorldNormal(float3 local_normal, float3 world_normal, float3 world_tangent, float3 world_binormal)
+float3 TransformNormal(float3 to_transform, float3 normal, float3 tangent, float3 binormal)
 {
     return normalize(
-        local_normal.x * world_tangent
-        + local_normal.y * world_binormal
-        + local_normal.z * world_normal
+        to_transform.x * tangent
+        + to_transform.y * binormal
+        + to_transform.z * normal
     );
 }
 
-float3 UnpackNormalMap(float2 normal_map, float3 world_normal, float3 world_tangent, float3 world_binormal)
+float3 UnpackNormalMap(float2 normal_map, float3 normal, float3 tangent, float3 binormal)
 {
     float3 local_normal = DenormalizeNormalMap(normal_map);
-    return LocalToWorldNormal(local_normal, world_normal, world_tangent, world_binormal);
+
+    return TransformNormal(local_normal, normal, tangent, binormal);
 }
 
-float3 UnpackNormalMapSafe(float2 normal_map, float3 world_normal, float3 world_tangent, float3 world_binormal)
+float3 UnpackNormalMapSafe(float2 normal_map, float3 normal, float3 tangent, float3 binormal)
 {
-    float3 result = UnpackNormalMap(normal_map, world_normal, world_tangent, world_binormal);
+    float3 result = UnpackNormalMap(normal_map, normal, tangent, binormal);
 
     bool3 nan_check = result != result;
     if(nan_check.x | nan_check.y | nan_check.z)
     {
-        return world_normal;
+        return normal;
     }
     else
     {
         return result;
     }
 }
+
+float3 BlendNormals(float3 a, float3 b)
+{
+    a += float3(0, 0, 1);
+    b *= float3(-1, -1, 1);
+
+    return a * dot(a, b) / a.z - b;
+}
+
+//////////////////////////////////////////////////
 
 struct NormalDirections
 {
@@ -83,14 +94,19 @@ NormalDirections ComputeWorldNormalDirs2(PixelInput input)
     result.normal = normalize(input.world_normal.xyz);
 
     #ifdef enable_multi_tangent_space
-        result.tangent = normalize(input.world_tangent2.xyz);
-        result.binormal = normalize(cross(result.normal, result.tangent2) * input.tangent2.w);
+        result.tangent = normalize(input.world_tangent_2.xyz);
+        result.binormal = normalize(cross(result.normal, result.tangent) * input.world_tangent_2.w);
     #else
         result.tangent = normalize(input.world_tangent.xyz);
         result.binormal = normalize(cross(result.normal, result.tangent) * input.binormal_orientation.x);
     #endif
 
     return result;
+}
+
+float3 TransformNormal(float3 normal, NormalDirections directions)
+{
+    return TransformNormal(normal, directions.normal, directions.tangent, directions.binormal);
 }
 
 float3 UnpackNormalMap(float2 normal_map, NormalDirections directions)

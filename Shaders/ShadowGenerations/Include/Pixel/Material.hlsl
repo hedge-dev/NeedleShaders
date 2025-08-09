@@ -13,6 +13,12 @@
 	DefineFeature(is_use_tex_srt_anim);
 #endif
 
+#ifdef add_enable_multi_tangent_space
+	#if !defined(enable_multi_tangent_space) && !defined(enable_multi_tangent_space)
+		DefineFeature(enable_multi_tangent_space);
+	#endif
+#endif
+
 #ifndef enable_deferred_rendering
 	// Including here to get all the macros set
 	#include "Lighting/CompositeMaterial.hlsl"
@@ -28,10 +34,16 @@
 #include "Surface/AlphaThreshold.hlsl"
 #include "Surface/Common.hlsl"
 
-#define SampleUV0(name) SampleTextureBiasedGl(name, TexUV(input.uv01.xy, name))
-#define SampleUV1(name) SampleTextureBiasedGl(name, TexUV(input.uv01.zw, name))
-#define SampleUV2(name) SampleTextureBiasedGl(name, TexUV(input.uv23.xy, name))
-#define SampleUV3(name) SampleTextureBiasedGl(name, TexUV(input.uv23.zw, name))
+#define UV0 input.uv01.xy
+#define UV1 input.uv01.zw
+#define UV2 input.uv23.xy
+#define UV3 input.uv23.zw
+
+#define SampleUV(name, uv) SampleTextureBiasedGl(name, TexUV(uv, name))
+#define SampleUV0(name) SampleUV(name, UV0)
+#define SampleUV1(name) SampleUV(name, UV1)
+#define SampleUV2(name) SampleUV(name, UV2)
+#define SampleUV3(name) SampleUV(name, UV3)
 
 #ifdef enable_deferred_rendering
 

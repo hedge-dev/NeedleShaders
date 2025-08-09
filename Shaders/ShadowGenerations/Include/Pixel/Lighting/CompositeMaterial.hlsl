@@ -83,7 +83,7 @@ float4 CompositeMaterialLighting(LightingParameters parameters, float transparen
 
 	float3 ambient_color = 0.0;
 
-	if(parameters.shading_model.type != ShadingModelType_Hair && parameters.typed_occlusion.mode == OcclusionType_AOLightField)
+	if(parameters.shading_model.type != ShadingModelType_Unlit && parameters.typed_occlusion.mode == OcclusionType_AOLightField)
 	{
 		ambient_color = ComputeAmbientColor(parameters);
 		ambient_color *= 1.0 - parameters.metallic;

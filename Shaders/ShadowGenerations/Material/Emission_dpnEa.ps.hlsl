@@ -22,7 +22,7 @@ PixelOutput main(const PixelInput input)
     // Surface setup
 
     SurfaceParameters parameters = CreateCommonSurface(
-        input, ShadingModelType_Default, false);
+        input, ShadingModelType_Default);
 
     //////////////////////////////////////////////////
     // Surface parameters

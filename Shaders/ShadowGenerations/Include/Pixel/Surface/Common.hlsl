@@ -18,14 +18,25 @@
 #include "Weather.hlsl"
 #include "MotionBlur.hlsl"
 
-SurfaceParameters CreateCommonSurface(PixelInput input, uint shading_model_type, bool is_vegetation)
+SurfaceParameters CreateCommonSurface(PixelInput input)
 {
     SurfaceParameters parameters = InitSurfaceParameters();
     SetupSurfaceParamFromInput(input, parameters);
-    parameters.shading_model = ShadingModelFromCB(shading_model_type, false);
-
     ComputeInstanceDithering(parameters);
+    return parameters;
+}
 
+SurfaceParameters CreateCommonSurface(PixelInput input, uint shading_model_type, bool is_vegetation)
+{
+    SurfaceParameters parameters = CreateCommonSurface(input);
+    parameters.shading_model = ShadingModelFromCB(shading_model_type, false);
+    return parameters;
+}
+
+SurfaceParameters CreateCommonSurface(PixelInput input, uint shading_model_type)
+{
+    SurfaceParameters parameters = CreateCommonSurface(input);
+    parameters.shading_model = ShadingModelFromCB(shading_model_type);
     return parameters;
 }
 

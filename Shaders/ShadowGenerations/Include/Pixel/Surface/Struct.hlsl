@@ -46,7 +46,7 @@ struct SurfaceParameters
 SurfaceParameters InitSurfaceParameters()
 {
 	SurfaceParameters result = {
-		{ 0, false, 0 },
+		{ 0, false, 0, 0 },
 
 		{0.0, 0.0, 0.0},
 		1.0,
@@ -158,7 +158,7 @@ SurfaceData SurfaceParamToData(SurfaceParameters parameters)
     result.normal = parameters.normal * 0.5 + 0.5;
     result.velocity = parameters.velocity;
 
-    result.albedo.w = (0.5 + ShadingModelToFlags(parameters.shading_model)) / 255.0;
+    result.albedo.w = (0.5 + parameters.shading_model.as_flags) / 255.0;
 
     result.o5.xy = parameters.unk_o5;
 
