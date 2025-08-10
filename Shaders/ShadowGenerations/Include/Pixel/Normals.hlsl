@@ -67,6 +67,22 @@ float3 BlendNormals(float3 a, float3 b)
     return a * dot(a, b) / a.z - b;
 }
 
+float ComputeDirectionBlendFactor(float3 normal, float3 direction, float bias, float blend_limit, float blend_intensity, float blend_offset)
+{
+    float dir_fac = dot(direction, normal) * blend_limit;
+
+    float start = max(0, bias - 0.5) * 2;
+    float end = min(0.5, bias) * 2;
+
+    float blend_fac = min(1, start + saturate(end * dir_fac));
+
+    return saturate(
+        blend_offset
+        + blend_fac * blend_fac
+        + blend_fac * (1 - blend_fac) * blend_intensity * 2
+    );
+}
+
 //////////////////////////////////////////////////
 
 struct NormalDirections

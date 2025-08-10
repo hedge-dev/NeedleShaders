@@ -109,10 +109,15 @@ void SetupCommonNormalMap(inout SurfaceParameters parameters, PixelInput input, 
 
 //////////////////////////////////////////////////
 
+float SmoothnessToRoughness(float smoothness)
+{
+    return max(0.01, 1.0 - smoothness);
+}
+
 void SetupCommonPRM(inout SurfaceParameters parameters, float4 prm)
 {
 	parameters.specular = prm.x;
-	parameters.roughness = max(0.01, 1.0 - prm.y);
+	parameters.roughness = SmoothnessToRoughness(prm.y);
 	parameters.metallic = prm.z;
 	parameters.cavity = prm.w;
 
