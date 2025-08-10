@@ -65,7 +65,7 @@ struct LightingParameters
 LightingParameters InitLightingParameters()
 {
 	LightingParameters result = {
-		{ 0, false, 0 },
+		{ 0, false, 0, 0},
 
 		{0.0, 0.0},
 		{0, 0},

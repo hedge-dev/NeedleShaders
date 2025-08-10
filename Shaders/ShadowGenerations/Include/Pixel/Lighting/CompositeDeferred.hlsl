@@ -26,7 +26,7 @@
 
 float4 CompositeReflection(LightingParameters parameters)
 {
-	if(parameters.shading_model.type == ShadingModelType_Hair)
+	if(parameters.shading_model.type == ShadingModelType_Unlit)
 	{
 		return float4(0, 0, 0, 1);
 	}
@@ -78,7 +78,7 @@ float4 CompositeDeferredLighting(LightingParameters parameters, out float4 ssss_
 
 	float3 ambient_color = 0.0;
 
-	if(parameters.shading_model.type != ShadingModelType_Hair && parameters.typed_occlusion.mode == OcclusionType_AOLightField)
+	if(parameters.shading_model.type != ShadingModelType_Unlit && parameters.typed_occlusion.mode == OcclusionType_AOLightField)
 	{
 		ambient_color = ComputeAmbientColor(parameters);
 		ambient_color *= 1.0 - parameters.metallic;
@@ -110,7 +110,7 @@ float4 CompositeDeferredLighting(LightingParameters parameters, out float4 ssss_
 
 	float3 occlusion_capsule_0 = lerp(u_occlusion_capsule_param[0].xyz, 1.0, ssao.x);
 	float3 occlusion_capsule_1 = lerp(u_occlusion_capsule_param[1].xyz, 1.0, ssao.y);
-	float3 occlusion_capsule_2 = parameters.shading_model.type == ShadingModelType_Hair ? 1.0 : occlusion_capsule_0;
+	float3 occlusion_capsule_2 = parameters.shading_model.type == ShadingModelType_Unlit ? 1.0 : occlusion_capsule_0;
 
 	float3 out_diffuse = sunlight_diffuse * occlusion_capsule_1
 		+ positional_light_diffuse * occlusion_capsule_0;

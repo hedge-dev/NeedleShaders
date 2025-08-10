@@ -1,5 +1,6 @@
 /////////////////////////////////////////////////
 // Excluded Default features
+#define no_is_compute_instancing
 #define no_u_model_user_flag_0
 /////////////////////////////////////////////////
 
@@ -8,11 +9,11 @@
 MaterialImmutables
 {
     UVInput(diffuse)
-    UVInput(specular)
+    float4 Luminance;
+    float4 PBRFactor;
 }
 
 Texture2D<float4> WithSampler(diffuse);
-Texture2D<float4> WithSampler(specular);
 
 PixelOutput main(const PixelInput input)
 {
@@ -26,12 +27,16 @@ PixelOutput main(const PixelInput input)
     // Surface parameters
 
     float4 diffuse_texture = SampleUV0(diffuse);
-    float4 specular_texture = SampleUV0(specular);
 
-    SetupCommonAlbedoTransparencyVCA(parameters, input, diffuse_texture);
+    SetupCommonAlbedoTransparencyVC(parameters, input, diffuse_texture);
     TransparencyDitherDiscardW(parameters);
     SetupCommonNormal(parameters, input);
-    SetupCommonPRMTexture(parameters, specular_texture);
+    SetupCommonPBRFactor(parameters, PBRFactor);
+
+    parameters.emission =
+        emissive_color.xyz
+        * ambient_color.xyz
+        * Luminance.x;
 
     //////////////////////////////////////////////////
     // Output

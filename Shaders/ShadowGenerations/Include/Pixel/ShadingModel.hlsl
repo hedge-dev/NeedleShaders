@@ -8,7 +8,7 @@
 // 2 = Approximate Environment BRDF
 
 static const uint ShadingModelType_Clear = 0;
-static const uint ShadingModelType_Hair = 1;
+static const uint ShadingModelType_Unlit = 1;
 static const uint ShadingModelType_Default = 2;
 static const uint ShadingModelType_SSS = 3;
 static const uint ShadingModelType_AnisotropicReflection = 4;
@@ -26,6 +26,7 @@ struct ShadingModel
 	uint type;
 	bool is_vegetation;
 	uint kind;
+	uint as_flags;
 };
 
 ShadingModel ShadingModelFromFlags(uint flags)
@@ -35,6 +36,7 @@ ShadingModel ShadingModelFromFlags(uint flags)
 	result.type = flags & 0x7;
 	result.is_vegetation = (flags & 0x8) != 0;
 	result.kind = (flags >> 4) & 0x3;
+	result.as_flags = flags;
 
 	return result;
 }
@@ -42,6 +44,11 @@ ShadingModel ShadingModelFromFlags(uint flags)
 ShadingModel ShadingModelFromCB(uint type, bool is_vegetation)
 {
 	return ShadingModelFromFlags(asuint(u_shading_model_flag.x) | type | (is_vegetation ? 0x8 : 0));
+}
+
+ShadingModel ShadingModelFromCB(uint type)
+{
+	return ShadingModelFromFlags(asuint(u_shading_model_flag.x) | type);
 }
 
 uint ShadingModelToFlags(ShadingModel model)
