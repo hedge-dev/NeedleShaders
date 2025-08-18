@@ -1,3 +1,8 @@
+/////////////////////////////////////////////////
+// Excluded Default features
+#define no_is_compute_instancing
+/////////////////////////////////////////////////
+
 #include "../Include/Pixel/Material.hlsl"
 
 MaterialImmutables
