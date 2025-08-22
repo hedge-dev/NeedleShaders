@@ -80,7 +80,7 @@ PixelOutput main(const PixelInput input)
 	);
 
 	parameters.metallic = lerp(
-		saturate((specular1_texture.z - 0.5) * 2 + parameters.metallic),
+		saturate(specular1_texture.z * 2.0 - 1.0 + parameters.metallic),
 		parameters.metallic,
 		detail_distance
 	);
