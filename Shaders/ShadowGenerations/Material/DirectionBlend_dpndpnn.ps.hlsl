@@ -92,8 +92,6 @@ PixelOutput main(const PixelInput input)
 		dir_blend
 	));
 
-	parameters.debug_normal = world_dirs.normal;
-
 
 	SetupCommonPRMTexture(parameters, specular_texture);
 

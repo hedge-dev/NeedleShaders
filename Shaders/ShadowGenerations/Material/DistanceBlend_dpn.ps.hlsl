@@ -94,7 +94,6 @@ PixelOutput main(const PixelInput input)
 	);
 
 	parameters.normal = TransformNormal(denormal_blended, world_dirs);
-	parameters.debug_normal = world_dirs.normal;
 
 	//////////////////////////////////////////////////
 	// PRM

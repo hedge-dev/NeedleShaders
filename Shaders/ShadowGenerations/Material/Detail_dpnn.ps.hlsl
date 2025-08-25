@@ -51,7 +51,6 @@ PixelOutput main(const PixelInput input)
 		detail_distance,
 		world_dirs
 	);
-	parameters.debug_normal = world_dirs.normal;
 
 
     SetupCommonPRMTexture(parameters, specular_texture);

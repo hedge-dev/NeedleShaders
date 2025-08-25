@@ -78,9 +78,6 @@ PixelOutput main(const PixelInput input)
 		dir_blend
 	));
 
-	parameters.debug_normal = world_dirs.normal;
-
-
 	float4 prm = lerp(
 		specular_texture,
 		specular1_texture,

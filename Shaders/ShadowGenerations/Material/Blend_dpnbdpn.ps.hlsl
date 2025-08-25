@@ -68,7 +68,6 @@ PixelOutput main(const PixelInput input)
 
 	NormalDirections world_dirs = ComputeWorldNormalDirs(input);
 	NormalDirections world_dirs2 = ComputeWorldNormalDirs2(input);
-	parameters.debug_normal = world_dirs.normal;
 
 	float3 normal_map = UnpackNormalMapSafe(normal_texture.xy, world_dirs);
 	float3 normal1_map = UnpackNormalMap(normal1_texture.xy, world_dirs2);

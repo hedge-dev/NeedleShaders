@@ -107,7 +107,6 @@ PixelOutput main(const PixelInput input)
 	float3 normal_2 = UnpackNormalMap(normal2_texture.xy, broken_dir);
 
 	parameters.normal = normalize(lerp(normal, normal_2, dir_blend));
-	parameters.debug_normal = world_dirs.normal;
 
 
 	float4 prm = lerp(

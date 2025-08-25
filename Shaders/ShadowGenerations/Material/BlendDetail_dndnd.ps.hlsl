@@ -61,8 +61,6 @@ PixelOutput main(const PixelInput input)
 		blend
 	);
 
-	NormalDirections world_dirs = ComputeWorldNormalDirs(input);
-	parameters.debug_normal = world_dirs.normal;
 
 	float detail_distance = ComputeDetailDistance(parameters.world_position.xyz);
 	if(detail_distance < 1.0)
@@ -76,6 +74,8 @@ PixelOutput main(const PixelInput input)
 			LinearToSrgb(diffuse1_texture.xyz),
 			detail_distance
 		);
+
+		NormalDirections world_dirs = ComputeWorldNormalDirs(input);
 
 		parameters.normal = BlendNormalMapDetail(
 			normal_texture.xy,

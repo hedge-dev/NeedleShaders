@@ -21,6 +21,7 @@
 SurfaceParameters CreateCommonSurface(PixelInput input)
 {
     SurfaceParameters parameters = InitSurfaceParameters();
+    parameters.debug_normal = normalize(input.world_normal);
     SetupSurfaceParamFromInput(input, parameters);
     ComputeInstanceDithering(parameters);
     return parameters;
@@ -97,14 +98,12 @@ void SetupCommonNormal(inout SurfaceParameters parameters, PixelInput input)
 {
     NormalDirections world_dirs = ComputeWorldNormalDirs(input);
     parameters.normal = world_dirs.normal;
-    parameters.debug_normal = world_dirs.normal;
 }
 
 void SetupCommonNormalMap(inout SurfaceParameters parameters, PixelInput input, float2 normal_map)
 {
     NormalDirections world_dirs = ComputeWorldNormalDirs(input);
     parameters.normal = UnpackNormalMapSafe(normal_map, world_dirs);
-    parameters.debug_normal = world_dirs.normal;
 }
 
 //////////////////////////////////////////////////
