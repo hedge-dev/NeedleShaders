@@ -162,7 +162,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                         if(macroAssign == -1)
                         {
                             macroName = macro;
-                            macroValue = string.Empty;
+                            macroValue = "1";
                         }
                         else
                         {
