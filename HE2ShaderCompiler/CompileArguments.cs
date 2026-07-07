@@ -87,7 +87,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                             throw new ArgumentException("Missing path parameter for argument -o");
                         }
 
-                        string outputPath = Path.GetFullPath(arguments[0]);
+                        string outputPath = Path.GetFullPath(arguments[i]);
 
                         result.OutputFile = Path.GetFileName(outputPath);
                         result.OutputDirectory = Path.GetDirectoryName(outputPath)!;
@@ -102,7 +102,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                             throw new ArgumentException("Missing path parameter for argument -od");
                         }
 
-						string outputDirPath = Path.GetFullPath(arguments[0]);
+						string outputDirPath = Path.GetFullPath(arguments[i]);
 
 						result.OutputDirectory = outputDirPath;
                         result.OutputFile = rawOutputFile;
