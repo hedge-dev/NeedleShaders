@@ -7,6 +7,13 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
     {
         static void Main(string[] args)
         {
+            bool debug = false;
+            if(args.Length > 0 && args[0] == "DEBUG")
+            {
+                debug = true;
+                args = args[1..];
+            }
+
             if(args.Length == 0 || args[0].ToLower() is "help" or "--help" or "?" or "-?" or "-help" or "--h" or "-h")
             {
                 PrintHelp("cmdhelp.txt");
@@ -52,7 +59,7 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
             }
             catch(Exception exception)
             {
-                Console.WriteLine($" === A(n) {exception.GetType().Name} exception occured === ");
+                Console.WriteLine($" === A(n) {exception.GetType().Name} exception occured ===");
                 Console.WriteLine(exception.Message);
 
                 Exception? innerException = exception.InnerException;
@@ -64,6 +71,13 @@ namespace HedgeDev.NeedleShaders.HE2.Compiler
                     Console.WriteLine(innerException.Message);
 
                     innerException = innerException.InnerException;
+                }
+
+                if(debug && !string.IsNullOrWhiteSpace(exception.StackTrace))
+                {
+                    Console.WriteLine();
+					Console.WriteLine(" --- Stack trace ---");
+					Console.WriteLine(exception.StackTrace);
                 }
             }
         }
